@@ -29,6 +29,14 @@ describe("POST /api/lead", () => {
     expect(sendLeadEmail).toHaveBeenCalledTimes(1);
   });
 
+  it("logs a WhatsApp-button click without a name, using a number from the chat when there is one", async () => {
+    const body = { source: "whatsapp_click", sessionId: "s2", messages: [{ role: "user", content: "serum, wa saya 0812 3456 7890" }] };
+    const res = await POST(new Request("http://x/api/lead", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "6.6.6.6" }, body: JSON.stringify(body) }));
+    expect(res.status).toBe(201);
+    const row = (saveLead.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+    expect(row).toMatchObject({ name: "Pengunjung (klik WhatsApp)", whatsapp: "081234567890", session_id: "s2" });
+  });
+
   it("rejects an invalid WhatsApp number", async () => {
     const res = await POST(req({ ...good, whatsapp: "12345" }));
     expect(res.status).toBe(400);

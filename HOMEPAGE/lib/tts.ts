@@ -5,11 +5,6 @@ export type VoiceOverride = Partial<RaraConfig["voice"]>;
 export async function synthesize(rawText: string, override?: VoiceOverride): Promise<ArrayBuffer> {
   const isTest = process.env.NODE_ENV === "test";
   const cfg = isTest ? undefined : getRaraConfig().voice;
-  const provider = override?.provider ?? cfg?.provider ?? "elevenlabs";
-  if (provider === "browser") {
-    throw new Error("browser_tts_selected");
-  }
-
   const rules = override?.pronunciationDictionary ?? cfg?.pronunciationDictionary ?? [];
   const text = applyPronunciationDictionary(rawText, rules);
 
@@ -21,11 +16,10 @@ export async function synthesize(rawText: string, override?: VoiceOverride): Pro
     override?.voiceId ||
     (isTest ? process.env.ELEVENLABS_VOICE_ID : cfg?.voiceId || process.env.ELEVENLABS_VOICE_ID) ||
     "";
-  const modelId = override?.modelId || cfg?.modelId || process.env.ELEVENLABS_MODEL || "eleven_multilingual_v2";
+  const modelId = override?.modelId || cfg?.modelId || process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
 
-  if (!apiKey || !voiceId) {
-    throw new Error("ElevenLabs is not configured");
-  }
+  if (!apiKey) throw new Error("API Key ElevenLabs belum diisi");
+  if (!voiceId) throw new Error("Voice ID belum dipilih");
 
   const stability = Math.max(0, Math.min(1, (override?.stability ?? cfg?.stability ?? 75) / 100));
   const similarity_boost = Math.max(0, Math.min(1, (override?.similarityBoost ?? cfg?.similarityBoost ?? 85) / 100));
@@ -55,6 +49,43 @@ export async function synthesize(rawText: string, override?: VoiceOverride): Pro
       }),
     }
   );
-  if (!res.ok) throw new Error(`ElevenLabs failed: ${res.status}`);
+  if (!res.ok) throw await elevenLabsError(res);
   return res.arrayBuffer();
+}
+
+/** Error carrying ElevenLabs' own reason (e.g. "invalid_api_key", "quota_exceeded") instead of a bare status. */
+async function elevenLabsError(res: Response): Promise<Error> {
+  const text = await res.text().catch(() => "");
+  let detail = text.slice(0, 300);
+  try {
+    const d = JSON.parse(text)?.detail;
+    detail = typeof d === "string" ? d : d?.message || d?.status || detail;
+  } catch {
+    // body is not JSON, keep the raw text
+  }
+  return new Error(`ElevenLabs gagal: ${res.status}${detail ? ` — ${detail}` : ""}`);
+}
+
+export type ElevenLabsVoice = { voiceId: string; name: string; category: string; description: string; previewUrl: string };
+
+/** Voices in the ElevenLabs account: premade ones plus clones and voices added from the Voice Library. */
+export async function listVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
+  if (!apiKey) throw new Error("API Key ElevenLabs belum diisi");
+  const res = await fetch("https://api.elevenlabs.io/v1/voices", { headers: { "xi-api-key": apiKey } });
+  if (!res.ok) throw await elevenLabsError(res);
+  const json = await res.json();
+  const voices: Record<string, unknown>[] = Array.isArray(json?.voices) ? json.voices : [];
+  return voices
+    .map((v) => {
+      const labels = (v.labels && typeof v.labels === "object" ? v.labels : {}) as Record<string, string>;
+      return {
+        voiceId: String(v.voice_id ?? ""),
+        name: String(v.name ?? ""),
+        category: String(v.category ?? ""),
+        description: [labels.gender, labels.age, labels.accent, labels.use_case ?? labels["use case"]].filter(Boolean).join(", "),
+        previewUrl: String(v.preview_url ?? ""),
+      };
+    })
+    .filter((v) => v.voiceId)
+    .sort((a, b) => Number(a.category === "premade") - Number(b.category === "premade") || a.name.localeCompare(b.name));
 }

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { avatarReducer, type AvatarEvent, type AvatarState } from "./avatarState";
 import { createRecognizer } from "./speech";
-import { extractPhone, LEAD_MARKER, stripMarker } from "./lead";
+import { LEAD_MARKER, stripMarker } from "./lead";
 import { getSessionId } from "./session";
 import type { ChatMessage } from "./llm";
 
@@ -12,19 +12,32 @@ const NETWORK_ERROR = "Maaf Kak, koneksinya terputus. Coba kirim lagi ya.";
 
 type Voice = { audio: HTMLAudioElement; analyser: AnalyserNode | null };
 
+/** What the chat panel shows: every turn, plus greetings, thanks and errors that never reach the LLM. */
+export type ThreadItem = { id: number; role: "user" | "assistant"; content: string; tone?: "error"; at?: number };
+
+const STORE_KEY = "rara-chat";
+const VOICE_KEY = "rara-voice";
+const greetingThread = (): ThreadItem[] => [{ id: 0, role: "assistant", content: GREETING }];
+type Saved = { thread: ThreadItem[]; messages: ChatMessage[]; leadDone: boolean; showWhatsApp?: boolean };
+
 export function useConversation() {
   const [state, dispatch] = useReducer(avatarReducer, "idle" as AvatarState);
   const [line, setLine] = useState(GREETING);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [thread, setThread] = useState<ThreadItem[]>(greetingThread);
+  const [streaming, setStreaming] = useState<string | null>(null);
+  const [restored, setRestored] = useState(false);
   const [micSupported, setMicSupported] = useState(false);
   const [micActive, setMicActive] = useState(false);
-  const [showLeadForm, setShowLeadForm] = useState(false);
+  const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [leadDone, setLeadDone] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [voiceOn, setVoiceOn] = useState(true);
 
   const messagesRef = useRef<ChatMessage[]>([]);
   const leadDoneRef = useRef(false);
   const micActiveRef = useRef(false);
+  const voiceOnRef = useRef(true);
   // Each send or mic press starts a new turn; anything an older turn finishes later is dropped.
   const turn = useRef(0);
   const abort = useRef<AbortController | null>(null);
@@ -34,8 +47,52 @@ export function useConversation() {
   const levelFrame = useRef<number | null>(null);
   const recognizer = useRef<ReturnType<typeof createRecognizer>>(null);
   const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
+  const seq = useRef(0);
 
   const fire = useCallback((e: AvatarEvent) => dispatch(e), []);
+
+  const post = useCallback((role: ThreadItem["role"], content: string, tone?: ThreadItem["tone"]) => {
+    const item: ThreadItem = { id: ++seq.current, role, content, at: Date.now(), ...(tone ? { tone } : {}) };
+    setThread((t) => [...t, item]);
+  }, []);
+
+  // Keep the chat across reloads within the tab; restore after mount so server and client render the same first frame.
+  useEffect(() => {
+    try {
+      // The voice choice is a per-device preference, so it outlives the tab.
+      if (localStorage.getItem(VOICE_KEY) === "off") {
+        voiceOnRef.current = false;
+        setVoiceOn(false);
+      }
+    } catch {
+      // Storage blocked: keep the voice on.
+    }
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORE_KEY) ?? "null") as Saved | null;
+      if (saved?.thread?.length) {
+        seq.current = Math.max(...saved.thread.map((m) => m.id));
+        messagesRef.current = saved.messages ?? [];
+        leadDoneRef.current = !!saved.leadDone;
+        setThread(saved.thread);
+        setMessages(messagesRef.current);
+        setLeadDone(leadDoneRef.current);
+        setShowWhatsApp(!!saved.showWhatsApp || leadDoneRef.current);
+      }
+    } catch {
+      // Storage blocked or corrupt: start fresh.
+    }
+    setRestored(true);
+  }, []);
+
+  useEffect(() => {
+    if (!restored) return;
+    try {
+      const saved: Saved = { thread, messages, leadDone, showWhatsApp };
+      sessionStorage.setItem(STORE_KEY, JSON.stringify(saved));
+    } catch {
+      // Private mode or full storage: history just won't survive a reload.
+    }
+  }, [restored, thread, messages, leadDone, showWhatsApp]);
 
   const stopLevel = useCallback(() => {
     if (levelFrame.current) cancelAnimationFrame(levelFrame.current);
@@ -64,6 +121,7 @@ export function useConversation() {
     voice.current?.audio.pause();
     if (textTimer.current) clearTimeout(textTimer.current);
     stopLevel();
+    setStreaming(null);
     return ++turn.current;
   }, [stopLevel]);
 
@@ -98,7 +156,7 @@ export function useConversation() {
 
   const speak = useCallback(async (text: string, id: number) => {
     const v = voice.current;
-    if (!v) return speakAsText(text);
+    if (!v || !voiceOnRef.current) return speakAsText(text);
     try {
       const res = await fetch("/api/tts", {
         method: "POST",
@@ -129,10 +187,16 @@ export function useConversation() {
     const history: ChatMessage[] = [...messagesRef.current, { role: "user", content: text }];
     messagesRef.current = history;
     setMessages(history);
+    post("user", text);
+    setStreaming("");
 
-    const fail = (message: string) => {
+    // `handoff`: Rara cannot help right now (AI down, session limit), so offer the WhatsApp team instead.
+    const fail = (message: string, handoff = false) => {
       if (id !== turn.current) return;
       setLine(message);
+      setStreaming(null);
+      post("assistant", message, "error");
+      if (handoff) setShowWhatsApp(true);
       fire("CANCEL");
     };
 
@@ -147,7 +211,7 @@ export function useConversation() {
       if (id !== turn.current) return;
       if (!res.ok || !res.body) {
         const err = await res.json().catch(() => null);
-        return fail(err?.error ?? NETWORK_ERROR);
+        return fail(err?.error ?? NETWORK_ERROR, res.status === 429 || res.status >= 500);
       }
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -157,6 +221,7 @@ export function useConversation() {
         if (done) break;
         full += decoder.decode(value, { stream: true });
         setLine(stripMarker(full));
+        setStreaming(stripMarker(full));
       }
     } catch {
       return fail(NETWORK_ERROR);
@@ -165,11 +230,13 @@ export function useConversation() {
     const reply = stripMarker(full);
     if (!reply) return fail(NETWORK_ERROR);
     setLine(reply);
-    if (full.includes(LEAD_MARKER) && !leadDoneRef.current) setShowLeadForm(true);
+    setStreaming(null);
+    post("assistant", reply);
+    if (full.includes(LEAD_MARKER)) setShowWhatsApp(true);
     messagesRef.current = [...messagesRef.current, { role: "assistant", content: reply }];
     setMessages(messagesRef.current);
     await speak(reply, id);
-  }, [fire, newTurn, speak]);
+  }, [fire, newTurn, post, speak]);
   sendRef.current = send;
 
   const setMic = useCallback((on: boolean) => {
@@ -220,22 +287,46 @@ export function useConversation() {
     else if (!micActiveRef.current) fire("MIC_OFF");
   }, [fire]);
 
-  const leadSubmitted = useCallback((name: string) => {
+  /** The visitor opened the WhatsApp chat; the button stays so they can reopen it, but the lead is logged once. */
+  const whatsappOpened = useCallback(() => {
     leadDoneRef.current = true;
     setLeadDone(true);
-    setShowLeadForm(false);
-    const thanks = `Terima kasih Kak ${name}! Tim kami akan menghubungi lewat WhatsApp.`;
-    const id = newTurn();
-    setLine(thanks);
-    fire("CANCEL");
-    fire("SUBMIT");
-    void speak(thanks, id);
-  }, [fire, newTurn, speak]);
+  }, []);
 
-  const chatPhone = extractPhone(messages.filter((m) => m.role === "user").map((m) => m.content));
+  const toggleVoice = useCallback(() => {
+    const on = !voiceOnRef.current;
+    voiceOnRef.current = on;
+    setVoiceOn(on);
+    try {
+      localStorage.setItem(VOICE_KEY, on ? "on" : "off");
+    } catch {
+      // Storage blocked: the choice lasts for this page only.
+    }
+    // Muting mid-sentence: stop the audio and let the avatar settle like a finished reply.
+    if (!on && voice.current && !voice.current.audio.paused) {
+      voice.current.audio.pause();
+      stopLevel();
+      fire("AUDIO_END");
+    }
+  }, [fire, stopLevel]);
+
+  /** Starts a fresh conversation (same session id, so the dashboard still groups it with this visitor). */
+  const reset = useCallback(() => {
+    newTurn();
+    fire("CANCEL");
+    seq.current = 0;
+    messagesRef.current = [];
+    leadDoneRef.current = false;
+    setMessages([]);
+    setThread(greetingThread());
+    setShowWhatsApp(false);
+    setLeadDone(false);
+    setLine(GREETING);
+  }, [fire, newTurn]);
+
 
   return {
-    state, audioLevel, line, messages, micSupported, micActive, showLeadForm, leadDone, chatPhone,
-    send, startMic, stopMic, userGestured, typing, leadSubmitted,
+    state, audioLevel, line, messages, thread, streaming, micSupported, micActive, showWhatsApp, leadDone,
+    voiceOn, send, startMic, stopMic, userGestured, typing, whatsappOpened, toggleVoice, reset,
   };
 }

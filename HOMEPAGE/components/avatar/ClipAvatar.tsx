@@ -75,6 +75,15 @@ export default function ClipAvatar({ state, clips }: { state: AvatarState; clips
 
   return (
     <div className={styles.root} data-state={state}>
+      {/* A 74 KB still of the same frame shows at once and fades out when the first clip can play. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        className={styles.video}
+        src="/avatar/placeholder.jpg"
+        alt=""
+        aria-hidden="true"
+        style={{ opacity: front === null ? 1 : 0, transition: `opacity ${FADE_MS}ms ease` }}
+      />
       {refs.map((r, i) => (
         <video
           key={i}

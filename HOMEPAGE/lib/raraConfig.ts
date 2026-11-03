@@ -69,16 +69,15 @@ export type RaraConfig = {
     maxQuestionsPerTurn: number;
   };
   voice: {
-    provider: "elevenlabs" | "browser" | "openai";
+    provider: "elevenlabs";
     elevenlabsApiKey: string;
     voiceId: string;
-    modelId: "eleven_multilingual_v2" | "eleven_turbo_v2_5" | "eleven_flash_v2_5";
+    modelId: "eleven_flash_v2_5" | "eleven_turbo_v2_5" | "eleven_multilingual_v2";
     stability: number; // 0 - 100
     similarityBoost: number; // 0 - 100
     styleExaggeration: number; // 0 - 100
     useSpeakerBoost: boolean;
-    speakingSpeed: number; // 0.8 - 1.3
-    autoFallbackBrowserTts: boolean;
+    speakingSpeed: number; // 0.7 - 1.2 (ElevenLabs range)
     sttLang: "id-ID" | "en-US";
     sampleTestText: string;
     pronunciationDictionary: PronunciationRule[];
@@ -191,13 +190,12 @@ export const DEFAULT_RARA_CONFIG: RaraConfig = {
     provider: "elevenlabs",
     elevenlabsApiKey: process.env.ELEVENLABS_API_KEY || "",
     voiceId: process.env.ELEVENLABS_VOICE_ID || "21m00Tcm4TlvDq8ikWAM",
-    modelId: (process.env.ELEVENLABS_MODEL as RaraConfig["voice"]["modelId"]) || "eleven_multilingual_v2",
+    modelId: (process.env.ELEVENLABS_MODEL as RaraConfig["voice"]["modelId"]) || "eleven_flash_v2_5",
     stability: 75,
     similarityBoost: 85,
     styleExaggeration: 20,
     useSpeakerBoost: true,
     speakingSpeed: 1.05,
-    autoFallbackBrowserTts: true,
     sttLang: "id-ID",
     sampleTestText:
       "Halo Kak! Aku Rara dari PT Haraka Erfi. Mau mulai bikin brand skincare sendiri dengan MOQ seribu pcs dan izin BPOM resmi? Ceritakan konsep produk impian Kakak ya!",
@@ -514,6 +512,22 @@ function readSecrets(): RaraSecrets {
   }
   return { llmApiKey: "", elevenlabsApiKey: "", vpsWaWebhookSecret: "" };
 }
+// Windows can briefly lock a file that was just written (antivirus, editors, file watchers) and fail the open
+// with EBUSY/EPERM/UNKNOWN; retry a few times so one unlucky moment does not lose a dashboard save.
+function writeFileRetry(file: string, data: string) {
+  const transient = new Set(["EBUSY", "EPERM", "EACCES", "UNKNOWN"]);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      fs.writeFileSync(file, data, "utf8");
+      return;
+    } catch (e) {
+      const code = (e as NodeJS.ErrnoException).code ?? "";
+      if (attempt >= 5 || !transient.has(code)) throw e;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 80 * (attempt + 1));
+    }
+  }
+}
+
 const KNOWLEDGE_MD_PATH = path.join(process.cwd(), "lib", "knowledge", "haraka.md");
 const MANIFEST_PATH = path.join(process.cwd(), "public", "avatar", "manifest.json");
 
@@ -659,10 +673,10 @@ ${guardrailBullets.join("\n")}
 MENGGALI KEBUTUHAN KUALIFIKASI LEAD
 - Sambil menjawab pertanyaan pengunjung dengan ramah, pelan-pelan gali informasi berikut: ${qualificationList}.
 
-MENAWARKAN KONSULTASI & FORM LEAD
-- Saat pengunjung menunjukkan niat komersial (bertanya harga, MOQ, estimasi waktu, sampel, atau setelah ${l.triggerAfterTurns} kali tanya-jawab), tawarkan perhitungan estimasi atau pengiriman sampel gratis bersama tim ${k.company.brandName} dan minta nama serta nomor WhatsApp ${p.visitorHonorific}.
-- Setiap kali kamu membuat penawaran konsultasi/kontak tersebut, wajib akhiri jawabanmu dengan ${LEAD_MARKER} di baris tersendiri. Lakukan ini paling banyak satu kali dalam satu percakapan.
-- Kalau pengunjung ingin langsung menghubungi via WhatsApp, sebutkan nomor WhatsApp CS resmi ${l.whatsappCsNumber}.
+MENGARAHKAN KE WHATSAPP
+- Saat pengunjung menunjukkan niat komersial (bertanya harga, MOQ, estimasi waktu, sampel, atau setelah ${l.triggerAfterTurns} kali tanya-jawab), tawarkan perhitungan estimasi atau sampel bersama tim ${k.company.brandName}, lalu ajak ${p.visitorHonorific} menekan tombol "Chat via WhatsApp" yang muncul di bawah jawabanmu.
+- Jangan pernah meminta nama atau nomor WhatsApp pengunjung. Pengunjung yang menghubungi kita lewat tombol tersebut.
+- Setiap kali kamu mengajak ke WhatsApp, wajib akhiri jawabanmu dengan ${LEAD_MARKER} di baris tersendiri agar tombolnya muncul. Ini juga berlaku saat pengunjung bertanya nomor WhatsApp atau ingin langsung bicara dengan tim; sebutkan juga nomor CS resmi ${l.whatsappCsNumber}.
 
 PENGETAHUAN
 ${knowledgeMd}`;
@@ -707,6 +721,7 @@ export function getRaraConfig(): RaraConfig {
         voice: {
           ...DEFAULT_RARA_CONFIG.voice,
           ...(raw.voice || {}),
+          provider: "elevenlabs",
           elevenlabsApiKey:
             secrets.elevenlabsApiKey || raw.voice?.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "",
           voiceId: raw.voice?.voiceId || process.env.ELEVENLABS_VOICE_ID || DEFAULT_RARA_CONFIG.voice.voiceId,
@@ -781,7 +796,7 @@ export function saveRaraConfig(nextConfig: RaraConfig): RaraConfig {
     elevenlabsApiKey: elevenApiKey === process.env.ELEVENLABS_API_KEY ? "" : elevenApiKey,
     vpsWaWebhookSecret: webhookSecret,
   };
-  fs.writeFileSync(SECRETS_PATH, JSON.stringify(secrets, null, 2), "utf8");
+  writeFileRetry(SECRETS_PATH, JSON.stringify(secrets, null, 2));
 
   const publicConfig: RaraConfig = {
     ...finalConfig,
@@ -789,7 +804,7 @@ export function saveRaraConfig(nextConfig: RaraConfig): RaraConfig {
     voice: { ...finalConfig.voice, elevenlabsApiKey: "" },
     leadRules: finalConfig.leadRules && { ...finalConfig.leadRules, vpsWaWebhookSecret: "" },
   };
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(publicConfig, null, 2), "utf8");
+  writeFileRetry(CONFIG_PATH, JSON.stringify(publicConfig, null, 2));
 
   // Sync lib/knowledge/haraka.md so legacy readers also stay updated
   try {

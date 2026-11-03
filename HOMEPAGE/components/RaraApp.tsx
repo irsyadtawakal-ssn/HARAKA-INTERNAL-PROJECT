@@ -4,8 +4,10 @@ import { useEffect } from "react";
 import Avatar from "@/components/avatar/Avatar";
 import Conversation from "@/components/Conversation";
 import { useConversation } from "@/lib/controller";
+import type { WhatsAppContact } from "@/components/WhatsAppCta";
+import type { ProductCategory } from "@/components/ProductCard";
 
-export default function RaraApp() {
+export default function RaraApp({ whatsapp, products }: { whatsapp: WhatsAppContact; products?: ProductCategory[] }) {
   const conv = useConversation();
 
   // Browsers only allow audio after a user gesture; remember the first one.
@@ -20,15 +22,15 @@ export default function RaraApp() {
   }, [conv]);
 
   return (
-    <>
+    <div className="studio">
       <section className="stage">
         <div className="avatar-slot">
           <Avatar state={conv.state} audioLevel={conv.audioLevel} />
         </div>
       </section>
-      <section className="bottom">
-        <Conversation conv={conv} />
+      <section className="chat-slot">
+        <Conversation conv={conv} whatsapp={whatsapp} products={products} />
       </section>
-    </>
+    </div>
   );
 }

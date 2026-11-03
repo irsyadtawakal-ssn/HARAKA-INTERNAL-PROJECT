@@ -11,7 +11,7 @@ import {
   type RaraConfig,
 } from "@/lib/raraConfig";
 import { completeChat, listModels, type ChatMessage } from "@/lib/llm";
-import { synthesize } from "@/lib/tts";
+import { listVoices, synthesize } from "@/lib/tts";
 import { heuristicLeadSummary, LEAD_MARKER, stripMarker } from "@/lib/lead";
 
 function listAvailableAvatarFiles(): { name: string; sizeKb: number }[] {
@@ -181,9 +181,9 @@ export async function POST(req: Request) {
       const phoneticText = applyPronunciationDictionary(rawText, rules);
 
       const effectiveKey =
-        draftVoice.elevenlabsApiKey === "***MASKED***"
+        !draftVoice.elevenlabsApiKey || draftVoice.elevenlabsApiKey === "***MASKED***"
           ? current.voice.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || ""
-          : draftVoice.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "";
+          : draftVoice.elevenlabsApiKey;
 
       const start = Date.now();
       try {
@@ -202,16 +202,16 @@ export async function POST(req: Request) {
         });
       } catch (err: unknown) {
         const latencyMs = Date.now() - start;
-        const msg = err instanceof Error ? err.message : "ElevenLabs belum dikonfigurasi, menggunakan Web Speech API lokal";
-        return NextResponse.json({
-          ok: true,
-          engine: "browser_fallback",
-          reason: msg,
-          latencyMs,
-          phoneticText,
-          speakingSpeed: draftVoice.speakingSpeed || 1.05,
-        });
+        const msg = err instanceof Error ? err.message : "ElevenLabs gagal";
+        return NextResponse.json({ ok: false, error: msg, latencyMs, phoneticText });
       }
+    }
+
+    if (action === "list_voices") {
+      const current = getRaraConfig();
+      const draftKey = body.voice?.elevenlabsApiKey;
+      const apiKey = !draftKey || draftKey === "***MASKED***" ? current.voice.elevenlabsApiKey : draftKey;
+      return NextResponse.json({ ok: true, voices: await listVoices(apiKey) });
     }
 
     if (action === "simulate_chat") {

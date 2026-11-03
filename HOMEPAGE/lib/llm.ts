@@ -26,25 +26,32 @@ export function buildKnowledgeFallbackReply(messages: ChatMessage[]): string {
   const lastUser = ([...messages].reverse().find((m) => m.role === "user")?.content || "").toLowerCase();
   const userTurnCount = messages.filter((m) => m.role === "user").length;
 
+  // Keyword answers only fit short factual questions; advice, trends or comparisons need the real AI or a person.
+  const openEnded = /rekomend|rekomen|saran|tren|trend|cocok|bagus|terbaik|laris|bandingk|beda|kenapa|mengapa|gimana cara|bagaimana cara/.test(lastUser);
+  const handoff = `Maaf ${h}, untuk pertanyaan ini ${cfg.persona.avatarName} belum bisa menjawab dengan detail sekarang. Supaya jawabannya tepat, tim ${cfg.knowledge.company.brandName} siap bantu langsung lewat tombol WhatsApp di bawah ya.
+[[LEAD]]`;
+
   let answer = "";
-  if (lastUser.includes("moq") || lastUser.includes("minimal") || lastUser.includes("jumlah")) {
+  if (openEnded) {
+    answer = handoff;
+  } else if (lastUser.includes("moq") || lastUser.includes("minimal") || lastUser.includes("jumlah")) {
     answer = `Di ${cfg.knowledge.company.brandName}, jumlah pemesanan minimum atau MOQ sangat fleksibel ${h}, mulai dari 1.000 pcs untuk mempermudah perintis brand baru dan UMKM. Kami juga menyediakan opsi simulasi awal 500 pcs maupun kapasitas besar di atas 5.000 pcs. Kira-kira ${h} berencana membuat produk kategori apa?`;
   } else if (lastUser.includes("bpom") || lastUser.includes("halal") || lastUser.includes("izin") || lastUser.includes("haki") || lastUser.includes("legal")) {
     answer = `Betul ${h}, seluruh pengurusan notifikasi resmi BPOM, sertifikasi Halal MUI atau BPJPH, hingga pendaftaran merek HAKI didampingi penuh oleh tim regulasi kami. Pabrik kami juga sudah berstandar CPKB dan ISO 22716 sehingga produk ${h} seratus persen legal dan aman dipasarkan. Apakah ${h} sudah punya konsep produk yang ingin didaftarkan?`;
   } else if (lastUser.includes("lama") || lastUser.includes("waktu") || lastUser.includes("proses") || lastUser.includes("estimasi") || lastUser.includes("bulan")) {
     answer = `Estimasi waktu total dari persetujuan sampel formula hingga produk siap jual adalah sekitar 3 bulan ${h}, mencakup registrasi BPOM, kemasan, dan produksi massal di pabrik CPKB kami. Untuk sampel awalnya sendiri bisa direvisi bersama tim R&D sampai ${h} cocok seratus persen. Target launching produk ${h} rencananya bulan apa?`;
   } else if (lastUser.includes("harga") || lastUser.includes("biaya") || lastUser.includes("modal") || lastUser.includes("budget")) {
-    answer = `Untuk rincian harga per pcs disesuaikan dengan pilihan bahan aktif, tekstur, dan kemasan ${h}, tapi tenang saja karena sistem satu pintu kami sangat hemat untuk brand baru. Supaya tim R&D dan sales kami bisa kirimkan hitungan estimasi dan sampelnya, boleh minta nama dan nomor WhatsApp ${h}?\n[[LEAD]]`;
+    answer = `Untuk rincian harga per pcs disesuaikan dengan pilihan bahan aktif, tekstur, dan kemasan ${h}, tapi tenang saja karena sistem satu pintu kami sangat hemat untuk brand baru. Supaya tim R&D dan sales kami bisa kirimkan hitungan estimasi dan sampelnya, ${h} bisa langsung chat tim kami lewat tombol WhatsApp di bawah ya.\n[[LEAD]]`;
   } else if (lastUser.includes("sampel") || lastUser.includes("sample") || lastUser.includes("formula") || lastUser.includes("revisi")) {
     answer = `Tim R&D ${cfg.knowledge.company.brandName} siap meracik sampel formula khusus sesuai bahan aktif, tekstur, dan aroma impian ${h}, dan sampelnya bisa direvisi sampai benar-benar pas. Saat ini ${h} tertarik mengembangkan produk skincare, bodycare, haircare, atau parfum?`;
   } else if (lastUser.includes("produk") || lastUser.includes("kategori") || lastUser.includes("bisa bikin") || lastUser.includes("apa saja")) {
     answer = `Kami melayani maklon lengkap mulai dari Skincare seperti serum, sunscreen, moisturizer, dan cleanser, lalu Bodycare, Haircare, hingga Parfum EDP dan Body Mist ${h}. Semuanya diproduksi di pabrik CPKB kami di Bekasi sejak 2015. Produk mana yang paling ingin ${h} luncurkan lebih dulu?`;
   } else {
-    answer = `Terima kasih sudah berdiskusi dengan ${cfg.persona.avatarName} dari ${cfg.knowledge.company.brandName} ${h}. Kami siap mendampingi pembuatan brand kosmetik ${h} dari riset formula R&D, desain kemasan, izin BPOM dan Halal, sampai produksi siap jual dengan MOQ mulai 1.000 pcs. Boleh ceritakan jenis produk dan kisaran jumlah yang ingin ${h} buat?`;
+    answer = handoff;
   }
 
   if (userTurnCount >= cfg.leadRules.triggerAfterTurns && !answer.includes("[[LEAD]]")) {
-    answer += ` Jika ${h} ingin kami hitungkan estimasi biaya dan kirimkan sampel formulanya, boleh tinggalkan nama dan nomor WhatsApp ya.\n[[LEAD]]`;
+    answer += ` Jika ${h} ingin kami hitungkan estimasi biaya dan kirimkan sampel formulanya, langsung chat tim kami lewat tombol WhatsApp di bawah ya.\n[[LEAD]]`;
   }
   return answer;
 }

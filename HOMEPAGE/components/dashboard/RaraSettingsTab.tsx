@@ -22,6 +22,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { RaraConfig, FaqItem, PronunciationRule, ExtraKnowledgeDoc } from "@/lib/raraConfig";
+import type { ElevenLabsVoice } from "@/lib/tts";
 import styles from "@/app/dashboard/dashboard.module.css";
 
 type SubTabId = "visual" | "llm" | "voice" | "knowledge" | "persona" | "simulator";
@@ -46,13 +47,6 @@ const LLM_INPUT_STYLE: React.CSSProperties = {
   fontSize: 12.5,
   fontFamily: "monospace",
 };
-
-const VOICE_PRESETS = [
-  { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel — Ramah, Hangat & Profesional (Default Rara)" },
-  { id: "EXAVITQu4vr4xnSDxMaL", name: "Bella — Lembut, Kalem & Konsultatif" },
-  { id: "XB0fDUnXU5powFXDhCwa", name: "Charlotte — Tegas, Eksekutif B2B" },
-  { id: "XrExE9yKIg1WjnnlVkGX", name: "Matilda — Ceria, Antusias & Bersahabat" },
-];
 
 export default function RaraSettingsTab() {
   const [subTab, setSubTab] = useState<SubTabId>("visual");
@@ -107,11 +101,14 @@ export default function RaraSettingsTab() {
   const [showElevenKey, setShowElevenKey] = useState(false);
   const [ttsTesting, setTtsTesting] = useState(false);
   const [ttsTestResult, setTtsTestResult] = useState<{
-    engine: string;
+    ok: boolean;
     latencyMs: number;
     phoneticText: string;
-    reason?: string;
+    error?: string;
   } | null>(null);
+  const [voices, setVoices] = useState<ElevenLabsVoice[]>([]);
+  const [voicesLoading, setVoicesLoading] = useState(false);
+  const [voicesError, setVoicesError] = useState("");
   const [newPronTerm, setNewPronTerm] = useState("");
   const [newPronPhonetic, setNewPronPhonetic] = useState("");
 
@@ -148,7 +145,7 @@ export default function RaraSettingsTab() {
 
   const showToast = (text: string, type: "ok" | "err" = "ok") => {
     setToast({ text, type });
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), type === "err" ? 12000 : 3500);
   };
 
   const loadConfig = async () => {
@@ -185,6 +182,14 @@ export default function RaraSettingsTab() {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [isDirty]);
+
+  // Load the ElevenLabs voices once a key is saved and the voice tab is opened
+  useEffect(() => {
+    if (subTab === "voice" && hasElevenKey && config && !voices.length && !voicesLoading && !voicesError) {
+      void handleListVoices();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subTab, hasElevenKey, config === null]);
 
   // Load the 9Router model list once a key is saved and the LLM tab is opened
   useEffect(() => {
@@ -394,6 +399,29 @@ export default function RaraSettingsTab() {
     }
   };
 
+  const selectedVoice = voices.find((v) => v.voiceId === config?.voice.voiceId);
+
+  const handleListVoices = async () => {
+    if (!config) return;
+    setVoicesLoading(true);
+    setVoicesError("");
+    try {
+      const res = await fetch("/api/rara-config", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "list_voices", voice: config.voice }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "Gagal mengambil daftar suara");
+      setVoices(json.voices || []);
+      if (!json.voices?.length) setVoicesError("Akun ElevenLabs belum punya suara.");
+    } catch (e: unknown) {
+      setVoicesError(e instanceof Error ? e.message : "Gagal mengambil daftar suara");
+    } finally {
+      setVoicesLoading(false);
+    }
+  };
+
   const handleTestTts = async (customText?: string) => {
     if (!config) return;
     setTtsTesting(true);
@@ -401,6 +429,13 @@ export default function RaraSettingsTab() {
     const speakingClip = config.visual.clips.speaking?.[0] || "speaking-1.mp4";
     setActiveAvatarState("speaking");
     setPreviewVideo(`/avatar/${speakingClip}`);
+
+    const restoreIdle = () => {
+      const idleClip = config.visual.clips.idle?.[0] || "idle-1.mp4";
+      setActiveAvatarState(prevState === "speaking" ? "idle" : prevState);
+      setPreviewVideo(`/avatar/${idleClip}`);
+      setTtsTesting(false);
+    };
 
     try {
       const res = await fetch("/api/rara-config", {
@@ -413,36 +448,23 @@ export default function RaraSettingsTab() {
         }),
       });
       const json = await res.json();
-      if (json.ok) {
-        setTtsTestResult({
-          engine: json.engine,
-          latencyMs: json.latencyMs,
-          phoneticText: json.phoneticText,
-          reason: json.reason,
-        });
-
-        const restoreIdle = () => {
-          const idleClip = config.visual.clips.idle?.[0] || "idle-1.mp4";
-          setActiveAvatarState(prevState === "speaking" ? "idle" : prevState);
-          setPreviewVideo(`/avatar/${idleClip}`);
-          setTtsTesting(false);
-        };
-
-        if (json.engine === "elevenlabs" && json.audioDataUrl) {
-          const audio = new Audio(json.audioDataUrl);
-          audio.onended = restoreIdle;
-          audio.onerror = restoreIdle;
-          await audio.play();
-        } else {
-          playVoiceWithBrowser(json.phoneticText, config.voice.speakingSpeed, restoreIdle);
-        }
-      } else {
-        setTtsTesting(false);
-      }
-    } catch {
-      setTtsTesting(false);
+      setTtsTestResult({
+        ok: Boolean(json.ok),
+        latencyMs: json.latencyMs ?? 0,
+        phoneticText: json.phoneticText ?? "",
+        error: json.ok ? undefined : json.error || "ElevenLabs gagal",
+      });
+      if (!json.ok || !json.audioDataUrl) return restoreIdle();
+      const audio = new Audio(json.audioDataUrl);
+      audio.onended = restoreIdle;
+      audio.onerror = restoreIdle;
+      await audio.play();
+    } catch (e: unknown) {
+      setTtsTestResult({ ok: false, latencyMs: 0, phoneticText: "", error: e instanceof Error ? e.message : "Error" });
+      restoreIdle();
     }
   };
+
 
   const handleSimulatorSend = async (textOverride?: string) => {
     if (!config) return;
@@ -1645,12 +1667,14 @@ export default function RaraSettingsTab() {
           ==================================================================== */}
       {subTab === "voice" && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
-          {/* LEFT: ELEVENLABS & FALLBACK CONFIG */}
+          {/* LEFT: ELEVENLABS CONFIG */}
           <div style={{ background: "#faf8f6", border: "1px solid #e8e2de", borderRadius: 14, padding: 20 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Volume2 size={18} style={{ color: "#a8666a" }} />
-                <h4 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Engine Suara (ElevenLabs & Web Speech)</h4>
+                <h4 style={{ fontSize: 15, fontWeight: 700, margin: 0, whiteSpace: "nowrap" }}>Suara Rara — ElevenLabs</h4>
               </div>
               <span
                 style={{
@@ -1660,60 +1684,27 @@ export default function RaraSettingsTab() {
                   color: hasElevenKey ? "#0d6a55" : "#9a6100",
                   padding: "2px 8px",
                   borderRadius: 99,
+                  whiteSpace: "nowrap",
                 }}
               >
-                {hasElevenKey ? "ElevenLabs Ready" : "Fallback Browser Aktif"}
+                {hasElevenKey ? "API Key tersimpan" : "Belum terhubung"}
               </span>
             </div>
-
-            <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-              {(
-                [
-                  { id: "elevenlabs" as const, label: "🎙️ ElevenLabs Neural TTS" },
-                  { id: "browser" as const, label: "🌐 Browser Web Speech (Gratis)" },
-                ] as const
-              ).map((eng) => (
-                <button
-                  key={eng.id}
-                  type="button"
-                  onClick={() => setConfig({ ...config, voice: { ...config.voice, provider: eng.id } })}
-                  style={{
-                    flex: 1,
-                    padding: "8px 10px",
-                    borderRadius: 8,
-                    border: "1.5px solid",
-                    borderColor: config.voice.provider === eng.id ? "#a8666a" : "#e8e2de",
-                    background: config.voice.provider === eng.id ? "#faeeed" : "#fff",
-                    color: config.voice.provider === eng.id ? "#a8666a" : "#5c4b4b",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                  }}
-                >
-                  {eng.label}
-                </button>
-              ))}
-            </div>
+            <p style={{ fontSize: 12, color: "#705e5e", margin: "6px 0 16px" }}>
+              Semua suara Rara dibuat oleh ElevenLabs. Kalau ElevenLabs gagal atau kuotanya habis, Rara tetap menjawab
+              dalam bentuk teks.
+            </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#5c4b4b", marginBottom: 4 }}>
-                  ElevenLabs API Key (`ELEVENLABS_API_KEY`)
-                </label>
+                <label style={LLM_LABEL_STYLE}>API Key ElevenLabs (`ELEVENLABS_API_KEY`)</label>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     type={showElevenKey ? "text" : "password"}
                     value={config.voice.elevenlabsApiKey}
                     onChange={(e) => setConfig({ ...config, voice: { ...config.voice, elevenlabsApiKey: e.target.value } })}
-                    placeholder="xi-api-key ElevenLabs..."
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #e8e2de",
-                      fontSize: 12.5,
-                      fontFamily: "monospace",
-                    }}
+                    placeholder={hasElevenKey ? "Memakai key yang tersimpan" : "Tempel API Key dari dashboard ElevenLabs"}
+                    style={{ ...LLM_INPUT_STYLE, flex: 1, width: undefined }}
                   />
                   <button
                     type="button"
@@ -1725,88 +1716,89 @@ export default function RaraSettingsTab() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 10 }}>
-                <div>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#5c4b4b", marginBottom: 4 }}>
-                    Voice ID Karakter Suara
-                  </label>
-                  <select
-                    value={VOICE_PRESETS.some((v) => v.id === config.voice.voiceId) ? config.voice.voiceId : "custom"}
-                    onChange={(e) => {
-                      if (e.target.value !== "custom") {
-                        setConfig({ ...config, voice: { ...config.voice, voiceId: e.target.value } });
-                      }
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "7px 10px",
-                      borderRadius: 8,
-                      border: "1px solid #e8e2de",
-                      fontSize: 12,
-                      background: "#fff",
-                      marginBottom: 6,
-                    }}
-                  >
-                    {VOICE_PRESETS.map((vp) => (
-                      <option key={vp.id} value={vp.id}>
-                        {vp.name}
-                      </option>
-                    ))}
-                    <option value="custom">Custom Voice ID (Clone Sendiri)</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={config.voice.voiceId}
-                    onChange={(e) => setConfig({ ...config, voice: { ...config.voice, voiceId: e.target.value } })}
-                    placeholder="Masukkan Voice ID ElevenLabs..."
-                    style={{
-                      width: "100%",
-                      padding: "7px 10px",
-                      borderRadius: 8,
-                      border: "1px solid #e8e2de",
-                      fontSize: 12,
-                      fontFamily: "monospace",
-                    }}
-                  />
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={handleListVoices}
+                  disabled={voicesLoading}
+                  style={{
+                    border: "1px solid #a8666a",
+                    background: "#fff",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#a8666a",
+                    cursor: voicesLoading ? "wait" : "pointer",
+                  }}
+                >
+                  {voicesLoading ? "Mengambil suara..." : voices.length ? "Muat ulang suara" : "Ambil daftar suara"}
+                </button>
+                <span style={{ fontSize: 11, color: voicesError ? "#b3261e" : "#705e5e" }}>
+                  {voicesError ||
+                    (voices.length
+                      ? `${voices.length} suara di akun ElevenLabs.`
+                      : "Termasuk clone dan suara dari Voice Library yang sudah ditambahkan.")}
+                </span>
+              </div>
 
-                <div>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#5c4b4b", marginBottom: 4 }}>
-                    Model Suara ElevenLabs
-                  </label>
-                  <select
-                    value={config.voice.modelId}
-                    onChange={(e) =>
-                      setConfig({
-                        ...config,
-                        voice: { ...config.voice, modelId: e.target.value as RaraConfig["voice"]["modelId"] },
-                      })
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "8px 10px",
-                      borderRadius: 8,
-                      border: "1px solid #e8e2de",
-                      fontSize: 12,
-                      background: "#fff",
-                    }}
-                  >
-                    <option value="eleven_multilingual_v2">eleven_multilingual_v2 (Kualitas Terbaik)</option>
-                    <option value="eleven_turbo_v2_5">eleven_turbo_v2_5 (Seimbang & Cepat)</option>
-                    <option value="eleven_flash_v2_5">eleven_flash_v2_5 (Ultra Cepat 75ms)</option>
-                  </select>
-
-                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, marginTop: 12, cursor: "pointer" }}>
-                    <input
-                      type="checkbox"
-                      checked={config.voice.autoFallbackBrowserTts}
+              <div>
+                <label style={LLM_LABEL_STYLE}>Karakter Suara</label>
+                {voices.length > 0 && (
+                  <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+                    <select
+                      value={voices.some((v) => v.voiceId === config.voice.voiceId) ? config.voice.voiceId : ""}
                       onChange={(e) =>
-                        setConfig({ ...config, voice: { ...config.voice, autoFallbackBrowserTts: e.target.checked } })
+                        e.target.value && setConfig({ ...config, voice: { ...config.voice, voiceId: e.target.value } })
                       }
-                    />
-                    <span>Auto-Fallback ke Web Speech bila kuota habis</span>
-                  </label>
-                </div>
+                      style={{ ...LLM_INPUT_STYLE, flex: 1, width: undefined, fontFamily: "inherit", background: "#fff" }}
+                    >
+                      <option value="">— Voice ID manual di bawah —</option>
+                      {voices.map((v) => (
+                        <option key={v.voiceId} value={v.voiceId}>
+                          {v.name}
+                          {v.category && v.category !== "premade" ? ` (${v.category})` : ""}
+                          {v.description ? ` — ${v.description}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedVoice?.previewUrl && (
+                      <button
+                        type="button"
+                        onClick={() => void new Audio(selectedVoice.previewUrl).play()}
+                        title="Putar contoh suara dari ElevenLabs"
+                        style={{ border: "1px solid #e8e2de", background: "#fff", borderRadius: 8, padding: "0 12px", cursor: "pointer" }}
+                      >
+                        <Volume2 size={14} />
+                      </button>
+                    )}
+                  </div>
+                )}
+                <input
+                  type="text"
+                  value={config.voice.voiceId}
+                  onChange={(e) => setConfig({ ...config, voice: { ...config.voice, voiceId: e.target.value } })}
+                  placeholder="Voice ID ElevenLabs"
+                  style={LLM_INPUT_STYLE}
+                />
+              </div>
+
+              <div>
+                <label style={LLM_LABEL_STYLE}>Model Suara</label>
+                <select
+                  value={config.voice.modelId}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      voice: { ...config.voice, modelId: e.target.value as RaraConfig["voice"]["modelId"] },
+                    })
+                  }
+                  style={{ ...LLM_INPUT_STYLE, fontFamily: "inherit", background: "#fff" }}
+                >
+                  <option value="eleven_flash_v2_5">eleven_flash_v2_5 — paling cepat, disarankan untuk chat</option>
+                  <option value="eleven_turbo_v2_5">eleven_turbo_v2_5 — cepat, kualitas sedikit lebih baik</option>
+                  <option value="eleven_multilingual_v2">eleven_multilingual_v2 — kualitas terbaik, paling lambat</option>
+                </select>
               </div>
 
               {/* Voice Sliders */}
@@ -1867,8 +1859,8 @@ export default function RaraSettingsTab() {
                   </div>
                   <input
                     type="range"
-                    min="0.8"
-                    max="1.25"
+                    min="0.7"
+                    max="1.2"
                     step="0.05"
                     value={config.voice.speakingSpeed}
                     onChange={(e) =>
@@ -2027,8 +2019,10 @@ export default function RaraSettingsTab() {
 
               {ttsTestResult && (
                 <div style={{ marginTop: 10, background: "#fff", border: "1px solid #e8e2de", borderRadius: 8, padding: 10, fontSize: 11.5 }}>
-                  <div style={{ fontWeight: 700, color: "#0d6a55" }}>
-                    Engine: {ttsTestResult.engine === "elevenlabs" ? "ElevenLabs Neural Audio" : "Web Speech API (id-ID)"} ({ttsTestResult.latencyMs} ms)
+                  <div style={{ fontWeight: 700, color: ttsTestResult.ok ? "#0d6a55" : "#b3261e" }}>
+                    {ttsTestResult.ok
+                      ? `ElevenLabs berhasil (${ttsTestResult.latencyMs} ms)`
+                      : `Gagal: ${ttsTestResult.error}`}
                   </div>
                   <div style={{ color: "#5c4b4b", marginTop: 4 }}>
                     <b>Teks Fonetik Terkirim:</b> &ldquo;{ttsTestResult.phoneticText}&rdquo;

@@ -88,6 +88,25 @@ describe("useConversation", () => {
     expect(result.current.state).toBe("idle");
   });
 
+  it("keeps every turn in the chat thread and survives a remount", async () => {
+    const { result, unmount } = renderHook(() => useConversation());
+    await act(async () => { await result.current.send("berapa moq?"); });
+    await act(async () => { await result.current.send("bisa parfum?"); });
+    const texts = result.current.thread.map((m) => `${m.role}:${m.content}`);
+    expect(texts).toEqual([
+      `assistant:${GREETING}`,
+      "user:berapa moq?", "assistant:Halo Kak, MOQ kami fleksibel.",
+      "user:bisa parfum?", "assistant:Halo Kak, MOQ kami fleksibel.",
+    ]);
+    expect(result.current.streaming).toBeNull();
+    unmount();
+    const again = renderHook(() => useConversation());
+    expect(again.result.current.thread).toHaveLength(5);
+    expect(again.result.current.messages).toHaveLength(4);
+    act(() => again.result.current.reset());
+    expect(again.result.current.thread.map((m) => m.content)).toEqual([GREETING]);
+  });
+
   it("falls back to text when TTS is unavailable", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     ttsStatus = 503;
@@ -100,31 +119,24 @@ describe("useConversation", () => {
     expect(result.current.state).toBe("idle");
   });
 
-  it("shows the lead form when the reply carries the marker, without showing or speaking the marker", async () => {
-    chatReply = "Boleh minta nama dan nomor WhatsApp, Kak?\n[[LEAD]]";
+  it("shows the WhatsApp button when the reply carries the marker, without showing or speaking the marker", async () => {
+    chatReply = "Yuk lanjut chat tim kami lewat tombol WhatsApp di bawah, Kak.\n[[LEAD]]";
     const { result } = renderHook(() => useConversation());
     act(() => result.current.userGestured());
     await act(async () => { await result.current.send("harganya berapa?"); });
-    expect(result.current.showLeadForm).toBe(true);
+    expect(result.current.showWhatsApp).toBe(true);
     expect(result.current.line).not.toContain("[[LEAD]]");
     const ttsBody = JSON.parse(ttsCalls()[0][1].body);
     expect(ttsBody.text).not.toContain("[[LEAD]]");
   });
 
-  it("thanks the visitor by name after the lead is submitted", async () => {
-    chatReply = "Boleh minta nomornya, Kak?\n[[LEAD]]";
+  it("keeps the WhatsApp button after it is opened and marks the lead logged", async () => {
+    chatReply = "Langsung chat tim kami ya, Kak.\n[[LEAD]]";
     const { result } = renderHook(() => useConversation());
     await act(async () => { await result.current.send("harga?"); });
-    act(() => result.current.leadSubmitted("Dina"));
-    expect(result.current.line).toBe("Terima kasih Kak Dina! Tim kami akan menghubungi lewat WhatsApp.");
-    expect(result.current.showLeadForm).toBe(false);
+    act(() => result.current.whatsappOpened());
+    expect(result.current.showWhatsApp).toBe(true);
     expect(result.current.leadDone).toBe(true);
-  });
-
-  it("pre-fills the phone number the visitor typed in chat", async () => {
-    const { result } = renderHook(() => useConversation());
-    await act(async () => { await result.current.send("nomorku 0812 3456 7890"); });
-    expect(result.current.chatPhone).toBe("081234567890");
   });
 
   it("reports no mic support when speech recognition is missing", async () => {
@@ -139,6 +151,18 @@ describe("useConversation", () => {
     await act(async () => { await result.current.send("halo"); });
     expect(result.current.line).toBe("Sesi demo ini sudah mencapai batas.");
     expect(result.current.state).toBe("idle");
+    expect(result.current.showWhatsApp).toBe(true);
+  });
+
+  it("stays silent and remembers it when the visitor mutes Rara", async () => {
+    const { result } = renderHook(() => useConversation());
+    act(() => result.current.userGestured());
+    act(() => result.current.toggleVoice());
+    expect(result.current.voiceOn).toBe(false);
+    await act(async () => { await result.current.send("berapa moq?"); });
+    expect(ttsCalls()).toHaveLength(0);
+    expect(localStorage.getItem("rara-voice")).toBe("off");
+    localStorage.clear();
   });
 
   it("shows a network error and returns to idle when the stream breaks", async () => {

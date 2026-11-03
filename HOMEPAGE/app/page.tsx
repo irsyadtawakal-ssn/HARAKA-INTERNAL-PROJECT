@@ -1,36 +1,25 @@
+import Backdrop from "@/components/Backdrop";
 import DebugAvatar from "@/components/avatar/DebugAvatar";
 import RaraApp from "@/components/RaraApp";
+import { getRaraConfig } from "@/lib/raraConfig";
 
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { debugAvatar } = await searchParams;
+  const { leadRules, knowledge } = getRaraConfig();
+  const whatsapp = { number: leadRules.whatsappCsNumber, prefill: leadRules.whatsappPrefillTemplate };
+  const products = knowledge.categories.map(({ id, name, items, heroIngredients, moqNote }) => ({ id, name, items, heroIngredients, moqNote }));
   return (
     <main className="page">
+      <Backdrop />
       <header className="topbar">
         <span className="logo">HARAKA ERFI</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, zIndex: 3 }}>
-          <a
-            href="/dashboard"
-            style={{
-              fontSize: 12,
-              background: "var(--glass)",
-              borderRadius: 99,
-              padding: "6px 12px",
-              color: "inherit",
-              textDecoration: "none",
-              fontWeight: 500,
-            }}
-          >
-            Dashboard
-          </a>
-          <span className="badge" style={{ position: "static" }}>CPKB · BPOM · HALAL</span>
-        </div>
       </header>
       {debugAvatar === "1" ? (
         <section className="stage">
           <div className="avatar-slot"><DebugAvatar /></div>
         </section>
       ) : (
-        <RaraApp />
+        <RaraApp whatsapp={whatsapp} products={products} />
       )}
     </main>
   );

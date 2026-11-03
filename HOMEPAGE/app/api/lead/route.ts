@@ -15,6 +15,8 @@ const SUMMARY_PROMPT = `Ringkas kebutuhan calon klien maklon kosmetik dari perca
 Balas HANYA dengan JSON: {"produk": string|null, "jumlah": string|null, "budget": string|null, "launching": string|null}.
 Isi null bila tidak disebut. Jangan menebak.`;
 
+const WA_CLICK_NAME = "Pengunjung (klik WhatsApp)";
+
 async function summarise(messages: ChatMessage[]): Promise<LeadSummary> {
   try {
     const transcript = messages.map((m) => `${m.role === "user" ? "Klien" : "Rara"}: ${m.content}`).join("\n");
@@ -64,10 +66,21 @@ export async function POST(req: Request): Promise<Response> {
     );
   }
   const body = await req.json().catch(() => null);
-  const name = typeof body?.name === "string" ? body.name.trim().slice(0, 100) : "";
-  const whatsapp = typeof body?.whatsapp === "string" ? extractPhone([body.whatsapp]) : null;
   const messages: ChatMessage[] = cleanMessages(body?.messages).slice(-41);
   const sessionId = typeof body?.sessionId === "string" ? body.sessionId : "";
+  // A visitor who tapped "Chat via WhatsApp" gives no name; their number arrives with the WhatsApp chat itself.
+  const waClick = body?.source === "whatsapp_click";
+  const userTexts = messages.filter((m) => m.role === "user").map((m) => m.content);
+  const name = waClick
+    ? WA_CLICK_NAME
+    : typeof body?.name === "string"
+      ? body.name.trim().slice(0, 100)
+      : "";
+  const whatsapp = waClick
+    ? extractPhone(userTexts) ?? "-"
+    : typeof body?.whatsapp === "string"
+      ? extractPhone([body.whatsapp])
+      : null;
 
   if (!name) return Response.json({ error: "Nama wajib diisi." }, { status: 400 });
   if (!whatsapp) return Response.json({ error: "Nomor WhatsApp tidak valid." }, { status: 400 });

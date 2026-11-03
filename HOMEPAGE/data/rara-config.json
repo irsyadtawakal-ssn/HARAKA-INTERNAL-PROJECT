@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-03T02:50:44.258Z",
+  "updatedAt": "2026-11-03T04:28:28.225Z",
   "visual": {
     "mode": "clips",
     "clips": {
@@ -59,9 +59,9 @@
     "provider": "9router",
     "baseUrl": "https://router-okx.akbaralatas.com/v1",
     "apiKey": "",
-    "model": "",
-    "fallbackModel": "",
-    "temperature": 0.45,
+    "model": "SUKA-PANTAU-REVIEW",
+    "fallbackModel": "SUKA-OKX-RUTIN",
+    "temperature": 0.6,
     "maxTokens": 320,
     "targetSentences": "2–4 kalimat yang mengalir alami saat dibacakan suara",
     "maxQuestionsPerTurn": 1

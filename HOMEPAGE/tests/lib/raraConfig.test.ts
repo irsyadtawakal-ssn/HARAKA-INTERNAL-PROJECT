@@ -54,4 +54,13 @@ describe("raraConfig engine & harakaerfi.com knowledge compiler", () => {
     const reply = buildKnowledgeFallbackReply([{ role: "user", content: "Berapa MOQ maklon?" }]);
     expect(reply).toContain("1.000 pcs");
   });
+
+  it("hands open questions to WhatsApp instead of guessing with a keyword answer", () => {
+    const reply = buildKnowledgeFallbackReply([
+      { role: "user", content: "halo saya mau bikin produk kecantikan, kira kira yang rekomended apa di tahun 2027" },
+    ]);
+    expect(reply).toContain("belum bisa menjawab");
+    expect(reply).toContain("[[LEAD]]");
+    expect(reply).not.toContain("Kami melayani maklon lengkap");
+  });
 });
