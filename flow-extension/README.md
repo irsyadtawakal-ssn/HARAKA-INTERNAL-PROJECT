@@ -85,6 +85,14 @@ WantedBy=timers.target
 Di `backend/.env` VPS:
 
 - `FLOW_DOWNLOAD_DIR=/srv/flow-downloads`. Folder ini di-mount ke container worker lewat `docker-compose.yml`.
+- **Izin folder.** Chrome berjalan sebagai user `flow`, sedangkan worker di container berjalan sebagai user `app` (UID berbeda). Worker harus bisa me-rename file serta membuat `processed/` dan `orphans/` di folder itu. Kalau izin ini tidak ada, ingest gagal `PermissionError` tiap 5 detik. Cek UID worker dengan `docker compose run --rm worker id -u`, lalu:
+
+```bash
+sudo setfacl -m u:<uid-worker>:rwx /srv/flow-downloads
+sudo setfacl -d -m u:<uid-worker>:rwx -m u:flow:rwx /srv/flow-downloads
+```
+
+- **Satu device aktif per folder unduhan.** Ingest memasangkan file lewat nama file yang dilaporkan extension. Kalau nama itu tidak ada, ingest memakai job yang sedang diunduh. Bila memindahkan render ke mesin lain, nonaktifkan device lama (`PATCH /render-devices/{id}` `{"is_active": false}`).
 - `CORS_ORIGINS` memuat `"https://flow.google.com"` dan `"https://labs.google"`. Ini dibutuhkan untuk mengambil foto referensi dan untuk upload cadangan ke storage. Aturan CORS bucket ikut nilai ini saat API start.
 - Jalankan juga service `beat` (`docker compose --profile app up -d`). Beat menjadwalkan ingest unduhan tiap 5 detik.
 
@@ -101,7 +109,9 @@ curl -X POST https://<backend>/render-devices -H "Authorization: Bearer <token o
 3. Klik ikon extension. Isi alamat backend (`https://...`) dan token device, lalu klik **Simpan & uji**. Izinkan akses ke alamat backend. Popup harus menampilkan `Terhubung sebagai device "VPS Flow 1"`.
 4. Biarkan satu tab Google Flow terbuka. Extension mengambil job sendiri.
 
-Update: `git pull` di VPS → `chrome://extensions` → **Reload** pada extension ini.
+Update: `git pull` di VPS → `chrome://extensions` → **Reload** pada extension ini → **muat ulang tab Google Flow**. Tab lama masih memakai content script versi sebelumnya yang sudah terputus. Bila job dikirim ke tab itu, job langsung dikembalikan ke antrian dengan pesan "Tab Flow tidak merespons".
+
+**Captcha:** begitu captcha terdeteksi, job dilaporkan gagal dan klaim dijeda 30 menit. Selesaikan captcha lewat VNC, lalu klik **Simpan & uji** di popup untuk langsung melanjutkan.
 
 ## Uji coba seminggu
 

@@ -21,7 +21,8 @@ celery_app.conf.update(
     task_serializer="json",
     accept_content=["json"],
     beat_schedule={
-        "render-ingest-downloads": {"task": "render.ingest_downloads", "schedule": 5.0},
+        # expires: saat worker tertinggal, scan lama dibuang alih-alih menumpuk.
+        "render-ingest-downloads": {"task": "render.ingest_downloads", "schedule": 5.0, "options": {"expires": 5}},
     },
 )
 log = logging.getLogger("harka.worker")

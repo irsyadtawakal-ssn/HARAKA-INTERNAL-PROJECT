@@ -54,7 +54,10 @@ RENDER_SLOTS = ("hook", "body", "cta", "broll")
 RENDER_DURATIONS = ("4s", "6s", "8s", "10s")
 # Status selama job dipegang extension; lease dihitung dari heartbeat_at.
 RENDER_ACTIVE_STATUSES = ("claimed", "uploading_ref", "generating", "downloading")
-RENDER_STATUSES = ("queued", *RENDER_ACTIVE_STATUSES, "done", "failed")
+# downloaded: unduhan sudah dipicu, job tidak lagi dipegang device; menunggu file di-ingest (tetap kena lease).
+RENDER_STATUSES = ("queued", *RENDER_ACTIVE_STATUSES, "downloaded", "done", "failed")
+# Status yang bisa dipasangkan dengan file di folder unduhan Chrome.
+RENDER_INGEST_STATUSES = ("downloading", "downloaded")
 APPROVAL_ACTIONS = (
     "claim",
     "testimonial",
@@ -217,6 +220,8 @@ class RenderJob(Base):
     claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     result_asset_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("assets.id"))
+    # Nama file unduhan Chrome yang dilaporkan extension; dipakai ingest untuk memasangkan file ke job yang tepat.
+    download_filename: Mapped[str | None] = mapped_column(String(255))
     error: Mapped[str | None] = mapped_column(Text)
     requested_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = _created_at()

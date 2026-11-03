@@ -7,8 +7,13 @@ const FLOW_TABS = ['*://flow.google.com/*', '*://labs.google/*'];
 let claiming = false;
 
 function getConfig() {
-  return chrome.storage.local.get(['backendUrl', 'deviceToken', 'activeJobId']);
+  return chrome.storage.local.get(['backendUrl', 'deviceToken', 'activeJobId', 'pausedUntil']);
 }
+
+// Chrome restart / extension dipasang ulang: job lama sudah tidak dikerjakan siapa pun.
+// Klaim berikutnya membuat backend menggugurkan job aktif device ini lebih awal daripada menunggu lease.
+chrome.runtime.onStartup.addListener(() => chrome.storage.local.remove(['activeJobId', 'activeJobSince']));
+chrome.runtime.onInstalled.addListener(() => chrome.storage.local.remove(['activeJobId', 'activeJobSince']));
 
 async function callApi(method, path, body) {
   const { backendUrl, deviceToken } = await getConfig();
@@ -27,22 +32,24 @@ async function callApi(method, path, body) {
   }
 }
 
-// Ambil job baru hanya bila tidak ada job aktif dan tab Flow terbuka.
-async function claimIfIdle() {
-  if (claiming) return;
+// Ambil job baru hanya bila tidak ada job aktif / jeda captcha, lalu kirim ke tab Flow yang mengirim heartbeat
+// (tab itu pasti punya content script yang hidup).
+async function claimIfIdle(tabId) {
+  if (claiming || !tabId) return;
   claiming = true;
   try {
-    const { activeJobId } = await getConfig();
-    if (activeJobId) return;
-    const tabs = await chrome.tabs.query({ url: FLOW_TABS });
-    const tab = tabs.find((t) => t.id);
-    if (!tab) return;
+    if (!claimAllowed(await getConfig(), Date.now())) return;
     const r = await callApi('POST', '/flow/claim');
     if (!r.ok || !r.data || !r.data.job) return;
     const task = r.data.job;
     await chrome.storage.local.set({ activeJobId: task.job_id, activeJobSince: Date.now() });
-    // Satu tab Flow saja yang mengerjakan job.
-    chrome.tabs.sendMessage(tab.id, { action: 'INJECT_PROMPT', data: task }).catch(() => {});
+    try {
+      await chrome.tabs.sendMessage(tabId, { action: 'INJECT_PROMPT', data: task });
+    } catch (e) {
+      // Job tidak sampai ke halaman: kembalikan ke antrian sekarang, jangan menunggu lease 15 menit.
+      await callApi('POST', `/flow/jobs/${task.job_id}/status`, { stage: 'failed', message: 'Tab Flow tidak merespons (muat ulang tab Flow)' });
+      await chrome.storage.local.remove(['activeJobId', 'activeJobSince']);
+    }
   } finally {
     claiming = false;
   }
@@ -52,14 +59,18 @@ async function claimIfIdle() {
 let lastDownload = { at: 0, id: 0, name: '' };
 if (chrome.downloads && chrome.downloads.onCreated) {
   chrome.downloads.onCreated.addListener((item) => {
-    lastDownload = { at: Date.now(), id: item.id, name: item.filename || item.finalUrl || item.url || '' };
+    lastDownload = { at: Date.now(), id: item.id, name: item.filename || '' };
+  });
+  // Nama file final (setelah uniquify) baru diketahui lewat onChanged.
+  chrome.downloads.onChanged.addListener((delta) => {
+    if (delta.id === lastDownload.id && delta.filename && delta.filename.current) lastDownload.name = delta.filename.current;
   });
 }
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Heartbeat content.js tiap 1,2 detik: menjaga Service Worker tetap bangun + kesempatan klaim job.
   if (msg && msg.action === 'POLL_QUEUE') {
-    claimIfIdle().finally(() => sendResponse({ ok: true }));
+    claimIfIdle(sender.tab && sender.tab.id).finally(() => sendResponse({ ok: true }));
     return true;
   }
 
@@ -73,6 +84,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (!msg.jobId || s.activeJobId === msg.jobId) chrome.storage.local.remove(['activeJobId', 'activeJobSince']);
       sendResponse({ ok: true });
     });
+    return true;
+  }
+
+  if (msg && msg.action === 'PAUSE_CLAIMS') {
+    chrome.storage.local.set({ pausedUntil: Date.now() + (msg.minutes || 30) * 60 * 1000 }, () => sendResponse({ ok: true }));
     return true;
   }
 

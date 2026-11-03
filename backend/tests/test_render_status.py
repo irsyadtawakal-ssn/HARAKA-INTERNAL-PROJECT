@@ -1,4 +1,9 @@
+import os
+import shutil
+import time
 from datetime import UTC, datetime, timedelta
+
+from app.ingest import scan_download_dir
 
 
 def _report(client, device, job, stage, message="ok"):
@@ -16,11 +21,38 @@ def test_laporan_memperbarui_status_dan_heartbeat(client, db, flow_device, claim
     assert claimed_job.heartbeat_at > datetime.now(UTC) - timedelta(minutes=1)
 
 
-def test_downloaded_tidak_mengubah_status_downloading(client, db, flow_device, claimed_job):
+def test_downloaded_melepas_job_dari_device(client, db, flow_device, claimed_job):
     _report(client, flow_device, claimed_job, "downloading")
     assert _report(client, flow_device, claimed_job, "downloaded", "Download 720p dipicu").status_code == 200
     db.refresh(claimed_job)
-    assert claimed_job.status == "downloading" and claimed_job.stage_message == "Download 720p dipicu"
+    assert claimed_job.status == "downloaded" and claimed_job.stage_message == "Download 720p dipicu"
+
+
+def test_klaim_berikutnya_tidak_menggugurkan_job_yang_sudah_diunduh(client, db, tmp_path, media_dir, flow_device, claimed_job):
+    # Alur nyata: extension lapor downloaded, melepas job, lalu langsung klaim lagi sebelum file selesai diunduh.
+    _report(client, flow_device, claimed_job, "downloading")
+    _report(client, flow_device, claimed_job, "downloaded")
+    assert client.post("/flow/claim", headers=flow_device["headers"]).json() == {"job": None, "reason": "empty"}
+    db.refresh(claimed_job)
+    assert claimed_job.status == "downloaded" and claimed_job.attempts == 1
+
+    shutil.copy(media_dir / "clip.mp4", tmp_path / "Flow.mp4")
+    old = time.time() - 10
+    os.utime(tmp_path / "Flow.mp4", (old, old))
+    assert scan_download_dir(db, tmp_path, now=time.time()) == [f"attached:Flow.mp4:{claimed_job.id}"]
+    db.refresh(claimed_job)
+    assert claimed_job.status == "done"
+
+
+def test_file_tidak_muncul_setelah_downloaded_dicoba_ulang(client, db, flow_device, claimed_job):
+    _report(client, flow_device, claimed_job, "downloading")
+    _report(client, flow_device, claimed_job, "downloaded")
+    claimed_job.heartbeat_at = datetime.now(UTC) - timedelta(minutes=16)
+    db.commit()
+    got = client.post("/flow/claim", headers=flow_device["headers"]).json()
+    assert got["job"]["job_id"] == str(claimed_job.id)
+    db.refresh(claimed_job)
+    assert claimed_job.attempts == 2
 
 
 def test_laporan_failed_captcha_masuk_antrian_lagi(client, db, flow_device, claimed_job):

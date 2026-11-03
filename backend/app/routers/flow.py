@@ -59,7 +59,7 @@ def report_status(
     device: RenderDevice = Depends(get_render_device),
 ) -> dict:
     job = get_device_job(db, job_id, device)
-    apply_status(db, job, body.stage, body.message, datetime.now(UTC))
+    apply_status(db, job, body.stage, body.message, datetime.now(UTC), body.filename)
     db.commit()
     return {"ok": True}
 

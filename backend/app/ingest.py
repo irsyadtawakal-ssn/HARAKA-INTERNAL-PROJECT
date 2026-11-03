@@ -1,5 +1,5 @@
 """Jalur utama hasil render (spec §4.3): Chrome di mesin yang sama mengunduh 720p ke folder khusus,
-worker memasangkan file baru ke satu-satunya job yang sedang `downloading`."""
+worker memasangkan file baru ke satu-satunya job yang sedang diunduh (`downloading` / `downloaded`)."""
 
 from pathlib import Path
 
@@ -7,17 +7,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app import storage
-from app.models import RenderJob
+from app.models import RENDER_INGEST_STATUSES, RenderJob
 from app.render import create_result_asset, result_storage_key
 
 # File yang mtime-nya lebih baru dari ini dianggap masih ditulis Chrome.
 STABLE_AFTER_S = 5
+CLAIM_SUFFIX = ".ingesting"
 
 
-def _move(path: Path, subdir: str) -> None:
+def _move(path: Path, subdir: str, name: str) -> None:
     dest = path.parent / subdir
     dest.mkdir(exist_ok=True)
-    path.rename(dest / path.name)
+    path.rename(dest / name)
 
 
 def scan_download_dir(db: Session, root: Path, now: float) -> list[str]:
@@ -26,23 +27,46 @@ def scan_download_dir(db: Session, root: Path, now: float) -> list[str]:
 
     actions: list[str] = []
     for path in sorted(root.glob("*.mp4")):
-        if path.stat().st_mtime > now - STABLE_AFTER_S:
+        name = path.name
+        try:
+            if path.stat().st_mtime > now - STABLE_AFTER_S:
+                continue
+            # Klaim file lewat rename atomik dulu, supaya scan lain yang tumpang-tindih tidak ikut memprosesnya.
+            claimed = path.rename(path.with_name(name + CLAIM_SUFFIX))
+        except FileNotFoundError:
             continue
-        jobs = db.scalars(select(RenderJob).where(RenderJob.status == "downloading").with_for_update()).all()
+        candidates = db.scalars(
+            select(RenderJob)
+            .where(RenderJob.status.in_(RENDER_INGEST_STATUSES))
+            .with_for_update()
+            # Baris yang dikunci harus dibaca ulang, bukan diambil dari cache sesi.
+            .execution_options(populate_existing=True)
+        ).all()
+        # Nama file yang dilaporkan extension menang; tanpa itu, hanya job yang belum melapor nama file.
+        jobs = [j for j in candidates if j.download_filename == name] or [
+            j for j in candidates if not j.download_filename
+        ]
         if not jobs:
-            _move(path, "orphans")
-            actions.append(f"orphan:{path.name}")
+            db.rollback()
+            _move(claimed, "orphans", name)
+            actions.append(f"orphan:{name}")
             continue
         if len(jobs) > 1:
             db.rollback()
-            actions.append(f"ambiguous:{path.name}")
+            claimed.rename(path)
+            actions.append(f"ambiguous:{name}")
             continue
         job = jobs[0]
         key = result_storage_key(job.id)
-        storage.upload(path, key, "video/mp4")
-        asset = create_result_asset(db, job, storage_key=key, size_bytes=path.stat().st_size, filename=path.name)
-        db.commit()
-        _move(path, "processed")
+        try:
+            storage.upload(claimed, key, "video/mp4")
+            asset = create_result_asset(db, job, storage_key=key, size_bytes=claimed.stat().st_size, filename=name)
+            db.commit()
+        except Exception:
+            db.rollback()
+            claimed.rename(path)  # coba lagi di scan berikutnya
+            raise
         process_asset.delay(str(asset.id))
-        actions.append(f"attached:{path.name}:{job.id}")
+        _move(claimed, "processed", name)
+        actions.append(f"attached:{name}:{job.id}")
     return actions

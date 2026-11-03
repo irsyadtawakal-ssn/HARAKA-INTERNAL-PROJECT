@@ -2,7 +2,7 @@
 console.log('⚡ [Haraka Flow] Content script v4.0 aktif di Google Flow.');
 
 let _runId = 0;
-let _lastJobId = '';
+let _runningJobId = ''; // job yang sedang dikerjakan; kosong lagi setelah run selesai
 const _uploadedAvatarsInSession = new Set();
 
 // --- Identitas foto avatar (v2.4): supaya yang masuk ke Start frame SELALU foto yang diminta, bukan sekadar foto urutan pertama ---
@@ -25,7 +25,9 @@ const allAssetImgs = () => Array.from(document.querySelectorAll('img')).filter((
 // Tahap: uploading_ref | generating | downloading | downloaded | failed. 'warn' = catatan tanpa ganti tahap; 'error' = failed.
 let _curTask = { jobId: '', slot: 'hook', stage: 'uploading_ref' };
 let _captchaHit = false;
-function reportFlow(stage, message) {
+let _ownershipLost = false; // backend membalas 404/409: hentikan run supaya kredit Flow tidak terbuang
+let _downloadingSince = 0;
+function reportFlow(stage, message, extra) {
   if (!_curTask.jobId) return Promise.resolve(null);
   const s = stage === 'error' ? 'failed' : stage === 'warn' ? _curTask.stage : stage;
   if (stage !== 'warn') _curTask.stage = s;
@@ -33,7 +35,13 @@ function reportFlow(stage, message) {
     action: 'API',
     method: 'POST',
     path: `/flow/jobs/${_curTask.jobId}/status`,
-    body: { stage: s, message: String(message || '').slice(0, 300) },
+    body: { stage: s, message: String(message || '').slice(0, 300), ...(extra || {}) },
+  }).then((res) => {
+    if (ownershipLost(res)) {
+      _ownershipLost = true;
+      showNotification('⛔ Job ini sudah bukan milik device ini (lease habis / dirender ulang). Run dihentikan.', '#ef4444');
+    }
+    return res;
   });
 }
 
@@ -46,7 +54,9 @@ function captchaVisible() {
 async function stopIfCaptcha() {
   if (!captchaVisible()) return false;
   _captchaHit = true;
-  showNotification('⛔ Flow menampilkan captcha. Job dihentikan — selesaikan manual lewat VNC.', '#ef4444');
+  showNotification('⛔ Flow menampilkan captcha. Job dihentikan dan klaim dijeda 30 menit — selesaikan manual lewat VNC.', '#ef4444');
+  // Jeda klaim supaya captcha tidak menghabiskan seluruh antrian dan kuota harian.
+  chrome.runtime.sendMessage({ action: 'PAUSE_CLAIMS', minutes: 30 }, () => void chrome.runtime.lastError);
   await reportFlow('failed', 'captcha');
   return true;
 }
@@ -80,8 +90,8 @@ setInterval(() => {
 }, 1200);
 
 function handleIncomingTask(task) {
-  if (!task || !task.job_id || task.job_id === _lastJobId) return; // cegah duplikat push
-  _lastJobId = task.job_id;
+  if (isDuplicateTask(_runningJobId, task)) return; // push ganda saat job masih berjalan
+  _runningJobId = task.job_id;
   runFullFlowPipeline(task);
 }
 
@@ -232,6 +242,8 @@ async function runFullFlowPipeline(task) {
   const slot = task.slot || 'hook';
   _curTask = { jobId: task.job_id, slot, stage: 'uploading_ref' };
   _captchaHit = false;
+  _ownershipLost = false;
+  _downloadingSince = 0;
   const fail = async (why) => {
     showNotification('❌ ' + why, '#ef4444');
     await reportFlow('failed', why);
@@ -255,12 +267,12 @@ async function runFullFlowPipeline(task) {
     }
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
     await sleep(400);
-    if (myRunId !== _runId) return;
+    if (myRunId !== _runId || _ownershipLost) return;
 
     // 1. ATUR SETTINGS DULU (Pastikan pilih "Video" & "Frames", BUKAN "Ingredients"!)
     await configureFlowSettings(targetDuration);
     await sleep(500);
-    if (myRunId !== _runId) return;
+    if (myRunId !== _runId || _ownershipLost) return;
 
     // 2. Ambil foto referensi dari storage (presigned URL dari backend).
     //    Identitas = id aset, bukan nama file: dua foto bernama "avatar.jpg" tetap dibedakan.
@@ -300,13 +312,13 @@ async function runFullFlowPipeline(task) {
       if (uploaded) _uploadedAvatarsInSession.add(targetAvatarName);
       await sleep(800);
     }
-    if (myRunId !== _runId) return;
+    if (myRunId !== _runId || _ownershipLost) return;
 
     // Jika setelah upload belum terkunci (misal modal masih terbuka meminta klik thumbnail), pilih HANYA di dalam modal
     if (!isStartFrameSet() || _currentStartAvatar !== targetAvatarName) {
       await selectImageAndClickAddToPrompt(fileObj, myRunId);
     }
-    if (myRunId !== _runId) return;
+    if (myRunId !== _runId || _ownershipLost) return;
 
     await sleep(600);
 
@@ -322,7 +334,7 @@ async function runFullFlowPipeline(task) {
         return;
       }
     }
-    if (myRunId !== _runId) return;
+    if (myRunId !== _runId || _ownershipLost) return;
 
     // 5. HARD GUARD: Verifikasi keras bahwa slot [Start] SUDAH TERISI foto avatar sebelum klik Generate!
     if (!isStartFrameSet()) {
@@ -348,18 +360,25 @@ async function runFullFlowPipeline(task) {
     // 7. Tunggu video selesai digenerate, evaluasi cepat & klik titik 3 -> Download -> 720p!
     await reportFlow('generating', `Prompt ${slot.toUpperCase()} dikirim ke Flow, menunggu video selesai dibuat...`);
     const downloaded = await waitAndAutoSelectBestVideo720p(wstate, myRunId);
-    if (myRunId !== _runId || _captchaHit) return;
+    if (myRunId !== _runId || _captchaHit || _ownershipLost) return;
     if (!downloaded) {
       await fail(`Video ${slot.toUpperCase()} tidak selesai dibuat atau tombol Download tidak ketemu (lihat tab Flow: ada pesan error / masih memproses?).`);
       return;
     }
-    await reportFlow('downloaded', `Download video ${slot.toUpperCase()} 720p sudah dipicu.`);
+    // Nama file unduhan Chrome dikirim supaya ingest memasangkan file ke job ini, bukan job berikutnya.
+    const dl = await askBg({ action: 'LAST_DOWNLOAD' });
+    const last = dl && dl.last;
+    const filename = last && last.at >= _downloadingSince - 1000 ? baseName(last.name) || null : null;
+    await reportFlow('downloaded', `Download video ${slot.toUpperCase()} 720p sudah dipicu.`, { filename });
   } catch (err) {
     console.error('[Haraka Flow] Error:', err);
     await fail('Error extension: ' + ((err && err.message) || err));
   } finally {
-    // Satu job = satu klip: lepaskan job di background supaya job berikutnya bisa diklaim.
-    if (myRunId === _runId) chrome.runtime.sendMessage({ action: 'JOB_FINISHED', jobId: task.job_id }, () => void chrome.runtime.lastError);
+    // Satu job = satu klip: lepaskan job di background supaya job berikutnya (atau retry job ini) bisa diklaim.
+    if (myRunId === _runId) {
+      _runningJobId = '';
+      chrome.runtime.sendMessage({ action: 'JOB_FINISHED', jobId: task.job_id }, () => void chrome.runtime.lastError);
+    }
   }
 }
 
@@ -946,6 +965,7 @@ function pickFreshEntries(allNow, baseline) {
 
 // Lapor tahap downloading SEBELUM klik unduh: ingest backend hanya memasangkan file ke job yang sedang downloading.
 async function markDownloading() {
+  if (!_downloadingSince) _downloadingSince = Date.now();
   await reportFlow('downloading', 'Video selesai dibuat, memicu unduhan 720p...');
 }
 
@@ -957,7 +977,7 @@ async function waitAndAutoSelectBestVideo720p(wstate, myRunId) {
   let lastReport = 0;
 
   while (Date.now() - startWait < 600000) {
-    if (myRunId && myRunId !== _runId) return null;
+    if ((myRunId && myRunId !== _runId) || _ownershipLost) return null;
     if (await stopIfCaptcha()) return null;
 
     // 1. Cek tombol download langsung (⤓) di panel rincian sebelah kanan jika panel sedang aktif
@@ -965,6 +985,7 @@ async function waitAndAutoSelectBestVideo720p(wstate, myRunId) {
     if (directDl) {
       showNotification('🚀 Video siap di panel detail! Menekan tombol Download (⤓)...', '#10b981');
       await markDownloading();
+      if (_ownershipLost) return null;
       directDl.click();
       await sleep(350);
       const sub720 = find720pMenuItem();
@@ -1003,6 +1024,7 @@ async function waitAndAutoSelectBestVideo720p(wstate, myRunId) {
 
 async function pickBestAndDownload720p(candidates) {
   await markDownloading();
+  if (_ownershipLost) return false;
   showNotification(`🔍 Mengecek ${candidates.length} kandidat video (kestabilan wajah, transisi & suara)...`, '#3b82f6');
   let bestEntry = candidates[0];
   let bestScore = -999;

@@ -26,6 +26,27 @@ function apiUrl(baseUrl, path) {
   return `${base}/${String(path || '').replace(/^\/+/, '')}`;
 }
 
+// Push ganda untuk job yang SEDANG berjalan diabaikan; job yang sama yang diklaim ulang setelah gagal (retry) tidak.
+function isDuplicateTask(runningJobId, task) {
+  if (!task || !task.job_id) return true;
+  return Boolean(runningJobId) && task.job_id === runningJobId;
+}
+
+// Background hanya mengklaim job baru bila tidak ada job aktif dan device tidak sedang dijeda (captcha).
+function claimAllowed(state, now) {
+  const s = state || {};
+  return !s.activeJobId && !(s.pausedUntil && s.pausedUntil > now);
+}
+
+// 404/409 dari backend: job sudah bukan milik device ini (lease habis, render ulang, device dinonaktifkan).
+function ownershipLost(res) {
+  return Boolean(res) && (res.status === 404 || res.status === 409);
+}
+
+function baseName(path) {
+  return String(path || '').split(/[\\/]/).pop();
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { computeTargetDuration, resolveDuration, apiUrl };
+  module.exports = { computeTargetDuration, resolveDuration, apiUrl, isDuplicateTask, claimAllowed, ownershipLost, baseName };
 }

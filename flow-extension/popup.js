@@ -10,10 +10,13 @@ function say(text, color) {
   msgEl.textContent = text;
 }
 
-chrome.storage.local.get(['backendUrl', 'deviceToken', 'activeJobId'], (s) => {
+chrome.storage.local.get(['backendUrl', 'deviceToken', 'activeJobId', 'pausedUntil'], (s) => {
   if (s.backendUrl) backendInput.value = s.backendUrl;
   if (s.deviceToken) tokenInput.value = s.deviceToken;
-  jobEl.textContent = s.activeJobId ? `Job aktif: ${s.activeJobId}` : 'Tidak ada job aktif.';
+  const paused = s.pausedUntil && s.pausedUntil > Date.now();
+  jobEl.textContent = paused
+    ? `Klaim dijeda (captcha) sampai ${new Date(s.pausedUntil).toLocaleTimeString()}. Klik Simpan & uji untuk melanjutkan.`
+    : s.activeJobId ? `Job aktif: ${s.activeJobId}` : 'Tidak ada job aktif.';
 });
 
 saveBtn.addEventListener('click', async () => {
@@ -36,7 +39,9 @@ saveBtn.addEventListener('click', async () => {
     say('Izin akses ke alamat backend ditolak.', '#f87171');
     return;
   }
+  // Simpan sekaligus mengakhiri jeda klaim karena captcha (setelah captcha diselesaikan lewat VNC).
   await chrome.storage.local.set({ backendUrl, deviceToken });
+  await chrome.storage.local.remove(['pausedUntil']);
   say('Menguji koneksi...', '#fbbf24');
   chrome.runtime.sendMessage({ action: 'API', method: 'GET', path: '/flow/ping' }, (res) => {
     if (res && res.ok) say(`Terhubung sebagai device "${res.data.device}".`, '#34d399');

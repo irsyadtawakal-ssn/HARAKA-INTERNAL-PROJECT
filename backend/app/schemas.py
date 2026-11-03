@@ -198,6 +198,8 @@ class RenderQuotaOut(BaseModel):
 class FlowStatusIn(BaseModel):
     stage: Literal["uploading_ref", "generating", "downloading", "downloaded", "failed"]
     message: str = Field(default="", max_length=300)
+    # Untuk stage downloaded: nama file unduhan Chrome (path lengkap boleh; yang disimpan hanya nama file).
+    filename: str | None = Field(default=None, max_length=1024)
 
 
 class FlowUploadUrlOut(BaseModel):

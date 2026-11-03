@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app import audit
 from app.config import get_settings
-from app.models import RENDER_ACTIVE_STATUSES, Asset, AuditLog, GuardrailSetting, RenderDevice, RenderJob
+from app.models import RENDER_ACTIVE_STATUSES, RENDER_INGEST_STATUSES, Asset, AuditLog, GuardrailSetting, RenderDevice, RenderJob
 
 # WIB tanpa DST; dipakai untuk batas hari kuota (00:00 WIB).
 WIB = timezone(timedelta(hours=7))
@@ -76,6 +76,7 @@ def used_today(db: Session, now: datetime) -> int:
 def register_attempt_failure(db: Session, job: RenderJob, reason: str) -> None:
     """Satu percobaan gagal: kembali ke antrian, atau failed bila jatah percobaan habis."""
     before = {"status": job.status, "attempts": job.attempts}
+    job.download_filename = None
     if job.attempts < get_settings().flow_max_attempts:
         job.status = "queued"
         job.device_id = None
@@ -94,11 +95,18 @@ def requeue_stale(db: Session, now: datetime) -> int:
     minutes = get_settings().flow_lease_minutes
     stale = db.scalars(
         select(RenderJob)
-        .where(RenderJob.status.in_(RENDER_ACTIVE_STATUSES), RenderJob.heartbeat_at < now - timedelta(minutes=minutes))
+        .where(
+            RenderJob.status.in_((*RENDER_ACTIVE_STATUSES, "downloaded")),
+            RenderJob.heartbeat_at < now - timedelta(minutes=minutes),
+        )
         .with_for_update(skip_locked=True)
     ).all()
     for job in stale:
-        register_attempt_failure(db, job, f"Tidak ada kabar dari extension selama {minutes} menit")
+        if job.status == "downloaded":
+            reason = f"File hasil tidak muncul di folder unduhan selama {minutes} menit"
+        else:
+            reason = f"Tidak ada kabar dari extension selama {minutes} menit"
+        register_attempt_failure(db, job, reason)
     return len(stale)
 
 
@@ -148,13 +156,18 @@ def get_device_job(db: Session, job_id, device: RenderDevice) -> RenderJob:
     return job
 
 
-def apply_status(db: Session, job: RenderJob, stage: str, message: str, now: datetime) -> None:
+def apply_status(
+    db: Session, job: RenderJob, stage: str, message: str, now: datetime, filename: str | None = None
+) -> None:
     job.heartbeat_at = now
+    if stage == "downloaded" and filename:
+        # Chrome di Windows melapor path dengan "\", di Linux dengan "/".
+        job.download_filename = re.split(r"[\\/]", filename)[-1][:255]
     job.stage_message = message
     if stage == "failed":
         register_attempt_failure(db, job, message or "Extension melaporkan gagal")
-    elif stage != "downloaded":
-        # "downloaded" = unduhan dipicu; job tetap downloading sampai file di-ingest.
+    else:
+        # "downloaded" melepas job dari device (klaim berikutnya tidak menggugurkannya); ingest yang menyelesaikan.
         job.status = stage
 
 
@@ -162,6 +175,7 @@ def reset_for_retry(db: Session, job: RenderJob) -> None:
     if job.status not in ("failed", "done"):
         raise HTTPException(status.HTTP_409_CONFLICT, "Job masih berjalan; render ulang hanya untuk job selesai atau gagal.")
     job.status = "queued"
+    job.download_filename = None
     job.attempts = 0
     job.error = None
     job.result_asset_id = None
