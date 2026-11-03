@@ -1,5 +1,6 @@
 """Writer (spec §3.2-3.3, §4.1): script 3 hook + body/CTA + prompt Flow, divalidasi sebelum dipakai."""
 
+import re
 from typing import Literal
 
 from fastapi import HTTPException
@@ -82,6 +83,10 @@ def _validate(raw, content_type: str, mode: str) -> ScriptDraft:
     for s in draft.slots:
         if mode == "talking_head" and not (s.dialog and s.dialog.strip()):
             raise ValueError(f"slot {s.slot} butuh dialog")
+        if mode == "talking_head":
+            quoted = re.findall(r'"([^"]+)"', s.flow_prompt)
+            if any(q.strip() != s.dialog.strip() for q in quoted):
+                raise ValueError(f"slot {s.slot}: kalimat dalam tanda kutip di flow_prompt harus sama persis dengan dialog")
         try:
             s.target_duration = normalize_job_fields(mode, flow_slot(mode, s.slot), s.flow_prompt, s.target_duration)
         except HTTPException as e:

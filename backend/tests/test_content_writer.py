@@ -84,3 +84,12 @@ def test_forbid_new_claims_masuk_prompt_dan_klaim_terdaftar_tampil(db, fake_llm)
     _write(db, claims=[claim], forbid_new_claims=True)
     system = fake_llm.calls[0]["messages"][0]["content"]
     assert "di luar daftar" in system and f"{claim.id}: MOQ 1.000 pcs" in system
+
+
+def test_dialog_harus_sama_dengan_kutipan_prompt(db, fake_llm):
+    bad = _reply(ADS)
+    bad["slots"][0]["flow_prompt"] = TH_PROMPT.format(line="Bersertifikat BPOM dijamin putih")
+    fake_llm.reply("writer", bad)
+    fake_llm.reply("writer", _reply(ADS))
+    assert len(_write(db).slots) == 5 and len(fake_llm.calls) == 2
+    assert "dialog" in fake_llm.calls[1]["messages"][-1]["content"]

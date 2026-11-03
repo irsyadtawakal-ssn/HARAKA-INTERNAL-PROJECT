@@ -1,6 +1,7 @@
 """Analisis referensi (spec §3.1, §4.1): foto langsung dilihat model; video diwakili frame kunci, bukan filenya."""
 
 import base64
+import subprocess
 import tempfile
 import uuid
 from pathlib import Path
@@ -26,6 +27,11 @@ SYSTEM_PROMPT = (
 
 class AnalysisError(Exception):
     pass
+
+
+def _text(value) -> str | None:
+    """Model kadang membalas tipe yang salah; kolom Text hanya menerima string."""
+    return value if isinstance(value, str) else None
 
 
 def _image_part(path: Path) -> dict:
@@ -60,7 +66,10 @@ def analyze_reference(db: Session, job: ContentJob) -> tuple[AssetAnalysis, Asse
             transcript = llm.transcribe(db, src)
         else:
             thumb = tmp_dir / "ref_thumb.jpg"
-            media.make_thumbnail(src, thumb, is_video=False, duration_s=None)
+            try:
+                media.make_thumbnail(src, thumb, is_video=False, duration_s=None)
+            except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
+                raise AnalysisError("Foto referensi tidak bisa dibaca. Pastikan file fotonya tidak rusak.") from e
             frames, transcript = [thumb], None
 
         content = [{"type": "text", "text": f"Tipe konten: {job.type}. Funnel {job.funnel}." + (f"\nTranskrip audio: {transcript}" if transcript else "")}]
@@ -75,7 +84,7 @@ def analyze_reference(db: Session, job: ContentJob) -> tuple[AssetAnalysis, Asse
         best = result.get("best_frame")
         best = best if isinstance(best, int) and 0 <= best < len(frames) else len(frames) // 2
 
-        quality = dict(result.get("quality") or {})
+        quality = dict(result["quality"]) if isinstance(result.get("quality"), dict) else {}
         start = ref
         if ref.type == "video":
             start = _store_frame(db, job, ref, frames[best])
@@ -84,11 +93,11 @@ def analyze_reference(db: Session, job: ContentJob) -> tuple[AssetAnalysis, Asse
             asset_id=ref.id,
             agent_run_id=db.info.get("last_agent_run_id"),
             transcript=transcript,
-            hook_3s=result.get("hook_3s"),
-            key_message=result.get("key_message"),
+            hook_3s=_text(result.get("hook_3s")),
+            key_message=_text(result.get("key_message")),
             footage_type=footage,
             quality=quality,
-            tags=[str(t) for t in result.get("tags") or []],
+            tags=[str(t) for t in result["tags"]] if isinstance(result.get("tags"), list) else [],
         )
         db.add(found)
         db.flush()

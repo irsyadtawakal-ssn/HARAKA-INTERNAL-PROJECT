@@ -136,3 +136,80 @@ def test_peran_marketing_ditolak(client, as_role, stored_asset):
     assert _post(client, marketing, stored_asset("photo")).status_code == 403
     assert client.post(f"/content-jobs/{uuid.uuid4()}/claim-decision", headers=marketing, json={"decision": "approve"}).status_code == 403
     assert client.get("/content-jobs", headers=marketing).status_code == 403
+
+
+def test_analisis_tipe_salah_tetap_lanjut(client, owner_headers, stored_asset, fake_llm):
+    photo = stored_asset("photo")
+    fake_llm.reply("analysis", {**ANALYSIS, "quality": "bagus", "tags": 5, "hook_3s": {"a": 1}})
+    fake_llm.reply("writer", _writer_reply())
+    assert _get(client, owner_headers, _post(client, owner_headers, photo).json()["id"])["status"] == "rendering"
+
+
+def test_foto_rusak_job_failed(client, db, owner_headers, make_user, media_dir, fake_llm):
+    from app import storage
+    from app.models import Asset
+
+    asset_id = uuid.uuid4()
+    key = f"assets/{asset_id}/original.jpg"
+    storage.upload(media_dir / "broken.mp4", key, "image/jpeg")
+    db.add(Asset(id=asset_id, type="photo", status="ready", storage_key=key, original_filename="x.jpg", mime="image/jpeg", size_bytes=10, uploaded_by_id=make_user("creator", "k@uji-harka.id").id, license_status="creator_licensed", funnel="A"))
+    db.commit()
+    job = _get(client, owner_headers, client.post("/content-jobs", headers=owner_headers, json={"type": "video_ads", "funnel": "A", "reference_asset_id": str(asset_id)}).json()["id"])
+    assert job["status"] == "failed" and "tidak bisa dibaca" in job["error"] and fake_llm.calls == []
+
+
+def test_galat_tak_terduga_job_failed_dan_bisa_diulang(client, db, owner_headers, stored_asset, fake_llm):
+    photo = stored_asset("photo")
+    fake_llm.reply("analysis", RuntimeError("boom rahasia"))
+    job = _get(client, owner_headers, _post(client, owner_headers, photo).json()["id"])
+    assert job["status"] == "failed" and "galat internal" in job["error"] and "boom" not in job["error"]
+    fake_llm.reply("analysis", ANALYSIS)
+    fake_llm.reply("writer", _writer_reply())
+    assert client.post(f"/content-jobs/{job['id']}/retry", headers=owner_headers).status_code == 200
+    assert _get(client, owner_headers, job["id"])["status"] == "rendering"
+
+
+def test_job_macet_bisa_diulang_setelah_lama(client, db, owner_headers, stored_asset, fake_llm):
+    from sqlalchemy import text
+
+    photo = stored_asset("photo")
+    job = ContentJob(type="video_ads", funnel="A", reference_asset_id=photo.id, requested_by_id=db.scalar(select(ContentJob.requested_by_id)) or photo.uploaded_by_id, status="analyzing")
+    db.add(job)
+    db.commit()
+    assert client.post(f"/content-jobs/{job.id}/retry", headers=owner_headers).status_code == 409
+    db.execute(text("UPDATE content_jobs SET updated_at = now() - interval '30 minutes' WHERE id = :i"), {"i": job.id})
+    db.commit()
+    fake_llm.reply("analysis", ANALYSIS)
+    fake_llm.reply("writer", _writer_reply())
+    assert client.post(f"/content-jobs/{job.id}/retry", headers=owner_headers).status_code == 200
+    assert _get(client, owner_headers, str(job.id))["status"] == "rendering"
+
+
+def test_alternatif_gagal_agent_runs_tetap_tercatat(client, db, owner_headers, stored_asset, fake_llm):
+    photo = stored_asset("photo")
+    fake_llm.reply("analysis", ANALYSIS)
+    fake_llm.reply("writer", _writer_reply(new_claims=["Sertifikat halal MUI"]))
+    fake_llm.reply("writer", "bukan json")
+    fake_llm.reply("writer", "tetap bukan json")
+    job = _get(client, owner_headers, _post(client, owner_headers, photo).json()["id"])
+    assert job["status"] == "failed"
+    assert len(db.scalars(select(AgentRun)).all()) == 4
+    assert db.scalars(select(RenderJob)).all() == [] and db.scalars(select(Approval)).all() == []
+
+
+def test_klaim_pensiun_tampil_dan_approve_diblokir(client, db, owner_headers, stored_asset, fake_llm):
+    retired = Claim(category="moq", text="Diskon 70 persen", status="retired")
+    db.add(retired)
+    db.commit()
+    photo = stored_asset("photo")
+    fake_llm.reply("analysis", ANALYSIS)
+    first = _writer_reply()
+    first["slots"][0]["claim_ids"] = [str(retired.id)]
+    fake_llm.reply("writer", first)
+    fake_llm.reply("writer", _writer_reply())
+    job = _get(client, owner_headers, _post(client, owner_headers, photo).json()["id"])
+    assert db.get(Approval, uuid.UUID(job["claim_approval_id"])).payload_snapshot["new_claims"] == ["(tidak berlaku: retired) Diskon 70 persen"]
+    approve = client.post(f"/content-jobs/{job['id']}/claim-decision", headers=owner_headers, json={"decision": "approve"})
+    assert approve.status_code == 409 and "Diskon 70 persen" in approve.json()["detail"]
+    assert len(_get(client, owner_headers, job["id"])["render_jobs"]) == 5
+    assert client.post(f"/content-jobs/{job['id']}/claim-decision", headers=owner_headers, json={"decision": "reject"}).status_code == 200

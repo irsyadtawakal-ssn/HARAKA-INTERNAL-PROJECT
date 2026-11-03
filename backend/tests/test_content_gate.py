@@ -109,3 +109,24 @@ def test_slot_dan_mode_sesuai_tipe(db, setup, photo_asset, content_type, mode, f
     script = db.get(Script, job.script_id)
     assert script.duration_s == (15 if content_type == "hard_sell" else 30) and script.funnel == "A"
     assert uuid.UUID(str(script.source_asset_ids[0])) == photo_asset.id
+
+
+def test_klaim_di_dialog_tanpa_deklarasi_terdeteksi():
+    draft = _draft("talking_head")
+    draft.slots[0].dialog = "Bersertifikat BPOM dan dijamin putih"
+    draft.caption = "Sudah terbukti klinis"
+    found = " | ".join(pipeline.find_new_claims(draft, []))
+    assert all(token in found.lower() for token in ("bpom", "dijamin", "terbukti", "klinis"))
+
+
+def test_token_berisiko_aman_bila_ada_di_klaim_terdaftar(db):
+    claim = _approved(db, "Terdaftar BPOM nomor NA1234")
+    draft = _draft("talking_head")
+    draft.slots[0].dialog = "Produk terdaftar BPOM"
+    assert pipeline.find_new_claims(draft, [claim]) == []
+
+
+def test_klaim_kedaluwarsa_tampil_dengan_teksnya(db):
+    old = _approved(db, "Diskon 50 persen", valid_until=date.today() - timedelta(days=1))
+    found = pipeline.find_new_claims(_draft(claim_ids=[str(old.id)]), [], lookup=lambda cid: db.get(Claim, uuid.UUID(cid)))
+    assert found == ["(tidak berlaku: kedaluwarsa) Diskon 50 persen"]

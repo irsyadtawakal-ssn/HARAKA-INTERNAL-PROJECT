@@ -2,7 +2,10 @@
 
 import hashlib
 import json
+import logging
+import re
 import uuid
+from collections.abc import Callable
 from datetime import date
 
 from fastapi import HTTPException
@@ -15,6 +18,8 @@ from app.content.writer import DURATION_BY_TYPE, ScriptDraft, WriterError, flow_
 from app.llm import LLMError
 from app.models import Approval, Asset, AssetAnalysis, Claim, ContentJob, RenderJob, Script
 from app.render import normalize_job_fields, validate_reference
+
+log = logging.getLogger("harka.content")
 
 
 def render_mode(content_type: str) -> str:
@@ -36,14 +41,43 @@ def usable_claims(db: Session, today: date) -> list[Claim]:
     )
 
 
-def find_new_claims(draft: ScriptDraft, usable: list[Claim]) -> list[str]:
-    """Klaim di luar library: teks baru dari writer, atau claim_id yang tidak ada di daftar yang boleh dipakai."""
+# Kata yang lazim dipakai sebagai klaim (legal, sertifikasi, janji hasil). Dicari di teks yang diucapkan/tampil agar
+# gerbang tidak hanya percaya pada klaim yang dilaporkan sendiri oleh writer.
+RISK_TOKENS = re.compile(r"bpom|halal|mui|sertifikaw*|dijamin|terbukti|klinis|iso|gmp|cpkb|d+s?%", re.I)
+
+
+def find_new_claims(draft: ScriptDraft, usable: list[Claim], lookup: Callable[[str], Claim | None] | None = None) -> list[str]:
+    """Klaim di luar library: teks baru dari writer, claim_id yang tidak boleh dipakai, dan kata berisiko di teks
+    yang tidak tercakup klaim terdaftar. `lookup` memetakan id ke klaim agar yang kedaluwarsa/pensiun tampil dengan teksnya."""
     known = {str(c.id) for c in usable}
+    library_text = " ".join(c.text.lower() for c in usable)
     found: list[str] = []
     for slot in draft.slots:
-        found += [f"(id tidak dikenal) {cid}" for cid in slot.claim_ids if cid not in known]
+        for cid in slot.claim_ids:
+            if cid in known:
+                continue
+            claim = lookup(cid) if lookup else None
+            reason = None if claim is None else (claim.status if claim.status != "approved" else "kedaluwarsa")
+            found.append(f"(id tidak dikenal) {cid}" if claim is None else f"(tidak berlaku: {reason}) {claim.text}")
         found += [text for text in slot.new_claims if text.strip()]
+        found += _risky_tokens(f"{slot.slot}", [slot.dialog or "", slot.overlay_text], library_text)
+    found += _risky_tokens("headline/caption", [draft.headline, draft.caption], library_text)
     return list(dict.fromkeys(found))
+
+
+def _risky_tokens(where: str, texts: list[str], library_text: str) -> list[str]:
+    tokens = {m.group(0).lower() for t in texts for m in RISK_TOKENS.finditer(t)}
+    return [f"(terdeteksi otomatis) {tok} pada {where}" for tok in sorted(tokens) if tok not in library_text]
+
+
+def _lookup(db: Session) -> Callable[[str], Claim | None]:
+    def find(claim_id: str) -> Claim | None:
+        try:
+            return db.get(Claim, uuid.UUID(claim_id))
+        except ValueError:
+            return None
+
+    return find
 
 
 def _slot_text(draft: ScriptDraft, name: str) -> str:
@@ -93,20 +127,30 @@ def apply_gate(db: Session, job: ContentJob, draft: ScriptDraft, start: Asset, a
     """Tanpa klaim baru: render langsung. Ada klaim baru: approval `claim` + versi alternatif tanpa klaim baru yang dirender."""
     first_run_id = db.info.get("last_agent_run_id")
     usable = usable_claims(db, date.today())
-    new_claims = find_new_claims(draft, usable)
+    lookup = _lookup(db)
+    new_claims = find_new_claims(draft, usable, lookup)
     if not new_claims:
-        job.script_id = save_script(db, job, draft, version=1, parent=None).id
-        enqueue_renders(db, job, draft, start)
+        with db.begin_nested():
+            job.script_id = save_script(db, job, draft, version=1, parent=None).id
+            enqueue_renders(db, job, draft, start)
         return
 
-    # Alternatif dulu: bila gagal, tidak ada script/approval setengah jadi yang tersisa.
+    # Alternatif dulu, di luar savepoint: panggilan LLM-nya berbayar dan agent_runs-nya harus tetap tercatat walau gagal.
     alt = write_script(
         db, content_type=job.type, funnel=job.funnel, analysis=analysis, mode=render_mode(job.type), claims=usable, forbid_new_claims=True
     )
-    if find_new_claims(alt, usable):
+    if find_new_claims(alt, usable, lookup):
         raise WriterError("Versi alternatif masih memuat klaim baru, padahal dilarang. Coba generate ulang.")
     alt_run_id = db.info.get("last_agent_run_id")
+    # Savepoint: kegagalan menyimpan script/approval/render_jobs tidak boleh meninggalkan data setengah jadi.
+    with db.begin_nested():
+        _persist_pending(db, job, draft, alt, start, new_claims, first_run_id, alt_run_id)
 
+
+def _persist_pending(
+    db: Session, job: ContentJob, draft: ScriptDraft, alt: ScriptDraft, start: Asset, new_claims: list[str],
+    first_run_id, alt_run_id,
+) -> None:
     db.info["last_agent_run_id"] = first_run_id
     original = save_script(db, job, draft, version=1, parent=None)
     snapshot = {"script_id": str(original.id), "new_claims": new_claims}
@@ -153,12 +197,16 @@ def run_generate(db: Session, job_id: uuid.UUID) -> None:
             db, content_type=job.type, funnel=job.funnel, analysis=analysis, mode=render_mode(job.type),
             claims=usable_claims(db, date.today()),
         )
-        # Savepoint: kegagalan gerbang membuang script/render_jobs setengah jadi, tetapi agent_runs tetap tercatat.
-        with db.begin_nested():
-            apply_gate(db, job, draft, start, analysis)
+        apply_gate(db, job, draft, start, analysis)
         _set_status(db, job, "rendering")
     except (AnalysisError, WriterError, LLMError) as e:
         _set_status(db, job, "failed", getattr(e, "message", None) or str(e))
     except HTTPException as e:
         _set_status(db, job, "failed", str(e.detail))
+    except Exception:
+        # Galat tak terduga (S3, FFmpeg, data aneh dari LLM): job tidak boleh macet di analyzing/writing.
+        log.exception("content.generate gagal untuk job %s", job_id)
+        db.rollback()
+        job = db.get(ContentJob, job_id)
+        _set_status(db, job, "failed", "Terjadi galat internal saat memproses job. Coba ulang; bila berulang, hubungi admin.")
     db.commit()

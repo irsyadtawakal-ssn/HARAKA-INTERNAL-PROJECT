@@ -1,7 +1,7 @@
 """Tab Pembuatan Konten: setting LLM, content_jobs, keputusan klaim. Selama pilot hanya owner (spec §3.5)."""
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -22,6 +22,8 @@ from app.worker import generate_content
 router = APIRouter(tags=["content"])
 
 can_manage_content = require_roles("owner")
+# Job yang diam selama ini dianggap macet (worker mati / galat tak tertangkap) dan boleh diulang.
+STUCK_AFTER = timedelta(minutes=15)
 
 
 @router.get("/settings/content-llm", response_model=ContentLlmOut)
@@ -109,12 +111,14 @@ def retry_content_job(
     job_id: uuid.UUID, request: Request, db: Session = Depends(get_db), user: User = Depends(can_manage_content)
 ) -> ContentJobOut:
     job = _get(db, job_id, lock=True)
-    if job.status != "failed":
-        raise HTTPException(status.HTTP_409_CONFLICT, "Hanya job yang gagal yang bisa diulang.")
+    stuck = job.status in ("queued", "analyzing", "writing") and datetime.now(UTC) - job.updated_at > STUCK_AFTER
+    if job.status != "failed" and not stuck:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Hanya job yang gagal atau macet lebih dari 15 menit yang bisa diulang.")
+    before = job.status
     job.status, job.error = "queued", None
     audit.record(
         db, actor_type="user", actor_id=user.id, action="content_job.retry", entity="content_job", entity_id=job.id,
-        before={"status": "failed"}, after={"status": "queued"}, ip=client_ip(request),
+        before={"status": before}, after={"status": "queued"}, ip=client_ip(request),
     )
     db.commit()
     generate_content.delay(str(job.id))
@@ -140,12 +144,19 @@ def decide_claims(
     if approval is None or approval.status != "pending" or job.pending_script_id is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Tidak ada klaim baru yang menunggu keputusan untuk job ini.")
     original = db.get(Script, job.pending_script_id)
+    new_claims = approval.payload_snapshot.get("new_claims", [])
+    blocked = [c for c in new_claims if c.startswith(("(tidak berlaku", "(id tidak dikenal"))]
+    if body.decision == "approve" and blocked:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT,
+            f"Klaim ini tidak bisa disetujui: {'; '.join(blocked)}. Tolak, atau perbarui klaim di library lalu generate ulang.",
+        )
     approval.status = "approved" if body.decision == "approve" else "rejected"
     approval.decided_by_id, approval.decided_at, approval.note = user.id, datetime.now(UTC), body.note
     if body.decision == "approve":
-        for text in approval.payload_snapshot.get("new_claims", []):
-            # "(id tidak dikenal) ..." bukan teks klaim, jadi tidak ada yang bisa didaftarkan darinya.
-            if not text.startswith("(id tidak dikenal)"):
+        for text in new_claims:
+            # Entri berawalan "(" adalah temuan otomatis, bukan teks klaim yang bisa didaftarkan.
+            if not text.startswith("("):
                 db.add(Claim(category="portfolio", text=text, status="approved", approved_by_id=user.id))
         draft = ScriptDraft(
             headline=original.headline or "", caption=original.caption or "", slots=[SlotDraft(**s) for s in original.shot_list]
