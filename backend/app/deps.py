@@ -1,12 +1,16 @@
+import hmac
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import get_db
-from app.models import User
+from app.models import RenderDevice, User
+from app.render import hash_token
 from app.security import decode_access_token
 
 _bearer = HTTPBearer(auto_error=False)
@@ -44,3 +48,17 @@ def require_roles(*roles: str) -> Callable[[User], User]:
 
 def client_ip(request: Request) -> str | None:
     return request.client.host if request.client else None
+
+
+def get_render_device(x_device_token: str | None = Header(None), db: Session = Depends(get_db)) -> RenderDevice:
+    """Autentikasi extension Google Flow lewat header X-Device-Token."""
+    invalid = HTTPException(status.HTTP_401_UNAUTHORIZED, "Token device tidak valid.")
+    if not x_device_token:
+        raise invalid
+    token_hash = hash_token(x_device_token)
+    device = db.scalar(select(RenderDevice).where(RenderDevice.token_hash == token_hash))
+    if device is None or not device.is_active or not hmac.compare_digest(device.token_hash, token_hash):
+        raise invalid
+    device.last_seen_at = datetime.now(UTC)
+    db.commit()
+    return device

@@ -117,3 +117,31 @@ class AssetOut(BaseModel):
 class AssetPage(BaseModel):
     items: list[AssetOut]
     total: int
+
+
+# --- Render Google Flow (spec §4.2) ---
+RenderMode = Literal["talking_head", "broll"]
+RenderSlot = Literal["hook", "body", "cta", "broll"]
+RenderDuration = Literal["4s", "6s", "8s", "10s"]
+
+
+class RenderDeviceIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+
+
+class RenderDeviceUpdate(BaseModel):
+    is_active: bool
+
+
+class RenderDeviceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    is_active: bool
+    last_seen_at: datetime | None
+
+
+class RenderDeviceCreated(RenderDeviceOut):
+    # Hanya muncul sekali, saat device dibuat.
+    token: str

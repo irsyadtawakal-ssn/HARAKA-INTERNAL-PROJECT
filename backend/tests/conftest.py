@@ -123,6 +123,29 @@ def photo_asset(db, make_user):
     return asset
 
 
+@pytest.fixture
+def owner_headers(make_user, login):
+    """Owner tunggal per tes (email tetap), dipakai bersama oleh fixture render."""
+    return login(make_user("owner", "owner-render@uji-harka.id").email)
+
+
+@pytest.fixture
+def make_device(client, owner_headers):
+    def _make(name: str) -> dict:
+        r = client.post("/render-devices", headers=owner_headers, json={"name": name})
+        assert r.status_code == 201, r.text
+        d = r.json()
+        return {"id": uuid.UUID(d["id"]), "headers": {"X-Device-Token": d["token"]}, "owner_headers": owner_headers}
+
+    return _make
+
+
+@pytest.fixture
+def flow_device(make_device):
+    """Device render terdaftar: {"id", "headers" (X-Device-Token), "owner_headers"}."""
+    return make_device("VPS Flow Uji")
+
+
 @pytest.fixture(scope="session")
 def media_dir(tmp_path_factory) -> Path:
     d = tmp_path_factory.mktemp("media")
