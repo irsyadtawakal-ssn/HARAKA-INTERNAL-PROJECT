@@ -9,6 +9,7 @@ from celery import Celery
 from sqlalchemy import select
 
 from app import audit, ingest, media, storage
+from app.content import pipeline as content_pipeline
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.models import Asset
@@ -101,3 +102,10 @@ def ingest_downloads() -> list[str]:
     for action in actions:
         log.info("ingest render: %s", action)
     return actions
+
+
+@celery_app.task(name="content.generate")
+def generate_content(job_id: str) -> None:
+    """Satu Generate: analisis referensi, tulis script, gerbang klaim, buat render_jobs."""
+    with get_sessionmaker()() as db:
+        content_pipeline.run_generate(db, uuid.UUID(job_id))

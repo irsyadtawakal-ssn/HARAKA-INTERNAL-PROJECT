@@ -2,13 +2,17 @@
 
 import hashlib
 import json
+import uuid
 from datetime import date
 
+from fastapi import HTTPException
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app import audit
+from app.content.analysis import AnalysisError, analyze_reference
 from app.content.writer import DURATION_BY_TYPE, ScriptDraft, WriterError, flow_slot, write_script
+from app.llm import LLMError
 from app.models import Approval, Asset, AssetAnalysis, Claim, ContentJob, RenderJob, Script
 from app.render import normalize_job_fields, validate_reference
 
@@ -121,3 +125,40 @@ def apply_gate(db: Session, job: ContentJob, draft: ScriptDraft, start: Asset, a
         db, actor_type="system", actor_id="content", action="content_job.claim_pending", entity="content_job",
         entity_id=job.id, after={"approval_id": str(approval.id), "new_claims": new_claims},
     )
+
+
+def _set_status(db: Session, job: ContentJob, status: str, error: str | None = None) -> None:
+    before = job.status
+    job.status, job.error = status, error
+    audit.record(
+        db, actor_type="system", actor_id="content", action="content_job.status", entity="content_job", entity_id=job.id,
+        before={"status": before}, after={"status": status, "error": error},
+    )
+
+
+def run_generate(db: Session, job_id: uuid.UUID) -> None:
+    """Analisis -> writer -> gerbang 1 -> render_jobs. Hanya job `queued` yang jalan; panggilan ulang tidak berefek."""
+    job = db.get(ContentJob, job_id, with_for_update=True)
+    if job is None or job.status != "queued":
+        db.rollback()
+        return
+    _set_status(db, job, "analyzing")
+    db.commit()
+    try:
+        analysis, start = analyze_reference(db, job)
+        job.start_asset_id = start.id
+        _set_status(db, job, "writing")
+        db.commit()
+        draft = write_script(
+            db, content_type=job.type, funnel=job.funnel, analysis=analysis, mode=render_mode(job.type),
+            claims=usable_claims(db, date.today()),
+        )
+        # Savepoint: kegagalan gerbang membuang script/render_jobs setengah jadi, tetapi agent_runs tetap tercatat.
+        with db.begin_nested():
+            apply_gate(db, job, draft, start, analysis)
+        _set_status(db, job, "rendering")
+    except (AnalysisError, WriterError, LLMError) as e:
+        _set_status(db, job, "failed", getattr(e, "message", None) or str(e))
+    except HTTPException as e:
+        _set_status(db, job, "failed", str(e.detail))
+    db.commit()
