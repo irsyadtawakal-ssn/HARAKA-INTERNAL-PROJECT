@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      width: 340px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 16px;
+      margin: 0;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    h3 {
+      margin: 0;
+      font-size: 15px;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-badge {
+      padding: 3px 8px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 99px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    input[type="file"], textarea {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 62px;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .btn {
+      width: 100%;
+      padding: 10px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+      margin-bottom: 8px;
+    }
+    .btn:hover { opacity: 0.92; }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      color: #ffffff;
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    #msg {
+      font-size: 11px;
+      color: #fbbf24;
+      margin-top: 4px;
+      min-height: 16px;
+    }
+    .hint {
+      font-size: 10px;
+      color: #64748b;
+      line-height: 1.35;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h3>⚡ Google Flow Autopilot</h3>
+    <span class="status-badge">● READY</span>
+  </div>
+
+  <label>1. Foto Referensi Start Frame (.jpg/.png)</label>
+  <input type="file" id="avatarInput" accept="image/*" />
+
+  <label>2. Prompt Video 1 / Hook (Wajib)</label>
+  <textarea id="promptInput" placeholder="Masukkan prompt Veo 3.1 di sini... (taruh kalimat ucapan di dalam tanda kutip)"></textarea>
+
+  <label>3. Prompt Video 2 / CTA Berantai (Opsional)</label>
+  <textarea id="ctaInput" placeholder="Kosongkan jika hanya 1 video. Jika diisi, otomatis lanjut setelah video 1 selesai download!"></textarea>
+
+  <button id="runBtn" class="btn btn-primary">🚀 Jalankan Autopilot & Auto-Download 720p</button>
+  <button id="dlBtn" class="btn btn-secondary">📥 Download Video di Layar Sekarang (720p)</button>
+
+  <div id="msg"></div>
+  <div class="hint">
+    Bisa dikontrol langsung lewat Popup ini ATAU otomatis via Server CLI (<code>localhost:3210</code>).
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
