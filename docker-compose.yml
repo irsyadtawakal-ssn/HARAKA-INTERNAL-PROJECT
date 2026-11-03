@@ -77,9 +77,25 @@ services:
       S3_ENDPOINT_URL: http://s3:8000
       S3_PUBLIC_ENDPOINT_URL: http://localhost:9010
       CELERY_EAGER: "false"
+      # Folder unduhan Chrome render Google Flow (lihat flow-extension/README.md).
+      FLOW_DOWNLOAD_DIR: /flow-downloads
+    volumes:
+      - ${FLOW_DOWNLOAD_DIR:-./.flow-downloads}:/flow-downloads
     command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
     depends_on:
       db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  # Penjadwal task berkala: ingest unduhan render tiap 5 detik.
+  beat:
+    profiles: [app]
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://harka:harka@db:5432/harka
+      REDIS_URL: redis://redis:6379/0
+    command: celery -A app.worker.celery_app beat --loglevel=info --schedule /tmp/celerybeat-schedule
+    depends_on:
       redis: { condition: service_healthy }
 
 volumes:

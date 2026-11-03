@@ -1,12 +1,14 @@
+import logging
 import subprocess
 import tempfile
+import time
 import uuid
 from pathlib import Path
 
 from celery import Celery
 from sqlalchemy import select
 
-from app import audit, media, storage
+from app import audit, ingest, media, storage
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.models import Asset
@@ -18,7 +20,11 @@ celery_app.conf.update(
     worker_prefetch_multiplier=1,
     task_serializer="json",
     accept_content=["json"],
+    beat_schedule={
+        "render-ingest-downloads": {"task": "render.ingest_downloads", "schedule": 5.0},
+    },
 )
+log = logging.getLogger("harka.worker")
 
 
 @celery_app.task(name="assets.process", bind=True, max_retries=3, default_retry_delay=30)
@@ -77,3 +83,20 @@ def process_asset(self, asset_id: str) -> None:
             after={"status": asset.status, "duplicate_of_id": str(asset.duplicate_of_id) if asset.duplicate_of_id else None},
         )
         db.commit()
+
+
+@celery_app.task(name="render.ingest_downloads")
+def ingest_downloads() -> list[str]:
+    """Pindai folder unduhan Chrome (FLOW_DOWNLOAD_DIR). Dijadwalkan celery beat tiap 5 detik."""
+    folder = get_settings().flow_download_dir
+    if not folder:
+        return []
+    root = Path(folder)
+    if not root.is_dir():
+        log.warning("FLOW_DOWNLOAD_DIR %s tidak ditemukan", folder)
+        return []
+    with get_sessionmaker()() as db:
+        actions = ingest.scan_download_dir(db, root, now=time.time())
+    for action in actions:
+        log.info("ingest render: %s", action)
+    return actions

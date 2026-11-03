@@ -18,3 +18,4 @@ build/
 *service-account*.json
 *.zip
 *.tar.gz
+.flow-downloads/
