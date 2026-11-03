@@ -192,3 +192,8 @@ class RenderQuotaOut(BaseModel):
     limit: int
     used: int
     remaining: int
+
+
+class FlowStatusIn(BaseModel):
+    stage: Literal["uploading_ref", "generating", "downloading", "downloaded", "failed"]
+    message: str = Field(default="", max_length=300)

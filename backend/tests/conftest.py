@@ -171,6 +171,30 @@ def queued_jobs(client, db, owner_headers, photo_asset):
 
 
 @pytest.fixture
+def claimed_job(client, db, flow_device, queued_jobs):
+    """Satu job yang sudah diklaim flow_device lewat /flow/claim."""
+    (job,) = queued_jobs(1)
+    r = client.post("/flow/claim", headers=flow_device["headers"])
+    assert r.json()["job"]["job_id"] == str(job.id), r.text
+    db.refresh(job)
+    return job
+
+
+@pytest.fixture
+def second_device(make_device):
+    return make_device("VPS Flow Kedua")
+
+
+@pytest.fixture
+def done_job(db, claimed_job):
+    # Hasil render baru tersedia di Task 6; di sini cukup status akhirnya.
+    claimed_job.status = "done"
+    claimed_job.stage_message = "Selesai"
+    db.commit()
+    return claimed_job
+
+
+@pytest.fixture
 def set_limit(db):
     def _set(limit: int) -> None:
         db.merge(GuardrailSetting(key="flow_daily_clip_limit", value={"limit": limit}))

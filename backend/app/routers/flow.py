@@ -1,5 +1,6 @@
 """Endpoint untuk extension Google Flow di mesin render. Autentikasi lewat header X-Device-Token."""
 
+import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
@@ -9,8 +10,8 @@ from app import storage
 from app.db import get_db
 from app.deps import get_render_device
 from app.models import Asset, RenderDevice
-from app.render import claim_next
-from app.schemas import FlowClaimOut, FlowTask
+from app.render import apply_status, claim_next, get_device_job
+from app.schemas import FlowClaimOut, FlowStatusIn, FlowTask
 
 router = APIRouter(prefix="/flow", tags=["flow"])
 
@@ -39,3 +40,16 @@ def claim(db: Session = Depends(get_db), device: RenderDevice = Depends(get_rend
         ),
         reason=reason,
     )
+
+
+@router.post("/jobs/{job_id}/status")
+def report_status(
+    job_id: uuid.UUID,
+    body: FlowStatusIn,
+    db: Session = Depends(get_db),
+    device: RenderDevice = Depends(get_render_device),
+) -> dict:
+    job = get_device_job(db, job_id, device)
+    apply_status(db, job, body.stage, body.message, datetime.now(UTC))
+    db.commit()
+    return {"ok": True}

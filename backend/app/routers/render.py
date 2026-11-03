@@ -12,7 +12,14 @@ from app import audit
 from app.db import get_db
 from app.deps import client_ip, require_roles
 from app.models import RENDER_STATUSES, Asset, RenderDevice, RenderJob, User
-from app.render import daily_limit, hash_token, normalize_job_fields, used_today, validate_reference
+from app.render import (
+    daily_limit,
+    hash_token,
+    normalize_job_fields,
+    reset_for_retry,
+    used_today,
+    validate_reference,
+)
 from app.schemas import (
     RenderDeviceCreated,
     RenderDeviceIn,
@@ -128,3 +135,20 @@ def get_quota(db: Session = Depends(get_db), _: User = Depends(can_manage_render
 @router.get("/render-jobs/{job_id}", response_model=RenderJobOut)
 def get_job(job_id: uuid.UUID, db: Session = Depends(get_db), _: User = Depends(can_manage_render)) -> RenderJob:
     return _get_job(db, job_id)
+
+
+@router.post("/render-jobs/{job_id}/retry", response_model=RenderJobOut)
+def retry_job(
+    job_id: uuid.UUID, request: Request, db: Session = Depends(get_db), user: User = Depends(can_manage_render)
+) -> RenderJob:
+    job = db.get(RenderJob, job_id, with_for_update=True)
+    if job is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Job render tidak ditemukan.")
+    before = {"status": job.status, "attempts": job.attempts, "result_asset_id": str(job.result_asset_id) if job.result_asset_id else None}
+    reset_for_retry(db, job)
+    audit.record(
+        db, actor_type="user", actor_id=user.id, action="render_job.retry", entity="render_job", entity_id=job.id,
+        before=before, after={"status": job.status}, ip=client_ip(request),
+    )
+    db.commit()
+    return job

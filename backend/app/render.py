@@ -135,3 +135,34 @@ def claim_next(db: Session, device: RenderDevice, now: datetime) -> tuple[Render
         entity_id=job.id, after={"attempt": job.attempts},
     )
     return job, "ok"
+
+
+def get_device_job(db: Session, job_id, device: RenderDevice) -> RenderJob:
+    """Job aktif milik device ini, dikunci untuk diubah. 404 bila tidak ada, 409 bila bukan miliknya / tidak aktif."""
+    job = db.get(RenderJob, job_id, with_for_update=True)
+    if job is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Job render tidak ditemukan.")
+    if job.device_id != device.id or job.status not in RENDER_ACTIVE_STATUSES:
+        raise HTTPException(status.HTTP_409_CONFLICT, "Job ini bukan milik device Anda atau sudah tidak aktif.")
+    return job
+
+
+def apply_status(db: Session, job: RenderJob, stage: str, message: str, now: datetime) -> None:
+    job.heartbeat_at = now
+    job.stage_message = message
+    if stage == "failed":
+        register_attempt_failure(db, job, message or "Extension melaporkan gagal")
+    elif stage != "downloaded":
+        # "downloaded" = unduhan dipicu; job tetap downloading sampai file di-ingest.
+        job.status = stage
+
+
+def reset_for_retry(db: Session, job: RenderJob) -> None:
+    if job.status not in ("failed", "done"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Job masih berjalan; render ulang hanya untuk job selesai atau gagal.")
+    job.status = "queued"
+    job.attempts = 0
+    job.error = None
+    job.result_asset_id = None
+    job.device_id = None
+    job.stage_message = "Dijadwalkan render ulang"
