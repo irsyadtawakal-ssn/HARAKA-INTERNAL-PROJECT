@@ -122,6 +122,22 @@ export async function streamChat(
   );
 }
 
+/** Lists model ids from the endpoint's OpenAI-compatible `/models` route (9Router, OpenRouter, etc.). */
+export async function listModels(override?: LlmOverride): Promise<string[]> {
+  const { base, key } = resolveConfig(override);
+  if (!base) throw new Error("Endpoint Base URL belum diisi");
+  if (!key) throw new Error("API Key belum diisi");
+
+  const res = await fetch(`${base}/models`, { headers: { authorization: `Bearer ${key}` } });
+  if (!res.ok) throw new Error(`Gagal mengambil daftar model: ${res.status}`);
+  const json = await res.json();
+  const data: unknown[] = Array.isArray(json?.data) ? json.data : [];
+  return data
+    .map((m) => (m && typeof m === "object" && "id" in m ? String((m as { id: unknown }).id) : ""))
+    .filter(Boolean)
+    .sort();
+}
+
 /** Non-streaming completion, used for structured summaries and connection testing. */
 export async function completeChat(
   messages: ChatMessage[],

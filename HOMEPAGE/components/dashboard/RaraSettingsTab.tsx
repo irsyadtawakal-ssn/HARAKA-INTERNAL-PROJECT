@@ -54,11 +54,11 @@ const LLM_PRESETS: Record<
     desc: "Satu API key untuk akses ratusan model (Gemini, Claude, Llama, DeepSeek).",
   },
   "9router": {
-    label: "9Router / VPS Internal AI",
-    baseUrl: "https://wa.sukapost.tech/api/v1",
-    defaultModel: "hermes-cs",
-    fallbackModel: "gpt-4o-mini",
-    desc: "Gateway AI terpusat di VPS internal Haraka / SukaPost.",
+    label: "9Router (Default)",
+    baseUrl: "https://router-okx.akbaralatas.com/v1",
+    defaultModel: "",
+    fallbackModel: "",
+    desc: "Gateway AI internal. Ambil daftar model setelah API Key diisi.",
   },
   custom: {
     label: "Custom OpenAI-Compatible Endpoint",
@@ -103,6 +103,9 @@ export default function RaraSettingsTab() {
     "Halo Rara, saya mau buat produk sunscreen serum untuk brand baru. Berapa MOQ dan estimasi waktunya?"
   );
   const [llmTesting, setLlmTesting] = useState(false);
+  const [llmModels, setLlmModels] = useState<string[]>([]);
+  const [llmModelsLoading, setLlmModelsLoading] = useState(false);
+  const [llmModelsError, setLlmModelsError] = useState("");
   const [llmTestResult, setLlmTestResult] = useState<{
     ok: boolean;
     mode?: string;
@@ -326,6 +329,29 @@ export default function RaraSettingsTab() {
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleListModels = async () => {
+    if (!config) return;
+    setLlmModelsLoading(true);
+    setLlmModelsError("");
+    try {
+      const res = await fetch("/api/rara-config", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "list_models", llm: config.llm }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "Gagal mengambil daftar model");
+      const models: string[] = json.models || [];
+      setLlmModels(models);
+      if (!models.length) setLlmModelsError("Endpoint tidak mengembalikan model apa pun.");
+      else setConfig((c) => (c && !c.llm.model ? { ...c, llm: { ...c.llm, model: models[0] } } : c));
+    } catch (e: unknown) {
+      setLlmModelsError(e instanceof Error ? e.message : "Gagal mengambil daftar model");
+    } finally {
+      setLlmModelsLoading(false);
+    }
   };
 
   const handleTestLlm = async () => {
@@ -1324,8 +1350,8 @@ export default function RaraSettingsTab() {
                           ...config.llm,
                           provider: provKey,
                           baseUrl: p.baseUrl || config.llm.baseUrl,
-                          model: p.defaultModel || config.llm.model,
-                          fallbackModel: p.fallbackModel || config.llm.fallbackModel,
+                          model: provKey === config.llm.provider ? config.llm.model : p.defaultModel,
+                          fallbackModel: provKey === config.llm.provider ? config.llm.fallbackModel : p.fallbackModel,
                         },
                       })
                     }
@@ -1423,9 +1449,10 @@ export default function RaraSettingsTab() {
                   </label>
                   <input
                     type="text"
+                    list="rara-llm-models"
                     value={config.llm.model}
                     onChange={(e) => setConfig({ ...config, llm: { ...config.llm, model: e.target.value } })}
-                    placeholder="gemini-2.5-flash"
+                    placeholder="Pilih dari daftar model"
                     style={{
                       width: "100%",
                       padding: "8px 12px",
@@ -1443,8 +1470,9 @@ export default function RaraSettingsTab() {
                   <input
                     type="text"
                     value={config.llm.fallbackModel}
+                    list="rara-llm-models"
                     onChange={(e) => setConfig({ ...config, llm: { ...config.llm, fallbackModel: e.target.value } })}
-                    placeholder="gemini-2.0-flash"
+                    placeholder="Opsional"
                     style={{
                       width: "100%",
                       padding: "8px 12px",
@@ -1455,6 +1483,37 @@ export default function RaraSettingsTab() {
                     }}
                   />
                 </div>
+              </div>
+
+              <datalist id="rara-llm-models">
+                {llmModels.map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={handleListModels}
+                  disabled={llmModelsLoading}
+                  style={{
+                    border: "1px solid #e8e2de",
+                    background: "#fff",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#a8666a",
+                    cursor: llmModelsLoading ? "wait" : "pointer",
+                  }}
+                >
+                  {llmModelsLoading ? "Mengambil model..." : "Ambil daftar model"}
+                </button>
+                <span style={{ fontSize: 11, color: llmModelsError ? "#b3261e" : "#705e5e" }}>
+                  {llmModelsError ||
+                    (llmModels.length
+                      ? `${llmModels.length} model tersedia — klik kolom model untuk memilih.`
+                      : "Memakai Base URL & API Key di atas.")}
+                </span>
               </div>
 
               {/* Sliders: Temperature & Max Tokens */}

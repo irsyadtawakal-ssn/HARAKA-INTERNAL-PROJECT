@@ -56,11 +56,11 @@
     ]
   },
   "llm": {
-    "provider": "gemini",
-    "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "provider": "9router",
+    "baseUrl": "https://router-okx.akbaralatas.com/v1",
     "apiKey": "",
-    "model": "gemini-2.5-flash",
-    "fallbackModel": "gemini-2.0-flash",
+    "model": "",
+    "fallbackModel": "",
     "temperature": 0.45,
     "maxTokens": 320,
     "targetSentences": "2–4 kalimat yang mengalir alami saat dibacakan suara",

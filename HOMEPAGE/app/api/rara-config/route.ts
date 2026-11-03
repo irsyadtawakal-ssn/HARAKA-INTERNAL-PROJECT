@@ -10,7 +10,7 @@ import {
   saveRaraConfig,
   type RaraConfig,
 } from "@/lib/raraConfig";
-import { completeChat, type ChatMessage } from "@/lib/llm";
+import { completeChat, listModels, type ChatMessage } from "@/lib/llm";
 import { synthesize } from "@/lib/tts";
 import { heuristicLeadSummary, LEAD_MARKER, stripMarker } from "@/lib/lead";
 
@@ -144,6 +144,17 @@ export async function POST(req: Request) {
         reply: stripMarker(reply),
         leadTriggered: reply.includes(LEAD_MARKER),
       });
+    }
+
+    if (action === "list_models") {
+      const current = getRaraConfig();
+      const draftLlm = body.llm || current.llm;
+      const effectiveKey =
+        draftLlm.apiKey === "***MASKED***"
+          ? current.llm.apiKey || process.env.LLM_API_KEY || ""
+          : draftLlm.apiKey || process.env.LLM_API_KEY || "";
+      const models = await listModels({ ...draftLlm, apiKey: effectiveKey });
+      return NextResponse.json({ ok: true, models });
     }
 
     if (action === "test_tts") {
