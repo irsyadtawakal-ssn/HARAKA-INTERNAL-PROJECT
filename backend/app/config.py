@@ -28,6 +28,12 @@ class Settings(BaseSettings):
     max_video_bytes: int = 2 * 1024**3
     max_photo_bytes: int = 25 * 1024**2
 
+    # Render Google Flow (spec §4.2-4.3). Folder unduhan Chrome yang dipindai worker; kosong = ingest mati.
+    flow_download_dir: str | None = None
+    flow_lease_minutes: int = 15
+    flow_max_attempts: int = 3
+    flow_default_daily_limit: int = 30
+
     # True = task Celery dijalankan langsung di proses (uji / dev tanpa worker).
     celery_eager: bool = False
 

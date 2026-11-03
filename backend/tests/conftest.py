@@ -3,6 +3,7 @@ Jalankan `docker compose up -d` di root project sebelum `uv run pytest`."""
 
 import os
 import subprocess
+import uuid
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -25,7 +26,7 @@ from sqlalchemy import text  # noqa: E402
 
 from app.db import Base, get_engine, get_sessionmaker  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import User  # noqa: E402
+from app.models import Asset, User  # noqa: E402
 from app.security import hash_password  # noqa: E402
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -97,6 +98,29 @@ def as_role(make_user, login):
         return login(user.email)
 
     return _as
+
+
+@pytest.fixture
+def photo_asset(db, make_user):
+    """Foto referensi siap pakai (ready, berlisensi kreator). Hanya baris DB; file S3 tidak diunggah."""
+    # Email sendiri supaya tes tetap bebas memanggil make_user("owner") / as_role("owner").
+    uploader = make_user("creator", "kreator-foto@uji-harka.id")
+    asset_id = uuid.uuid4()
+    asset = Asset(
+        id=asset_id,
+        type="photo",
+        status="ready",
+        storage_key=f"assets/{asset_id}/original.jpg",
+        original_filename="avatar.jpg",
+        mime="image/jpeg",
+        size_bytes=1234,
+        uploaded_by_id=uploader.id,
+        license_status="creator_licensed",
+        funnel="A",
+    )
+    db.add(asset)
+    db.commit()
+    return asset
 
 
 @pytest.fixture(scope="session")
