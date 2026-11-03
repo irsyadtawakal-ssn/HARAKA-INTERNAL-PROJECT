@@ -9,7 +9,7 @@ import ProductCard, { mentionedCategories, type ProductCategory } from "./Produc
 
 const CHIPS = ["Berapa MOQ?", "Bisa urus BPOM?", "Berapa lama prosesnya?"];
 const STATUS: Record<AvatarState, string> = {
-  idle: "Online · asisten maklon kosmetik",
+  idle: "Online · Virtual Assistant Haraka Erfi",
   listening: "Mendengarkan…",
   thinking: "Sedang mengetik…",
   speaking: "Sedang berbicara…",
