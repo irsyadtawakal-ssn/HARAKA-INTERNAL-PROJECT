@@ -145,3 +145,29 @@ class RenderDeviceOut(BaseModel):
 class RenderDeviceCreated(RenderDeviceOut):
     # Hanya muncul sekali, saat device dibuat.
     token: str
+
+
+class RenderJobIn(BaseModel):
+    reference_asset_id: uuid.UUID
+    mode: RenderMode
+    slot: RenderSlot
+    prompt: str = Field(min_length=1, max_length=4000)
+    target_duration: RenderDuration | None = None
+
+
+class RenderJobOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    mode: RenderMode
+    slot: RenderSlot
+    prompt: str
+    target_duration: RenderDuration | None
+    reference_asset_id: uuid.UUID
+    status: str
+    stage_message: str | None
+    attempts: int
+    error: str | None
+    result_asset_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
