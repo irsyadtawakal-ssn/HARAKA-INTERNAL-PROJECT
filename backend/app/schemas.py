@@ -171,3 +171,24 @@ class RenderJobOut(BaseModel):
     result_asset_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime
+
+
+class FlowTask(BaseModel):
+    job_id: uuid.UUID
+    mode: RenderMode
+    slot: RenderSlot
+    prompt: str
+    target_duration: RenderDuration | None
+    reference_url: str
+    reference_filename: str
+
+
+class FlowClaimOut(BaseModel):
+    job: FlowTask | None
+    reason: Literal["ok", "empty", "quota"]
+
+
+class RenderQuotaOut(BaseModel):
+    limit: int
+    used: int
+    remaining: int

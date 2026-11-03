@@ -2,6 +2,7 @@
 
 import secrets
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
@@ -11,7 +12,7 @@ from app import audit
 from app.db import get_db
 from app.deps import client_ip, require_roles
 from app.models import RENDER_STATUSES, Asset, RenderDevice, RenderJob, User
-from app.render import hash_token, normalize_job_fields, validate_reference
+from app.render import daily_limit, hash_token, normalize_job_fields, used_today, validate_reference
 from app.schemas import (
     RenderDeviceCreated,
     RenderDeviceIn,
@@ -19,6 +20,7 @@ from app.schemas import (
     RenderDeviceUpdate,
     RenderJobIn,
     RenderJobOut,
+    RenderQuotaOut,
 )
 
 router = APIRouter(tags=["render"])
@@ -114,6 +116,13 @@ def list_jobs(
             raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, "Status job tidak dikenal.")
         query = query.where(RenderJob.status == status_filter)
     return list(db.scalars(query))
+
+
+# Didaftarkan sebelum /render-jobs/{job_id} supaya "quota" tidak dibaca sebagai UUID.
+@router.get("/render-jobs/quota", response_model=RenderQuotaOut)
+def get_quota(db: Session = Depends(get_db), _: User = Depends(can_manage_render)) -> RenderQuotaOut:
+    limit, used = daily_limit(db), used_today(db, datetime.now(UTC))
+    return RenderQuotaOut(limit=limit, used=used, remaining=max(0, limit - used))
 
 
 @router.get("/render-jobs/{job_id}", response_model=RenderJobOut)

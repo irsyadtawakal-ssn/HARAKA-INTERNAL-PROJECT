@@ -26,7 +26,7 @@ from sqlalchemy import text  # noqa: E402
 
 from app.db import Base, get_engine, get_sessionmaker  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import Asset, User  # noqa: E402
+from app.models import Asset, GuardrailSetting, RenderJob, User  # noqa: E402
 from app.security import hash_password  # noqa: E402
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -144,6 +144,39 @@ def make_device(client, owner_headers):
 def flow_device(make_device):
     """Device render terdaftar: {"id", "headers" (X-Device-Token), "owner_headers"}."""
     return make_device("VPS Flow Uji")
+
+
+@pytest.fixture
+def queued_jobs(client, db, owner_headers, photo_asset):
+    """queued_jobs(n) -> n job talking head berstatus queued (lewat API), urut dari yang tertua."""
+
+    def _make(n: int) -> list[RenderJob]:
+        ids = []
+        for i in range(n):
+            r = client.post(
+                "/render-jobs",
+                headers=owner_headers,
+                json={
+                    "reference_asset_id": str(photo_asset.id),
+                    "mode": "talking_head",
+                    "slot": "hook",
+                    "prompt": f'Close-up of a woman. She says: "Hook nomor {i + 1}"',
+                },
+            )
+            assert r.status_code == 201, r.text
+            ids.append(uuid.UUID(r.json()["id"]))
+        return [db.get(RenderJob, job_id) for job_id in ids]
+
+    return _make
+
+
+@pytest.fixture
+def set_limit(db):
+    def _set(limit: int) -> None:
+        db.merge(GuardrailSetting(key="flow_daily_clip_limit", value={"limit": limit}))
+        db.commit()
+
+    return _set
 
 
 @pytest.fixture(scope="session")
