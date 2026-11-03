@@ -47,4 +47,37 @@ describe("dashboard API keys", () => {
     expect(getRaraConfig().llm.apiKey).toBe("sk-router");
     expect(getRaraConfig().llm.temperature).toBe(0.3);
   });
+
+  it("keeps the stored key when a tab saves with an empty key field", async () => {
+    const { DEFAULT_RARA_CONFIG, getRaraConfig, saveRaraConfig } = await import("@/lib/raraConfig");
+    const cfg = structuredClone(DEFAULT_RARA_CONFIG);
+    cfg.llm.apiKey = "sk-router";
+    saveRaraConfig(cfg);
+
+    saveRaraConfig({ ...getRaraConfig(), llm: { ...getRaraConfig().llm, apiKey: "" } });
+
+    expect(getRaraConfig().llm.apiKey).toBe("sk-router");
+  });
+});
+
+describe("POST /api/rara-config save", () => {
+  const save = (config: unknown, baseUpdatedAt: string) =>
+    new Request("http://x/api/rara-config", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action: "save", config, baseUpdatedAt }),
+    });
+
+  it("rejects a save from a tab that loaded an older version", async () => {
+    const { getRaraConfig } = await import("@/lib/raraConfig");
+    const { POST } = await import("@/app/api/rara-config/route");
+    const loaded = getRaraConfig();
+
+    const first = await POST(save({ ...loaded, llm: { ...loaded.llm, model: "rara-cs" } }, loaded.updatedAt));
+    expect(first.status).toBe(200);
+
+    const stale = await POST(save({ ...loaded, llm: { ...loaded.llm, temperature: 0.6 } }, loaded.updatedAt));
+    expect(stale.status).toBe(409);
+    expect(getRaraConfig().llm.model).toBe("rara-cs");
+  });
 });

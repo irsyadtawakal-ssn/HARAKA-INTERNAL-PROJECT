@@ -59,10 +59,12 @@ export default function RaraSettingsTab() {
   const [config, setConfig] = useState<RaraConfig | null>(null);
   // Last config the server confirmed; anything different has not reached Rara Live yet
   const [savedSnapshot, setSavedSnapshot] = useState("");
+  const [baseUpdatedAt, setBaseUpdatedAt] = useState("");
   const isDirty = Boolean(config && savedSnapshot && JSON.stringify(config) !== savedSnapshot);
   const applyServerConfig = (cfg: RaraConfig) => {
     setConfig(cfg);
     setSavedSnapshot(JSON.stringify(cfg));
+    setBaseUpdatedAt(cfg.updatedAt || "");
   };
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -200,7 +202,7 @@ export default function RaraSettingsTab() {
       const res = await fetch("/api/rara-config", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "save", config: target }),
+        body: JSON.stringify({ action: "save", config: target, baseUpdatedAt }),
       });
       const json = await res.json();
       if (json.ok) {

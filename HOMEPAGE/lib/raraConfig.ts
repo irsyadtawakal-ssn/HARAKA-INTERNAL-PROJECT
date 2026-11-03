@@ -736,7 +736,7 @@ export function getRaraConfig(): RaraConfig {
   const initial = structuredClone(DEFAULT_RARA_CONFIG);
   initial.knowledge.rawMarkdown = compileKnowledgeMarkdown(initial.knowledge);
   try {
-    saveRaraConfig(initial);
+    return saveRaraConfig(initial);
   } catch {
     // ignore write errors on read-only fs
   }
@@ -746,13 +746,11 @@ export function getRaraConfig(): RaraConfig {
 export function saveRaraConfig(nextConfig: RaraConfig): RaraConfig {
   const current = fs.existsSync(CONFIG_PATH) ? getRaraConfig() : DEFAULT_RARA_CONFIG;
 
-  // Preserve secret API keys if masked "***" is sent from client
-  const llmApiKey =
-    nextConfig.llm?.apiKey === "***MASKED***" ? current.llm?.apiKey || "" : nextConfig.llm?.apiKey ?? "";
-  const elevenApiKey =
-    nextConfig.voice?.elevenlabsApiKey === "***MASKED***"
-      ? current.voice?.elevenlabsApiKey || ""
-      : nextConfig.voice?.elevenlabsApiKey ?? "";
+  // A masked or empty key field means "keep the stored key"; a dashboard save never erases a key by itself
+  const keepKey = (next: string | undefined, stored: string | undefined) =>
+    !next || next === "***MASKED***" ? stored || "" : next;
+  const llmApiKey = keepKey(nextConfig.llm?.apiKey, current.llm?.apiKey);
+  const elevenApiKey = keepKey(nextConfig.voice?.elevenlabsApiKey, current.voice?.elevenlabsApiKey);
   const webhookSecret = nextConfig.leadRules?.vpsWaWebhookSecret ?? "";
 
   const finalConfig: RaraConfig = {

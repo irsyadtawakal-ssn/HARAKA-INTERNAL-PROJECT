@@ -78,6 +78,18 @@ export async function POST(req: Request) {
       if (!incoming) {
         return NextResponse.json({ ok: false, error: "Data config kosong" }, { status: 400 });
       }
+      // Refuse saves from a tab that loaded an older version, so it cannot overwrite newer settings
+      const currentUpdatedAt = getRaraConfig().updatedAt;
+      if (typeof body.baseUpdatedAt === "string" && currentUpdatedAt && body.baseUpdatedAt !== currentUpdatedAt) {
+        return NextResponse.json(
+          {
+            ok: false,
+            conflict: true,
+            error: "Pengaturan sudah diubah di tab lain. Muat ulang halaman dulu agar perubahan terbaru tidak tertimpa.",
+          },
+          { status: 409 }
+        );
+      }
       const saved = saveRaraConfig(incoming);
       return NextResponse.json({
         ok: true,
