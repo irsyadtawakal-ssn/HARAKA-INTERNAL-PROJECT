@@ -57,3 +57,30 @@ def make_thumbnail(src: Path, dest: Path, *, is_video: bool, duration_s: Decimal
         ],
         capture_output=True, timeout=_TIMEOUT_S, check=True,
     )
+
+
+def extract_frames(src: Path, dest_dir: Path, count: int = 6) -> list[Path]:
+    """`count` frame JPEG (lebar 480 px) yang tersebar rata sepanjang video. Kosong bila video tidak terbaca."""
+    try:
+        duration = probe(src).duration_s
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, ValueError):
+        return []
+    if not duration:
+        return []
+    frames: list[Path] = []
+    for i in range(count):
+        out = dest_dir / f"frame_{i}.jpg"
+        at = float(duration) * (i + 0.5) / count
+        try:
+            subprocess.run(
+                [
+                    "ffmpeg", "-v", "error", "-y", "-ss", f"{at:.3f}", "-i", str(src),
+                    "-frames:v", "1", "-vf", f"scale={THUMB_WIDTH}:-2", "-q:v", "4", str(out),
+                ],
+                capture_output=True, timeout=_TIMEOUT_S, check=True,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            continue
+        if out.exists():
+            frames.append(out)
+    return frames

@@ -267,9 +267,8 @@ def fake_llm(monkeypatch, db):
     from app import llm
 
     fake = FakeLLM()
-    monkeypatch.setattr(
-        llm, "get_settings", lambda: llm.get_settings.__wrapped__().model_copy(update={"llm_base_url": "http://fake-llm", "llm_api_key": "k"})
-    )
+    base_settings = llm.get_settings().model_copy(update={"llm_base_url": "http://fake-llm", "llm_api_key": "k"})
+    monkeypatch.setattr(llm, "get_settings", lambda: base_settings)
     db.merge(GuardrailSetting(key=llm.SETTING_KEY, value={"analysis_model": "model-analisis", "writer_model": "model-writer"}))
     db.commit()
 
@@ -286,3 +285,25 @@ def fake_llm(monkeypatch, db):
 
     monkeypatch.setattr(llm, "_chat", _chat)
     return fake
+
+
+@pytest.fixture
+def stored_asset(db, make_user, media_dir):
+    """Aset ready dengan file sungguhan di S3 (foto atau video dari media_dir)."""
+    from app import storage
+
+    def _make(kind: str = "photo", license_status: str = "creator_licensed") -> Asset:
+        uploader = make_user("creator", f"kreator-{uuid.uuid4().hex[:6]}@uji-harka.id")
+        asset_id = uuid.uuid4()
+        src, ext, mime = (media_dir / "clip.mp4", "mp4", "video/mp4") if kind == "video" else (media_dir / "photo.jpg", "jpg", "image/jpeg")
+        key = f"assets/{asset_id}/original.{ext}"
+        storage.upload(src, key, mime)
+        asset = Asset(
+            id=asset_id, type=kind, status="ready", storage_key=key, original_filename=src.name, mime=mime,
+            size_bytes=src.stat().st_size, uploaded_by_id=uploader.id, license_status=license_status, funnel="A",
+        )
+        db.add(asset)
+        db.commit()
+        return asset
+
+    return _make

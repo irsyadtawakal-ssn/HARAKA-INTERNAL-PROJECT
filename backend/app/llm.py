@@ -3,6 +3,7 @@
 import json
 import re
 import time
+from pathlib import Path
 from typing import Literal
 
 import httpx
@@ -95,6 +96,7 @@ def complete(
             except ValueError as e:
                 raise LLMFormatError(f"LLM tidak membalas JSON yang valid: {raw[:120]!r}") from e
         run.status = "succeeded"
+        db.info["last_agent_run_id"] = run.id
         run.output = result if isinstance(result, dict) else {"result": result}
         return result
     except LLMError as e:
@@ -103,3 +105,22 @@ def complete(
     finally:
         run.duration_ms = int((time.monotonic() - started) * 1000)
         db.flush()
+
+
+def transcribe(db: Session, path: Path) -> str | None:
+    """Transkrip audio lewat /audio/transcriptions. Opsional: tanpa LLM_TRANSCRIBE_MODEL atau saat gagal -> None."""
+    settings = get_settings()
+    if not (settings.llm_transcribe_model and settings.llm_base_url and settings.llm_api_key):
+        return None
+    try:
+        with httpx.Client(transport=_transport, timeout=300) as client, path.open("rb") as f:
+            response = client.post(
+                f"{settings.llm_base_url.rstrip('/')}/audio/transcriptions",
+                headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+                data={"model": settings.llm_transcribe_model},
+                files={"file": (path.name, f)},
+            )
+        response.raise_for_status()
+        return (response.json().get("text") or "").strip() or None
+    except (httpx.HTTPError, ValueError):
+        return None
