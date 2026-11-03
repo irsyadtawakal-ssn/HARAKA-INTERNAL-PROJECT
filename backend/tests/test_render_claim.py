@@ -21,6 +21,8 @@ def test_klaim_mengambil_job_tertua_dan_menguncinya(client, db, flow_device, mak
     assert task["job_id"] == str(oldest.id)
     assert task["mode"] == "talking_head" and task["slot"] == "hook" and task["prompt"] == oldest.prompt
     assert task["reference_url"].startswith("http") and task["reference_filename"] == "avatar.jpg"
+    # Identitas foto untuk extension: dua aset dengan nama file sama tidak boleh dianggap foto yang sama.
+    assert task["reference_asset_id"] == str(oldest.reference_asset_id)
 
     db.refresh(oldest)
     assert oldest.status == "claimed" and oldest.attempts == 1 and oldest.device_id == flow_device["id"]

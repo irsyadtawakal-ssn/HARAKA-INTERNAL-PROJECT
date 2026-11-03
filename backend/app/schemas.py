@@ -179,6 +179,7 @@ class FlowTask(BaseModel):
     slot: RenderSlot
     prompt: str
     target_duration: RenderDuration | None
+    reference_asset_id: uuid.UUID
     reference_url: str
     reference_filename: str
 

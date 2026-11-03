@@ -1,13 +1,13 @@
-// Google Flow Auto-Bridge Content Script — v2.7 (foto Start frame sesuai identitas, lapor status nyata, submenu Download, verifikasi download + cadangan unduh langsung)
-console.log('⚡ [AI Video Bridge] Autopilot Rafi v2.7 (verifikasi download + cadangan unduh langsung) aktif di flow.google.com!');
+// Haraka Flow Render Bridge — content script v4.0 (satu job backend = satu klip; foto Start frame sesuai identitas aset; status ke backend; unduh 720p + cadangan upload)
+console.log('⚡ [Haraka Flow] Content script v4.0 aktif di Google Flow.');
 
 let _runId = 0;
-let _lastProcessedTime = 0;
+let _lastJobId = '';
 const _uploadedAvatarsInSession = new Set();
 
 // --- Identitas foto avatar (v2.4): supaya yang masuk ke Start frame SELALU foto yang diminta, bukan sekadar foto urutan pertama ---
 const _avatarKeys = new Map();        // nama file avatar -> Set kunci gambar hasil upload-nya
-let _currentStartAvatar = '';         // nama avatar yang terakhir dikunci Rafi di Start frame
+let _currentStartAvatar = '';         // identitas foto yang terakhir dikunci di Start frame
 let _modalKeysBeforeUpload = new Set(); // gambar yang SUDAH ada di jendela pilihan sebelum upload
 // Kunci identitas gambar: Flow memakai ...getMediaUrlRedirect?name=<id> (id di query); bila tidak ada, pakai URL tanpa query & tanpa sufiks ukuran
 const srcKey = (u) => {
@@ -21,15 +21,34 @@ const allAssetImgs = () => Array.from(document.querySelectorAll('img')).filter((
   const r = img.getBoundingClientRect();
   return r.width > 35 && r.height > 35 && img.complete;
 });
-// --- Lapor status SEBENARNYA ke dashboard (v2.4): 'generating' | 'warn' | 'downloaded' | 'error'. Dashboard menampilkannya & berhenti bila 'error' ---
-let _curTask = {deliverableId: '', slot: 'hook'};
+// --- Status ke backend lewat background.js (token device tidak pernah ada di halaman ini) ---
+// Tahap: uploading_ref | generating | downloading | downloaded | failed. 'warn' = catatan tanpa ganti tahap; 'error' = failed.
+let _curTask = { jobId: '', slot: 'hook', stage: 'uploading_ref' };
+let _captchaHit = false;
 function reportFlow(stage, message) {
-  try {
-    fetch('http://localhost:3210/api/flow-status', {
-      method: 'POST',
-      body: JSON.stringify({deliverableId: _curTask.deliverableId, slot: _curTask.slot, stage, message: String(message || '').slice(0, 300)}),
-    }).catch(() => {});
-  } catch (e) {}
+  if (!_curTask.jobId) return Promise.resolve(null);
+  const s = stage === 'error' ? 'failed' : stage === 'warn' ? _curTask.stage : stage;
+  if (stage !== 'warn') _curTask.stage = s;
+  return askBg({
+    action: 'API',
+    method: 'POST',
+    path: `/flow/jobs/${_curTask.jobId}/status`,
+    body: { stage: s, message: String(message || '').slice(0, 300) },
+  });
+}
+
+// Captcha TIDAK diakali (spec §4.2): hentikan job, lapor 'captcha', manusia menyelesaikannya lewat VNC.
+function captchaVisible() {
+  const frames = Array.from(document.querySelectorAll('iframe[src*="recaptcha"], iframe[title*="reCAPTCHA"]'));
+  if (frames.some((f) => { const r = f.getBoundingClientRect(); return r.width > 50 && r.height > 50; })) return true;
+  return /unusual traffic|aktivitas tidak biasa/i.test(document.body ? document.body.innerText.slice(0, 20000) : '');
+}
+async function stopIfCaptcha() {
+  if (!captchaVisible()) return false;
+  _captchaHit = true;
+  showNotification('⛔ Flow menampilkan captcha. Job dihentikan — selesaikan manual lewat VNC.', '#ef4444');
+  await reportFlow('failed', 'captcha');
+  return true;
 }
 // Pilih gambar di jendela untuk avatar `name`: (1) hasil upload avatar itu, (2) gambar yang baru muncul sejak sebelum upload,
 // (3) cadangan: yang TERAKHIR (foto baru ada di akhir daftar; yang pertama = foto lama)
@@ -52,44 +71,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// 2. Heartbeat aktif setiap 1.2 detik ke background.js supaya Service Worker TIDAK PERNAH TIDUR
-//    dan bisa dipakai berkali-kali tanpa batas!
+// 2. Heartbeat tiap 1,2 detik ke background.js: menjaga Service Worker tetap bangun dan memberi kesempatan
+//    background mengklaim job baru dari backend (job dikirim balik lewat INJECT_PROMPT).
 setInterval(() => {
   try {
-    chrome.runtime.sendMessage({ action: 'POLL_QUEUE' }, (res) => {
-      if (chrome.runtime.lastError) return;
-      if (res && res.data && (res.data.prompt || res.data.action === 'DOWNLOAD_NOW')) {
-        handleIncomingTask(res.data);
-      }
-    });
+    chrome.runtime.sendMessage({ action: 'POLL_QUEUE' }, () => void chrome.runtime.lastError);
   } catch (e) {}
 }, 1200);
 
-function handleIncomingTask(data) {
-  const taskTime = data.time || Date.now();
-  if (taskTime === _lastProcessedTime) return; // cegah duplikat dari heartbeat + push
-  _lastProcessedTime = taskTime;
-
-  if (data.action === 'DOWNLOAD_NOW') {
-    evaluateAndDownloadBestVideoNow();
-    return;
-  }
-
-  const { prompt, ctaPrompt, avatarUrl, avatarFile, deliverableId, slot } = data;
-  runFullFlowPipeline(prompt, avatarUrl, avatarFile, ctaPrompt, deliverableId, slot || 'hook');
+function handleIncomingTask(task) {
+  if (!task || !task.job_id || task.job_id === _lastJobId) return; // cegah duplikat push
+  _lastJobId = task.job_id;
+  runFullFlowPipeline(task);
 }
 
-// Hitung durasi optimal (4s, 6s, 8s, 10s) sesuai panjang kalimat naskah
-function computeTargetDuration(promptText) {
-  if (!promptText) return '8s';
-  const match = promptText.match(/"([^"]+)"/);
-  const spoken = match ? match[1] : promptText;
-  const wordCount = spoken.trim().split(/\s+/).filter(Boolean).length;
-  if (wordCount <= 9) return '4s';
-  if (wordCount <= 14) return '6s';
-  if (wordCount <= 21) return '8s';
-  return '10s';
-}
+// computeTargetDuration & resolveDuration ada di lib.js (dimuat lebih dulu oleh manifest).
 
 function getPromptBox() {
   const editor = document.querySelector('div.ProseMirror[contenteditable="true"], div[role="textbox"][contenteditable="true"]');
@@ -231,23 +227,24 @@ function getUploadProgressText() {
   return null;
 }
 
-async function runFullFlowPipeline(promptText, avatarUrl, avatarFile, ctaPrompt = '', deliverableId = '', slot = 'hook') {
+async function runFullFlowPipeline(task) {
   const myRunId = ++_runId;
-  _curTask = {deliverableId, slot};
+  const slot = task.slot || 'hook';
+  _curTask = { jobId: task.job_id, slot, stage: 'uploading_ref' };
+  _captchaHit = false;
+  const fail = async (why) => {
+    showNotification('❌ ' + why, '#ef4444');
+    await reportFlow('failed', why);
+  };
   try {
-    // Beritahu server Dashboard sedang memproses slot ini (supaya file download masuk ke kotak Hook / CTA yang tepat)
-    if (deliverableId || slot) {
-      fetch('http://localhost:3210/api/flow-slot', {
-        method: 'POST',
-        body: JSON.stringify({ deliverableId, slot }),
-      }).catch(() => {});
-    }
-
-    const targetDuration = computeTargetDuration(promptText);
+    if (await stopIfCaptcha()) return;
+    const targetDuration = resolveDuration(task);
     showNotification(
-      `🤖 Rafi (Run #${myRunId} - ${slot.toUpperCase()}): Menyiapkan mode Video -> Frames (9:16, ${targetDuration}, x2)...`,
+      `🤖 Haraka Flow (Run #${myRunId} - ${slot.toUpperCase()}): Menyiapkan mode Video -> Frames (9:16, ${targetDuration}, x2)...`,
       '#8b5cf6'
     );
+    await reportFlow('uploading_ref', `Menyiapkan Flow (${targetDuration}, ${task.mode}) dan foto referensi`);
+
 
     // 0. Bersihkan bila ada seleksi gambar di canvas yang memicu mode Nano Banana
     const curBox = getPromptBox();
@@ -265,18 +262,23 @@ async function runFullFlowPipeline(promptText, avatarUrl, avatarFile, ctaPrompt 
     await sleep(500);
     if (myRunId !== _runId) return;
 
-    // 2. Ambil file foto avatar yang sesuai dengan teks prompt
+    // 2. Ambil foto referensi dari storage (presigned URL dari backend).
+    //    Identitas = id aset, bukan nama file: dua foto bernama "avatar.jpg" tetap dibedakan.
     let fileObj = null;
-    const targetAvatarName = avatarFile || 'akbar_leather_jacket_dark.jpg';
+    const ext = String(task.reference_filename || '').split('.').pop() || 'jpg';
+    const targetAvatarName = `ref_${task.reference_asset_id}.${ext}`;
     try {
-      const fetchUrl = avatarUrl || `http://localhost:3210/api/avatar/${targetAvatarName}`;
-      const res = await fetch(fetchUrl);
+      const res = await fetch(task.reference_url);
       if (res.ok) {
         const blob = await res.blob();
-        fileObj = new File([blob], targetAvatarName, { type: 'image/jpeg' });
+        fileObj = new File([blob], targetAvatarName, { type: blob.type || 'image/jpeg' });
       }
     } catch (e) {
-      console.warn('[AI Video Bridge] Gagal fetch avatar lokal:', e);
+      console.warn('[Haraka Flow] Gagal mengambil foto referensi:', e);
+    }
+    if (!fileObj) {
+      await fail('Foto referensi tidak bisa diambil dari storage (pastikan CORS_ORIGINS backend memuat https://flow.google.com).');
+      return;
     }
 
     // 3. Pastikan foto avatar masuk langsung ke slot [Start]
@@ -309,14 +311,14 @@ async function runFullFlowPipeline(promptText, avatarUrl, avatarFile, ctaPrompt 
     await sleep(600);
 
     // 4. Masukkan teks prompt ke ProseMirror (timpa bersih teks lama bila ada)
-    if (promptText) {
+    if (task.prompt) {
       showNotification(`✍️ Memasukkan teks prompt Veo 3.1 (${slot.toUpperCase()})...`, '#3b82f6');
-      const filled = await fillProseMirrorPrompt(promptText);
+      const filled = await fillProseMirrorPrompt(task.prompt);
       await sleep(700);
       if (!filled) {
         const why = 'Kotak prompt di Flow tidak bisa diisi bersih (masih ada teks lama). Hapus isi kotak prompt manual (Ctrl+A lalu Delete), lalu klik Jalankan lagi.';
         showNotification('❌ ' + why, '#ef4444');
-        reportFlow('error', why);
+        await reportFlow('error', why);
         return;
       }
     }
@@ -329,60 +331,35 @@ async function runFullFlowPipeline(promptText, avatarUrl, avatarFile, ctaPrompt 
       await sleep(800);
     }
     if (!isStartFrameSet()) {
-      const why = `Slot [Start] belum terisi foto avatar (${targetAvatarName}). Rafi DILARANG KERAS men-generate video kosong tanpa avatar! Silakan cek tab Flow.`;
+      const why = `Slot [Start] belum terisi foto avatar (${targetAvatarName}). Video tidak boleh digenerate tanpa foto referensi. Silakan cek tab Flow.`;
       showNotification('❌ ' + why, '#ef4444');
-      reportFlow('error', why);
+      await reportFlow('error', why);
       return;
     }
+
+    if (await stopIfCaptcha()) return;
 
     // 6. Klik tombol panah putih bulat (->) untuk langsung Generate!
     const baseline = captureVideoBaseline(); // v2.8: jumlah + identitas stabil video yang SUDAH ada sebelum Generate ditekan
-    const wstate = {baseline, rebased: false, since: Date.now()}; // v2.9: keadaan tunggu (dipakai ulang bila video yang terunduh ditolak dashboard)
-    showNotification(`🚀 Rafi menekan tombol Generate Video (${slot.toUpperCase()})!`, '#10b981');
+    const wstate = { baseline, rebased: false, since: Date.now() };
+    showNotification(`🚀 Menekan tombol Generate Video (${slot.toUpperCase()})!`, '#10b981');
     await clickWhiteArrowGenerateButton();
 
-    // 7. Tunggu video selesai digenerate, langsung evaluasi cepat & klik titik 3 -> Download -> 720p!
-    reportFlow('generating', `Prompt ${slot.toUpperCase()} dikirim ke Flow, menunggu video selesai dibuat...`);
-    // v2.9: setelah download dipicu, dashboard memeriksa ISI video (ucapan vs naskah slot ini). Bila ditolak (video lama), cari kandidat lain.
-    let downloaded = null, hookVerifyP = null;
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const sinceMs = Date.now();
-      downloaded = await waitAndAutoSelectBestVideo720p(wstate, myRunId);
-      if (myRunId !== _runId) return;
-      if (!downloaded) break;
-      // v3.0: untuk HOOK (masih ada CTA menunggu) verifikasi isi video berjalan di LATAR dan CTA langsung digenerate, tidak menunggu Whisper dashboard.
-      if (ctaPrompt && slot === 'hook') { hookVerifyP = verifyDownloadWithDashboard(deliverableId, slot, sinceMs); break; }
-      const verdict = await verifyDownloadWithDashboard(deliverableId, slot, sinceMs);
-      if (verdict !== 'reject') break;
-      reportFlow('warn', `Video ${slot.toUpperCase()} yang terunduh ternyata BUKAN hasil generate ini (ucapan tidak cocok dengan naskah, kemungkinan video lama). Mencari kandidat lain... (${attempt}/3)`);
-      showNotification('⚠️ Video yang terunduh salah (video lama), mencari kandidat lain...', '#f59e0b');
-      downloaded = null;
-    }
-    if (myRunId !== _runId) return;
-    // v2.4: JANGAN lanjut ke CTA / mengaku "selesai" kalau video tidak jadi atau download tidak terpicu
+    // 7. Tunggu video selesai digenerate, evaluasi cepat & klik titik 3 -> Download -> 720p!
+    await reportFlow('generating', `Prompt ${slot.toUpperCase()} dikirim ke Flow, menunggu video selesai dibuat...`);
+    const downloaded = await waitAndAutoSelectBestVideo720p(wstate, myRunId);
+    if (myRunId !== _runId || _captchaHit) return;
     if (!downloaded) {
-      const why = `Video ${slot.toUpperCase()} tidak selesai dibuat atau tombol Download tidak ketemu (lihat tab Flow: ada pesan error / masih memproses?).`;
-      showNotification('❌ ' + why, '#ef4444');
-      reportFlow('error', why);
+      await fail(`Video ${slot.toUpperCase()} tidak selesai dibuat atau tombol Download tidak ketemu (lihat tab Flow: ada pesan error / masih memproses?).`);
       return;
     }
-    reportFlow('downloaded', `Download video ${slot.toUpperCase()} 720p sudah dipicu.`);
-
-    // 7. FULL AUTOPILOT BERANTAI: Kalau ini baru selesai download HOOK dan ada ctaPrompt, LANGSUNG lanjut CTA tanpa jeda lama!
-    if (ctaPrompt && slot === 'hook' && myRunId === _runId) {
-      showNotification(
-        '🔥 Video HOOK 720p selesai didownload! LANGSUNG lanjut generate video CTA sekarang...',
-        '#f59e0b'
-      );
-      await sleep(800); // Responsif: 800ms cukup agar unduhan tercatat di Chrome, langsung gas slot CTA!
-      if (myRunId === _runId) {
-        _currentStartAvatar = ''; // Reset identitas avatar terkunci agar slot CTA mengunci avatar baru
-        await runFullFlowPipeline(ctaPrompt, avatarUrl, avatarFile, '', deliverableId, 'cta');
-      }
-    }
+    await reportFlow('downloaded', `Download video ${slot.toUpperCase()} 720p sudah dipicu.`);
   } catch (err) {
-    console.error('[AI Video Bridge] Error:', err);
-    showNotification('⚠️ Error: ' + err.message, '#ef4444');
+    console.error('[Haraka Flow] Error:', err);
+    await fail('Error extension: ' + ((err && err.message) || err));
+  } finally {
+    // Satu job = satu klip: lepaskan job di background supaya job berikutnya bisa diklaim.
+    if (myRunId === _runId) chrome.runtime.sendMessage({ action: 'JOB_FINISHED', jobId: task.job_id }, () => void chrome.runtime.lastError);
   }
 }
 
@@ -455,7 +432,7 @@ async function uploadAvatarAndWaitUntil100PercentDone(fileObj, myRunId) {
   const rememberUpload = () => {
     const nk = allAssetImgs().map((i) => srcKey(i.src)).filter((k) => !beforeKeys.has(k));
     if (nk.length) _avatarKeys.set(fileObj.name, new Set(nk));
-    console.log(`[AI Video Bridge] Foto ${fileObj.name} dikenali dari ${nk.length} gambar baru.`);
+    console.log(`[Haraka Flow] Foto ${fileObj.name} dikenali dari ${nk.length} gambar baru.`);
   };
 
   let capturedInput = null;
@@ -502,7 +479,7 @@ async function uploadAvatarAndWaitUntil100PercentDone(fileObj, myRunId) {
       fileInput.files = dt.files;
       fileInput.dispatchEvent(new Event('change', { bubbles: true }));
       fileInput.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('[AI Video Bridge] File avatar disuntikkan ke input[type="file"]!');
+      console.log('[Haraka Flow] File avatar disuntikkan ke input[type="file"]!');
     }
   } finally {
     document.removeEventListener('click', clickInterceptor, true);
@@ -596,7 +573,7 @@ async function selectImageAndClickAddToPrompt(fileObj, myRunId) {
       }
       if (targetImg) {
         chosenKey = srcKey(targetImg.src);
-        console.log(`[AI Video Bridge] Memilih foto ${wantName} di dalam modal:`, targetImg.src);
+        console.log(`[Haraka Flow] Memilih foto ${wantName} di dalam modal:`, targetImg.src);
         targetImg.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
         targetImg.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
         targetImg.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
@@ -608,7 +585,7 @@ async function selectImageAndClickAddToPrompt(fileObj, myRunId) {
     // SEKARANG CARI & KLIK TOMBOL PUTIH "Add to prompt"!
     addToPromptBtn = findAddToPromptButton();
     if (addToPromptBtn) {
-      console.log('[AI Video Bridge] Menekan tombol "Add to prompt"!');
+      console.log('[Haraka Flow] Menekan tombol "Add to prompt"!');
       showNotification('➕ Menekan tombol "Add to prompt" untuk mengunci Start Frame!', '#10b981');
       addToPromptBtn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
       addToPromptBtn.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
@@ -622,7 +599,7 @@ async function selectImageAndClickAddToPrompt(fileObj, myRunId) {
       const box2 = getPromptBox();
       const thumb = box2 ? Array.from(box2.querySelectorAll('img')).find((img) => img.src && img.getBoundingClientRect().width >= 20) : null;
       if (chosenKey && thumb && srcKey(thumb.src) !== chosenKey && attempt < 3) {
-        console.warn('[AI Video Bridge] Start frame berisi foto lain, mengganti...', srcKey(thumb.src), '!=', chosenKey);
+        console.warn('[Haraka Flow] Start frame berisi foto lain, mengganti...', srcKey(thumb.src), '!=', chosenKey);
         showNotification('♻️ Start frame berisi foto lain, mengganti ke foto yang benar...', '#f59e0b');
         _currentStartAvatar = '';
         await clearExistingStartFrameIfNeeded();
@@ -731,7 +708,7 @@ async function clickWhiteArrowGenerateButton() {
       arrowBtn.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
       arrowBtn.click();
       showNotification('🚀 2 VIDEO (9:16, FRAMES) SEDANG DI-GENERATE DI GOOGLE FLOW!', '#10b981');
-      console.log('[AI Video Bridge] Tombol panah putih (->) berhasil diklik!');
+      console.log('[Haraka Flow] Tombol panah putih (->) berhasil diklik!');
       return true;
     }
     await sleep(400);
@@ -967,36 +944,27 @@ function pickFreshEntries(allNow, baseline) {
   return unseen.slice().sort((a, b) => a.rect.top - b.rect.top || a.rect.left - b.rect.left).slice(0, Math.max(1, need));
 }
 
-// v2.9: tanya dashboard apakah video yang barusan diunduh COCOK dengan naskah slot ini ('ok' | 'reject' | 'unknown' bila tak ada jawaban).
-async function verifyDownloadWithDashboard(deliverableId, slot, sinceMs) {
-  if (!deliverableId) return 'unknown';
-  reportFlow('generating', `Download ${slot.toUpperCase()} dipicu. Dashboard memeriksa apakah isi videonya cocok dengan naskah...`);
-  const t0 = Date.now();
-  while (Date.now() - t0 < 150000) {
-    try {
-      const r = await fetch(`http://localhost:3210/api/flow-verdict?deliverableId=${encodeURIComponent(deliverableId)}&slot=${encodeURIComponent(slot)}&since=${sinceMs}`);
-      const j = await r.json();
-      if (j && (j.verdict === 'ok' || j.verdict === 'reject')) return j.verdict;
-    } catch (e) {}
-    await sleep(2500);
-  }
-  return 'unknown';
+// Lapor tahap downloading SEBELUM klik unduh: ingest backend hanya memasangkan file ke job yang sedang downloading.
+async function markDownloading() {
+  await reportFlow('downloading', 'Video selesai dibuat, memicu unduhan 720p...');
 }
 
 // Memantau hasil generate secara responsif: begitu video selesai, LANGSUNG download!
 async function waitAndAutoSelectBestVideo720p(wstate, myRunId) {
-  showNotification('⚡ Rafi memantau hasil generate... Begitu video selesai, LANGSUNG didownload!', '#8b5cf6');
+  showNotification('⚡ Memantau hasil generate... Begitu video selesai, langsung diunduh!', '#8b5cf6');
   const startWait = Date.now();
   const baselineCount = (wstate && wstate.baseline && wstate.baseline.count) || 0;
   let lastReport = 0;
 
   while (Date.now() - startWait < 600000) {
     if (myRunId && myRunId !== _runId) return null;
+    if (await stopIfCaptcha()) return null;
 
     // 1. Cek tombol download langsung (⤓) di panel rincian sebelah kanan jika panel sedang aktif
     const directDl = findDirectDownloadButton();
     if (directDl) {
       showNotification('🚀 Video siap di panel detail! Menekan tombol Download (⤓)...', '#10b981');
+      await markDownloading();
       directDl.click();
       await sleep(350);
       const sub720 = find720pMenuItem();
@@ -1033,42 +1001,15 @@ async function waitAndAutoSelectBestVideo720p(wstate, myRunId) {
   return null;
 }
 
-// Bisa dipanggil kapan saja untuk langsung menilai video yang sudah ada di layar sekarang & download 720p!
-async function evaluateAndDownloadBestVideoNow(targetSlot = '') {
-  // 1. Cek tombol download langsung jika ada panel detail terbuka
-  const directDl = findDirectDownloadButton();
-  if (directDl) {
-    showNotification('🚀 Menekan tombol Download langsung di panel rincian...', '#10b981');
-    directDl.click();
-    await sleep(350);
-    const sub720 = find720pMenuItem();
-    if (sub720) {
-      sub720.click();
-      await sleep(400);
-    }
-    if (await waitDownloadStarted(Date.now() - 1000, 8000)) {
-      showNotification('✅ Download 720p berhasil dipicu!', '#10b981');
-      return true;
-    }
-  }
-
-  const allEntries = getCompletedVideoEntries();
-  if (allEntries.length === 0) {
-    showNotification('⚠️ Belum ada kartu video yang terdeteksi di layar Google Flow! [' + videoDiag() + ']', '#ef4444');
-    reportFlow('warn', 'Tidak ada kartu video terdeteksi: ' + videoDiag());
-    return false;
-  }
-  return await pickBestAndDownload720p(allEntries);
-}
-
 async function pickBestAndDownload720p(candidates) {
-  showNotification(`🔍 Rafi mengecek ${candidates.length} kandidat video (cek kestabilan muka, transisi & suara)...`, '#3b82f6');
+  await markDownloading();
+  showNotification(`🔍 Mengecek ${candidates.length} kandidat video (kestabilan wajah, transisi & suara)...`, '#3b82f6');
   let bestEntry = candidates[0];
   let bestScore = -999;
 
   for (let i = 0; i < candidates.length; i++) {
     const sc = await scoreVideoCandidateFast(candidates[i]);
-    console.log(`[Rafi Evaluator] Kandidat #${i + 1} skor kerapian:`, sc.toFixed(1));
+    console.log(`[Haraka Flow] Kandidat #${i + 1} skor kerapian:`, sc.toFixed(1));
     if (sc > bestScore) {
       bestScore = sc;
       bestEntry = candidates[i];
@@ -1104,26 +1045,40 @@ async function waitDownloadStarted(sinceMs, timeoutMs) {
   }
   return false;
 }
-// Cadangan: (A) minta Chrome mengunduh alamat videonya langsung, (B) ambil file lewat halaman lalu simpan ke Downloads via dashboard.
-// Nama file sengaja "Flow_Rafi_<slot>_<waktu>.mp4" agar dikenali penjaga Downloads di dashboard seperti download biasa.
+// Cadangan: (A) minta Chrome mengunduh alamat videonya langsung (tetap masuk folder unduhan -> ingest backend),
+// (B) ambil file lewat halaman lalu unggah ke storage lewat presigned URL dari backend (spec §4.3).
 async function fallbackDownloadVideo(videoEl) {
   const src = videoEl && (videoEl.currentSrc || videoEl.src);
   const dims = videoEl ? `${videoEl.videoWidth}x${videoEl.videoHeight}` : '?';
-  const fname = `Flow_Rafi_${_curTask.slot || 'hook'}_${Date.now()}.mp4`;
+  const fname = `Haraka_${_curTask.slot || 'hook'}_${_curTask.jobId}.mp4`;
   if (!src) { reportFlow('error', 'Fallback gagal: alamat video tidak ditemukan.'); return false; }
   if (/^https?:/i.test(src)) {
     const r = await askBg({ action: 'DOWNLOAD_URL', url: src, filename: fname });
     if (r && r.ok) { reportFlow('warn', `Klik 720p tidak memicu download; video diunduh langsung dari sumbernya (${dims}).`); return true; }
-    console.warn('[AI Video Bridge] Fallback A gagal:', r && r.error);
+    console.warn('[Haraka Flow] Fallback A gagal:', r && r.error);
   }
   try {
     const resp = await fetch(src);
     const blob = await resp.blob();
     if (blob.size > 50000) {
-      const up = await fetch(`http://localhost:3210/api/flow-upload?name=${encodeURIComponent(fname)}`, { method: 'POST', body: blob });
-      if (up.ok) { reportFlow('warn', `Video diambil lewat halaman & dikirim ke dashboard (${dims}, ${(blob.size / 1048576).toFixed(1)} MB).`); return true; }
+      const ticket = await askBg({ action: 'API', method: 'POST', path: `/flow/jobs/${_curTask.jobId}/upload-url` });
+      if (ticket && ticket.ok) {
+        const put = await fetch(ticket.data.upload_url, { method: 'PUT', headers: ticket.data.upload_headers, body: blob });
+        if (put.ok) {
+          const done = await askBg({
+            action: 'API',
+            method: 'POST',
+            path: `/flow/jobs/${_curTask.jobId}/uploaded`,
+            body: { storage_key: ticket.data.storage_key, width: videoEl.videoWidth || null, height: videoEl.videoHeight || null },
+          });
+          if (done && done.ok) {
+            showNotification(`✅ Video diunggah lewat jalur cadangan (${dims}, ${(blob.size / 1048576).toFixed(1)} MB).`, '#10b981');
+            return true;
+          }
+        }
+      }
     }
-  } catch (e) { console.warn('[AI Video Bridge] Fallback B gagal:', e); }
+  } catch (e) { console.warn('[Haraka Flow] Fallback B gagal:', e); }
   reportFlow('error', `Download gagal: klik 720p tidak memicu apa pun dan video tidak bisa diambil langsung (${dims}, sumber: ${String(src).slice(0, 60)}).`);
   return false;
 }
@@ -1134,7 +1089,7 @@ async function downloadVideo720p(cardElement, videoElement) {
     // 0. Prioritas utama: jika panel rincian sebelah kanan aktif dan punya tombol Download (⤓), klik langsung!
     const directDl = findDirectDownloadButton();
     if (directDl) {
-      console.log('[AI Video Bridge] Menemukan tombol Download langsung (⤓) di panel detail!');
+      console.log('[Haraka Flow] Menemukan tombol Download langsung (⤓) di panel detail!');
       directDl.click();
       await sleep(350);
       const sub720 = find720pMenuItem();
@@ -1144,8 +1099,7 @@ async function downloadVideo720p(cardElement, videoElement) {
       }
       const clickedAt = Date.now();
       if (await waitDownloadStarted(clickedAt, 8000)) {
-        const isGlobal = _currentStartAvatar && _currentStartAvatar.startsWith('kira_');
-        showNotification(`⬇️ Video 720p didownload! Vanya langsung ubah ke Suara ${isGlobal ? 'LIAM (English Tech Creator)' : 'Pak Akbar'}!`, '#10b981');
+        showNotification('⬇️ Video 720p sedang diunduh ke folder render.', '#10b981');
         return true;
       }
     }
@@ -1293,8 +1247,7 @@ async function downloadVideo720p(cardElement, videoElement) {
           // v2.7: klik buatan skrip BELUM TENTU memicu download di Flow versi sekarang. Pastikan Chrome benar-benar memulai download.
           showNotification('⏳ Menunggu Chrome memulai download 720p...', '#8b5cf6');
           if (await waitDownloadStarted(clickedAt, 12000)) {
-            const isGlobal = _currentStartAvatar && _currentStartAvatar.startsWith('kira_');
-            showNotification(`⬇️ Video 720p didownload! Vanya langsung ubah ke Suara ${isGlobal ? 'LIAM (English Tech Creator)' : 'Pak Akbar'}!`, '#10b981');
+            showNotification('⬇️ Video 720p sedang diunduh ke folder render.', '#10b981');
             return true;
           }
           showNotification('⚠️ Klik 720p tidak memicu download. Mengambil video langsung dari sumbernya...', '#f59e0b');
@@ -1305,14 +1258,14 @@ async function downloadVideo720p(cardElement, videoElement) {
           .filter((el) => { const r = el.getBoundingClientRect(); return r.width > 20 && r.height > 12 && r.height < 90 && r.left > ir.left; })
           .map((el) => (el.textContent || '').replace(/\s+/g, ' ').trim()).filter((t) => t && t.length < 40);
         const uniq = [...new Set(seen)].slice(0, 12).join(' | ');
-        console.warn('[AI Video Bridge] Submenu Download tidak terbuka / opsi 720p tidak ketemu. Terlihat:', uniq);
+        console.warn('[Haraka Flow] Submenu Download tidak terbuka / opsi 720p tidak ketemu. Terlihat:', uniq);
         reportFlow('warn', `Submenu Download tidak menampilkan 720p. Teks terlihat: ${uniq}`);
         document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
         return false;
       }
     }
   } catch (e) {
-    console.warn('[AI Video Bridge] Gagal download 720p:', e);
+    console.warn('[Haraka Flow] Gagal download 720p:', e);
   }
   return false;
 }

@@ -43,6 +43,7 @@ def claim(db: Session = Depends(get_db), device: RenderDevice = Depends(get_rend
             slot=job.slot,
             prompt=job.prompt,
             target_duration=job.target_duration,
+            reference_asset_id=reference.id,
             reference_url=storage.presign_get(reference.storage_key),
             reference_filename=reference.original_filename,
         ),
