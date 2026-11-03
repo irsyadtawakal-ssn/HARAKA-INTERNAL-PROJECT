@@ -6,6 +6,9 @@
 # Object storage dev memakai zenko/cloudserver (S3-compatible) karena image MinIO tidak bisa di-pull
 # dari mesin ini. Production cukup mengganti S3_* di .env ke penyedia S3 sungguhan; bucket dibuat
 # oleh app (app.storage.ensure_bucket).
+#
+# Nilai rahasia dibaca dari .env di root project (bukan backend/.env); default di bawah hanya untuk dev:
+#   POSTGRES_PASSWORD, S3_ACCESS_KEY, S3_SECRET_KEY, S3_PUBLIC_ENDPOINT_URL, FLOW_DOWNLOAD_DIR
 
 name: harka-factory
 
@@ -14,7 +17,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: harka
-      POSTGRES_PASSWORD: harka
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-harka}
       POSTGRES_DB: harka
     ports: ["127.0.0.1:5442:5432"]
     volumes:
@@ -41,8 +44,8 @@ services:
       S3BACKEND: file
       S3DATA: file
       REMOTE_MANAGEMENT_DISABLE: "1"
-      SCALITY_ACCESS_KEY_ID: harka-dev
-      SCALITY_SECRET_ACCESS_KEY: harka-dev-secret
+      SCALITY_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-harka-dev}
+      SCALITY_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-harka-dev-secret}
       ENDPOINT: s3
       LOG_LEVEL: info
     ports: ["127.0.0.1:9010:8000"]
@@ -55,10 +58,10 @@ services:
     build: ./backend
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg://harka:harka@db:5432/harka
+      DATABASE_URL: postgresql+psycopg://harka:${POSTGRES_PASSWORD:-harka}@db:5432/harka
       REDIS_URL: redis://redis:6379/0
       S3_ENDPOINT_URL: http://s3:8000
-      S3_PUBLIC_ENDPOINT_URL: http://localhost:9010
+      S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9010}
       CELERY_EAGER: "false"
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     ports: ["127.0.0.1:8010:8000"]
@@ -72,10 +75,10 @@ services:
     build: ./backend
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg://harka:harka@db:5432/harka
+      DATABASE_URL: postgresql+psycopg://harka:${POSTGRES_PASSWORD:-harka}@db:5432/harka
       REDIS_URL: redis://redis:6379/0
       S3_ENDPOINT_URL: http://s3:8000
-      S3_PUBLIC_ENDPOINT_URL: http://localhost:9010
+      S3_PUBLIC_ENDPOINT_URL: ${S3_PUBLIC_ENDPOINT_URL:-http://localhost:9010}
       CELERY_EAGER: "false"
       # Folder unduhan Chrome render Google Flow (lihat flow-extension/README.md).
       FLOW_DOWNLOAD_DIR: /flow-downloads
@@ -92,7 +95,7 @@ services:
     build: ./backend
     env_file: ./backend/.env
     environment:
-      DATABASE_URL: postgresql+psycopg://harka:harka@db:5432/harka
+      DATABASE_URL: postgresql+psycopg://harka:${POSTGRES_PASSWORD:-harka}@db:5432/harka
       REDIS_URL: redis://redis:6379/0
     command: celery -A app.worker.celery_app beat --loglevel=info --schedule /tmp/celerybeat-schedule
     depends_on:
