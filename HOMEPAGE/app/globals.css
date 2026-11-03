@@ -292,6 +292,52 @@ body {
   .msg { max-width: 88%; }
 }
 
+/* Phones, video-call style: Rara fills the screen with her face in the top third, the chat is a glass sheet over the rest of her. */
+@media (max-width: 900px) {
+  .page { padding: 10px 10px max(10px, env(safe-area-inset-bottom)); }
+  .topbar { justify-content: center; }
+  .logo { font-size: 12px; }
+  .studio { grid-template-rows: minmax(0, 1fr); gap: 0; padding-top: 4px; }
+  .studio > .stage, .studio > .chat-slot { grid-area: 1 / 1; }
+  .studio .stage { height: auto; border-radius: 22px; }
+  .studio .avatar-slot { top: 20%; }
+  .chat-slot { align-self: end; height: 64%; }
+  .chat {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.46) 70%);
+    backdrop-filter: blur(6px);
+    border-color: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 -12px 40px rgba(58, 46, 46, 0.08);
+  }
+  /* The bubbles are solid, so only the header and input bar need their own glass to stay legible over her. */
+  .chat-head { background: rgba(255, 255, 255, 0.62); backdrop-filter: blur(14px); }
+  .chat-foot { background: rgba(255, 255, 255, 0.62); backdrop-filter: blur(14px); }
+  /* Older messages dissolve upward into Rara instead of ending at a hard edge. */
+  .chat-log { mask-image: linear-gradient(to bottom, transparent, #000 28px); }
+  /* Typing: the keyboard halves the screen, so Rara steps back to a small portrait above the sheet, face still whole. */
+  .studio:has(.inputbar:focus-within) .chat-slot { height: calc(100% - 132px); }
+  .studio:has(.inputbar:focus-within) .avatar-slot { top: 66px; transform: scale(0.5); }
+
+  .chat-head { padding: 10px 12px; gap: 10px; }
+  .chat-avatar { width: 36px; height: 36px; }
+  .chat-who b { font-size: 19px; }
+  .chat-reset { width: 44px; height: 44px; }
+  .chat-log { padding: 14px 12px; gap: 8px; scroll-padding-bottom: 12px; }
+  .msg { max-width: 92%; font-size: 15px; line-height: 1.6; }
+  .msg-meta { min-height: 24px; }
+  .msg-copy { width: 32px; height: 32px; }
+  .product-card { width: 100%; }
+
+  .chat-foot { gap: 8px; padding: 8px 10px max(10px, env(safe-area-inset-bottom)); }
+  /* One swipeable row of suggestions instead of a wrapping block that eats chat height. */
+  .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -10px; padding: 0 10px 2px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; min-height: 40px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+  .inputbar { padding: 4px 4px 4px 16px; }
+  /* 16px stops iOS Safari from zooming the page when the field gets focus. */
+  .inputbar input { font-size: 16px; padding: 10px 0; }
+  .icon-btn { width: 44px; height: 44px; }
+}
+
 @media (max-width: 768px) {
   .badge { position: static; }
   .topbar { flex-wrap: wrap; gap: 8px; }
