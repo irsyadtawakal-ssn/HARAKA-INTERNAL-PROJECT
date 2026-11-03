@@ -15,12 +15,12 @@ dependencies = [
     "argon2-cffi==23.1.0",
     "boto3==1.35.81",
     "celery[redis]==5.4.0",
+    "httpx==0.28.1",
 ]
 
 [dependency-groups]
 dev = [
     "pytest==8.3.4",
-    "httpx==0.28.1",
 ]
 
 [tool.pytest.ini_options]

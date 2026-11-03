@@ -246,3 +246,43 @@ def upload(client):
         return {"ticket": ticket, "response": done}
 
     return _upload
+
+
+class FakeLLM:
+    """Mengganti satu-satunya jalur HTTP ke LLM (`app.llm._chat`); wrapper `complete` + agent_runs tetap asli."""
+
+    def __init__(self) -> None:
+        self.queues: dict[str, list] = {}
+        self.calls: list[dict] = []
+
+    def reply(self, slot: str, payload) -> None:
+        """payload: dict/list (jadi JSON), str (apa adanya), atau Exception (dilempar)."""
+        self.queues.setdefault(slot, []).append(payload)
+
+
+@pytest.fixture
+def fake_llm(monkeypatch, db):
+    import json
+
+    from app import llm
+
+    fake = FakeLLM()
+    monkeypatch.setattr(
+        llm, "get_settings", lambda: llm.get_settings.__wrapped__().model_copy(update={"llm_base_url": "http://fake-llm", "llm_api_key": "k"})
+    )
+    db.merge(GuardrailSetting(key=llm.SETTING_KEY, value={"analysis_model": "model-analisis", "writer_model": "model-writer"}))
+    db.commit()
+
+    def _chat(base_url, api_key, model, messages):
+        slot = "analysis" if model == "model-analisis" else "writer"
+        fake.calls.append({"slot": slot, "model": model, "messages": messages})
+        queue = fake.queues.get(slot) or []
+        assert queue, f"fake_llm: tidak ada balasan untuk slot {slot}"
+        item = queue.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        text = item if isinstance(item, str) else json.dumps(item)
+        return text, {"prompt_tokens": 10, "completion_tokens": 5}
+
+    monkeypatch.setattr(llm, "_chat", _chat)
+    return fake

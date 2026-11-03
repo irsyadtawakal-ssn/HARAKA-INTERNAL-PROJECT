@@ -212,3 +212,12 @@ class FlowUploadedIn(BaseModel):
     storage_key: str = Field(min_length=1, max_length=300)
     width: int | None = Field(default=None, ge=0)
     height: int | None = Field(default=None, ge=0)
+
+
+class ContentLlmIn(BaseModel):
+    analysis_model: str = Field(max_length=120)
+    writer_model: str = Field(max_length=120)
+
+
+class ContentLlmOut(ContentLlmIn):
+    pass

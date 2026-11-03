@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     # True = task Celery dijalankan langsung di proses (uji / dev tanpa worker).
     celery_eager: bool = False
 
+    # LLM untuk tab konten (spec §4.1). Nama model dipilih owner lewat /settings/content-llm.
+    llm_base_url: str = ""
+    llm_api_key: str = ""
+    llm_transcribe_model: str = ""
+
     cors_origins: list[str] = ["http://localhost:3010"]
 
     # Owner pertama dibuat saat tabel users masih kosong.

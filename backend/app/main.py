@@ -10,7 +10,7 @@ from app import audit, storage
 from app.config import get_settings
 from app.db import get_db, get_sessionmaker
 from app.models import User
-from app.routers import assets, auth, flow, render, users
+from app.routers import assets, auth, content, flow, render, users
 from app.security import hash_password
 
 log = logging.getLogger("harka")
@@ -60,6 +60,7 @@ app.include_router(users.router)
 app.include_router(assets.router)
 app.include_router(render.router)
 app.include_router(flow.router)
+app.include_router(content.router)
 
 
 @app.get("/health", tags=["health"])
