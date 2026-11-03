@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Google Flow Autopilot Bridge (Veo 3.1 Auto-Generate & 720p Download)",
-  "version": "3.0",
-  "description": "100% Hands-Free Autopilot untuk Google Flow (flow.google.com): Auto-Set Video + Frames + 9:16 + 720p + x2, Auto-Upload Start Frame, Auto-Prompt, Auto-Select & Download 720p Berantai.",
+  "name": "Haraka Flow Render Bridge",
+  "version": "4.0",
+  "description": "Mengambil job render dari backend Haraka Factory, menjalankannya otomatis di Google Flow (Video + Frames + 9:16 + 720p + x2), lalu mengembalikan klip 720p.",
   "permissions": [
     "tabs",
     "downloads",
@@ -10,8 +10,12 @@
   ],
   "host_permissions": [
     "https://flow.google.com/*",
-    "https://labs.google/*",
-    "http://localhost:3210/*"
+    "https://labs.google/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -22,12 +26,12 @@
         "https://flow.google.com/*",
         "https://labs.google/*"
       ],
-      "js": ["content.js"],
+      "js": ["lib.js", "content.js"],
       "run_at": "document_end"
     }
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Google Flow Autopilot"
+    "default_title": "Haraka Flow Render Bridge"
   }
 }

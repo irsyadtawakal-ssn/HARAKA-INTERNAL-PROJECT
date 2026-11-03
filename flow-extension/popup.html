@@ -5,36 +5,14 @@
   <style>
     * { box-sizing: border-box; }
     body {
-      width: 340px;
+      width: 320px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       padding: 16px;
       margin: 0;
       background: #0f172a;
       color: #f8fafc;
     }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    h3 {
-      margin: 0;
-      font-size: 15px;
-      color: #38bdf8;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .status-badge {
-      padding: 3px 8px;
-      background: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      border-radius: 99px;
-      font-size: 10px;
-      font-weight: 700;
-    }
+    h3 { margin: 0 0 12px; font-size: 15px; color: #38bdf8; }
     label {
       display: block;
       font-size: 11px;
@@ -44,7 +22,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    input[type="file"], textarea {
+    input {
       width: 100%;
       background: #1e293b;
       border: 1px solid #334155;
@@ -55,14 +33,7 @@
       font-family: inherit;
       margin-bottom: 10px;
     }
-    textarea {
-      resize: vertical;
-      min-height: 62px;
-    }
-    textarea:focus {
-      outline: none;
-      border-color: #38bdf8;
-    }
+    input:focus { outline: none; border-color: #38bdf8; }
     .btn {
       width: 100%;
       padding: 10px 12px;
@@ -71,56 +42,28 @@
       font-size: 12px;
       font-weight: 700;
       cursor: pointer;
-      transition: opacity 0.15s;
-      margin-bottom: 8px;
-    }
-    .btn:hover { opacity: 0.92; }
-    .btn-primary {
-      background: linear-gradient(135deg, #2563eb, #7c3aed);
+      background: #2563eb;
       color: #ffffff;
     }
-    .btn-secondary {
-      background: #1e293b;
-      color: #cbd5e1;
-      border: 1px solid #334155;
-    }
-    #msg {
-      font-size: 11px;
-      color: #fbbf24;
-      margin-top: 4px;
-      min-height: 16px;
-    }
-    .hint {
-      font-size: 10px;
-      color: #64748b;
-      line-height: 1.35;
-      margin-top: 6px;
-    }
+    #msg { font-size: 11px; color: #fbbf24; margin-top: 8px; min-height: 16px; }
+    #job { font-size: 11px; color: #cbd5e1; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h3>⚡ Google Flow Autopilot</h3>
-    <span class="status-badge">● READY</span>
-  </div>
+  <h3>Haraka Flow Render Bridge</h3>
 
-  <label>1. Foto Referensi Start Frame (.jpg/.png)</label>
-  <input type="file" id="avatarInput" accept="image/*" />
+  <label for="backendUrl">Alamat backend</label>
+  <input id="backendUrl" placeholder="https://api.haraka-factory.id" autocomplete="off" />
 
-  <label>2. Prompt Video 1 / Hook (Wajib)</label>
-  <textarea id="promptInput" placeholder="Masukkan prompt Veo 3.1 di sini... (taruh kalimat ucapan di dalam tanda kutip)"></textarea>
+  <label for="deviceToken">Token device</label>
+  <input id="deviceToken" type="password" placeholder="Dari POST /render-devices" autocomplete="off" />
 
-  <label>3. Prompt Video 2 / CTA Berantai (Opsional)</label>
-  <textarea id="ctaInput" placeholder="Kosongkan jika hanya 1 video. Jika diisi, otomatis lanjut setelah video 1 selesai download!"></textarea>
-
-  <button id="runBtn" class="btn btn-primary">🚀 Jalankan Autopilot & Auto-Download 720p</button>
-  <button id="dlBtn" class="btn btn-secondary">📥 Download Video di Layar Sekarang (720p)</button>
+  <button id="saveBtn" class="btn">Simpan &amp; uji</button>
 
   <div id="msg"></div>
-  <div class="hint">
-    Bisa dikontrol langsung lewat Popup ini ATAU otomatis via Server CLI (<code>localhost:3210</code>).
-  </div>
+  <div id="job"></div>
 
+  <script src="lib.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

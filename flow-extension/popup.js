@@ -1,85 +1,45 @@
-// Popup Controller — Memungkinkan penggunaan mandiri tanpa server maupun dengan server
-const avatarInput = document.getElementById('avatarInput');
-const promptInput = document.getElementById('promptInput');
-const ctaInput = document.getElementById('ctaInput');
-const runBtn = document.getElementById('runBtn');
-const dlBtn = document.getElementById('dlBtn');
+// Popup: atur alamat backend + token device, lalu uji koneksi lewat GET /flow/ping.
+const backendInput = document.getElementById('backendUrl');
+const tokenInput = document.getElementById('deviceToken');
+const saveBtn = document.getElementById('saveBtn');
 const msgEl = document.getElementById('msg');
+const jobEl = document.getElementById('job');
 
-let cachedDataUrl = '';
-let cachedFileName = '';
+function say(text, color) {
+  msgEl.style.color = color;
+  msgEl.textContent = text;
+}
 
-// Muat input terakhir dari storage agar tidak hilang saat popup tertutup
-chrome.storage?.local?.get(['savedPrompt', 'savedCta', 'savedAvatarDataUrl', 'savedAvatarName'], (res) => {
-  if (res.savedPrompt) promptInput.value = res.savedPrompt;
-  if (res.savedCta) ctaInput.value = res.savedCta;
-  if (res.savedAvatarDataUrl) cachedDataUrl = res.savedAvatarDataUrl;
-  if (res.savedAvatarName) cachedFileName = res.savedAvatarName;
+chrome.storage.local.get(['backendUrl', 'deviceToken', 'activeJobId'], (s) => {
+  if (s.backendUrl) backendInput.value = s.backendUrl;
+  if (s.deviceToken) tokenInput.value = s.deviceToken;
+  jobEl.textContent = s.activeJobId ? `Job aktif: ${s.activeJobId}` : 'Tidak ada job aktif.';
 });
 
-promptInput.addEventListener('input', () => {
-  chrome.storage?.local?.set({ savedPrompt: promptInput.value });
-});
-ctaInput.addEventListener('input', () => {
-  chrome.storage?.local?.set({ savedCta: ctaInput.value });
-});
-
-avatarInput.addEventListener('change', (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  cachedFileName = file.name;
-  const reader = new FileReader();
-  reader.onload = () => {
-    cachedDataUrl = reader.result;
-    chrome.storage?.local?.set({
-      savedAvatarDataUrl: cachedDataUrl,
-      savedAvatarName: cachedFileName,
-    });
-    msgEl.style.color = '#34d399';
-    msgEl.textContent = `✅ Foto siap: ${cachedFileName}`;
-  };
-  reader.readAsDataURL(file);
-});
-
-runBtn.addEventListener('click', () => {
-  const prompt = promptInput.value.trim();
-  const ctaPrompt = ctaInput.value.trim();
-  if (!prompt) {
-    msgEl.style.color = '#f87171';
-    msgEl.textContent = '⚠️ Isi Prompt Video 1 terlebih dahulu!';
+saveBtn.addEventListener('click', async () => {
+  const backendUrl = backendInput.value.trim().replace(/\/+$/, '');
+  const deviceToken = tokenInput.value.trim();
+  let pingUrl;
+  try {
+    pingUrl = apiUrl(backendUrl, '/flow/ping');
+  } catch (e) {
+    say(e.message, '#f87171');
     return;
   }
-
-  const payload = {
-    prompt,
-    ctaPrompt,
-    avatarFile: cachedFileName || 'reference_avatar.jpg',
-    avatarUrl: cachedDataUrl || '',
-    slot: 'hook',
-  };
-
-  msgEl.style.color = '#fbbf24';
-  msgEl.textContent = '⏳ Mengirim tugas ke tab Google Flow...';
-
-  chrome.runtime.sendMessage({ action: 'TRIGGER_FROM_POPUP', data: payload }, (res) => {
-    if (res && res.ok) {
-      msgEl.style.color = '#34d399';
-      msgEl.textContent = '🚀 Autopilot berjalan di tab Google Flow!';
-    } else {
-      msgEl.style.color = '#f87171';
-      msgEl.textContent = res?.error || '⚠️ Buka tab flow.google.com terlebih dahulu!';
-    }
-  });
-});
-
-dlBtn.addEventListener('click', () => {
-  chrome.runtime.sendMessage({ action: 'TRIGGER_FROM_POPUP', data: { action: 'DOWNLOAD_NOW' } }, (res) => {
-    if (res && res.ok) {
-      msgEl.style.color = '#34d399';
-      msgEl.textContent = '📥 Memicu evaluasi & download 720p di tab Flow!';
-    } else {
-      msgEl.style.color = '#f87171';
-      msgEl.textContent = res?.error || '⚠️ Buka tab flow.google.com terlebih dahulu!';
-    }
+  if (!deviceToken) {
+    say('Isi token device terlebih dahulu.', '#f87171');
+    return;
+  }
+  // Izin host hanya untuk origin backend ini (bukan semua situs).
+  const granted = await chrome.permissions.request({ origins: [new URL(backendUrl).origin + '/*'] });
+  if (!granted) {
+    say('Izin akses ke alamat backend ditolak.', '#f87171');
+    return;
+  }
+  await chrome.storage.local.set({ backendUrl, deviceToken });
+  say('Menguji koneksi...', '#fbbf24');
+  chrome.runtime.sendMessage({ action: 'API', method: 'GET', path: '/flow/ping' }, (res) => {
+    if (res && res.ok) say(`Terhubung sebagai device "${res.data.device}".`, '#34d399');
+    else say((res && res.data && res.data.detail) || `Gagal menghubungi ${pingUrl}`, '#f87171');
   });
 });

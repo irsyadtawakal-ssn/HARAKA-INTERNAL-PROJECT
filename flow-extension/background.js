@@ -1,25 +1,51 @@
-// Background Service Worker — Never-Sleep Bridge via Content Script Heartbeat + Polling + Popup Trigger
-console.log('⚡ [Google Flow Autopilot] Background Service Worker v3.0 aktif...');
+// Background Service Worker — jembatan ber-token ke backend Haraka Factory.
+// Satu-satunya jalur ke API backend (X-Device-Token tidak pernah masuk ke halaman Flow).
+importScripts('lib.js');
+console.log('⚡ [Haraka Flow] Background Service Worker v4.0 aktif...');
 
-let memoryQueue = null;
+const FLOW_TABS = ['*://flow.google.com/*', '*://labs.google/*'];
+let claiming = false;
 
-async function fetchQueueFromServer() {
-  if (memoryQueue) {
-    const item = memoryQueue;
-    memoryQueue = null;
-    return item;
-  }
+function getConfig() {
+  return chrome.storage.local.get(['backendUrl', 'deviceToken', 'activeJobId']);
+}
+
+async function callApi(method, path, body) {
+  const { backendUrl, deviceToken } = await getConfig();
+  if (!backendUrl || !deviceToken) return { ok: false, status: 0, data: { detail: 'Backend URL / token device belum diisi di popup.' } };
   try {
-    const res = await fetch('http://localhost:3210/api/flow-queue', { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data && (data.prompt || data.action === 'DOWNLOAD_NOW')) {
-      return data;
-    }
+    const res = await fetch(apiUrl(backendUrl, path), {
+      method,
+      cache: 'no-store',
+      headers: { 'X-Device-Token': deviceToken, 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
   } catch (e) {
-    // server lokal sedang tidak aktif (mode mandiri / popup)
+    return { ok: false, status: 0, data: { detail: String((e && e.message) || e) } };
   }
-  return null;
+}
+
+// Ambil job baru hanya bila tidak ada job aktif dan tab Flow terbuka.
+async function claimIfIdle() {
+  if (claiming) return;
+  claiming = true;
+  try {
+    const { activeJobId } = await getConfig();
+    if (activeJobId) return;
+    const tabs = await chrome.tabs.query({ url: FLOW_TABS });
+    const tab = tabs.find((t) => t.id);
+    if (!tab) return;
+    const r = await callApi('POST', '/flow/claim');
+    if (!r.ok || !r.data || !r.data.job) return;
+    const task = r.data.job;
+    await chrome.storage.local.set({ activeJobId: task.job_id, activeJobSince: Date.now() });
+    // Satu tab Flow saja yang mengerjakan job.
+    chrome.tabs.sendMessage(tab.id, { action: 'INJECT_PROMPT', data: task }).catch(() => {});
+  } finally {
+    claiming = false;
+  }
 }
 
 // Catat kapan Chrome benar-benar memulai sebuah download
@@ -30,30 +56,22 @@ if (chrome.downloads && chrome.downloads.onCreated) {
   });
 }
 
-// 1. Terima heartbeat dari content.js & perintah dari popup.js
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // Heartbeat content.js tiap 1,2 detik: menjaga Service Worker tetap bangun + kesempatan klaim job.
   if (msg && msg.action === 'POLL_QUEUE') {
-    fetchQueueFromServer().then((data) => {
-      sendResponse({ ok: true, data });
-    });
+    claimIfIdle().finally(() => sendResponse({ ok: true }));
     return true;
   }
 
-  // Perintah langsung dari Popup UI extension (tanpa butuh server localhost)
-  if (msg && msg.action === 'TRIGGER_FROM_POPUP' && msg.data) {
-    const payload = { ...msg.data, time: Date.now() };
-    chrome.tabs.query({ url: ['*://flow.google.com/*', '*://labs.google/*'] }, (tabs) => {
-      if (tabs && tabs.length > 0) {
-        for (const tab of tabs) {
-          if (tab.id) {
-            chrome.tabs.sendMessage(tab.id, { action: 'INJECT_PROMPT', data: payload }).catch(() => {});
-          }
-        }
-        sendResponse({ ok: true, sentToTabs: tabs.length });
-      } else {
-        memoryQueue = payload;
-        sendResponse({ ok: false, error: 'Tab flow.google.com belum dibuka! Silakan buka flow.google.com terlebih dahulu.' });
-      }
+  if (msg && msg.action === 'API') {
+    callApi(msg.method || 'GET', msg.path, msg.body).then(sendResponse);
+    return true;
+  }
+
+  if (msg && msg.action === 'JOB_FINISHED') {
+    chrome.storage.local.get(['activeJobId'], (s) => {
+      if (!msg.jobId || s.activeJobId === msg.jobId) chrome.storage.local.remove(['activeJobId', 'activeJobSince']);
+      sendResponse({ ok: true });
     });
     return true;
   }
@@ -91,15 +109,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
 });
 
-// 2. Fallback polling dari background setiap 2 detik
+// Job aktif yang macet (tab ditutup / content script mati) dilepas setelah 20 menit;
+// backend sudah mengembalikan job ke antrian setelah lease 15 menit habis.
 setInterval(async () => {
-  const data = await fetchQueueFromServer();
-  if (data && (data.prompt || data.action === 'DOWNLOAD_NOW')) {
-    const tabs = await chrome.tabs.query({ url: ['*://flow.google.com/*', '*://labs.google/*'] });
-    for (const tab of tabs) {
-      if (tab.id) {
-        chrome.tabs.sendMessage(tab.id, { action: 'INJECT_PROMPT', data }).catch(() => {});
-      }
-    }
+  const s = await chrome.storage.local.get(['activeJobId', 'activeJobSince']);
+  if (s.activeJobId && Date.now() - (s.activeJobSince || 0) > 20 * 60 * 1000) {
+    await chrome.storage.local.remove(['activeJobId', 'activeJobSince']);
   }
-}, 2000);
+}, 60000);
