@@ -494,6 +494,26 @@ export const DEFAULT_RARA_CONFIG: RaraConfig = {
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const CONFIG_PATH = path.join(DATA_DIR, "rara-config.json");
+// API keys saved from the dashboard live here (gitignored) instead of the committed rara-config.json
+const SECRETS_PATH = path.join(DATA_DIR, "rara-secrets.json");
+
+type RaraSecrets = { llmApiKey: string; elevenlabsApiKey: string; vpsWaWebhookSecret: string };
+
+function readSecrets(): RaraSecrets {
+  try {
+    if (fs.existsSync(SECRETS_PATH)) {
+      const raw = JSON.parse(fs.readFileSync(SECRETS_PATH, "utf8"));
+      return {
+        llmApiKey: String(raw.llmApiKey || ""),
+        elevenlabsApiKey: String(raw.elevenlabsApiKey || ""),
+        vpsWaWebhookSecret: String(raw.vpsWaWebhookSecret || ""),
+      };
+    }
+  } catch (err) {
+    console.error("Error reading rara-secrets.json:", err);
+  }
+  return { llmApiKey: "", elevenlabsApiKey: "", vpsWaWebhookSecret: "" };
+}
 const KNOWLEDGE_MD_PATH = path.join(process.cwd(), "lib", "knowledge", "haraka.md");
 const MANIFEST_PATH = path.join(process.cwd(), "public", "avatar", "manifest.json");
 
@@ -660,7 +680,7 @@ export function applyPronunciationDictionary(text: string, rules: PronunciationR
 }
 
 /** 9Router is the only LLM engine; endpoint/models saved for another provider are discarded. */
-function mergeLlmConfig(rawLlm: Partial<RaraConfig["llm"]> | undefined): RaraConfig["llm"] {
+function mergeLlmConfig(rawLlm: Partial<RaraConfig["llm"]> | undefined, secretKey: string): RaraConfig["llm"] {
   const saved = rawLlm?.provider === "9router" ? rawLlm : { ...rawLlm, baseUrl: "", model: "", fallbackModel: "" };
   return {
     ...DEFAULT_RARA_CONFIG.llm,
@@ -668,7 +688,7 @@ function mergeLlmConfig(rawLlm: Partial<RaraConfig["llm"]> | undefined): RaraCon
     provider: "9router",
     // Fallback to env if saved config has empty key/baseUrl
     baseUrl: saved.baseUrl || process.env.LLM_BASE_URL || DEFAULT_RARA_CONFIG.llm.baseUrl,
-    apiKey: saved.apiKey || process.env.LLM_API_KEY || "",
+    apiKey: secretKey || saved.apiKey || process.env.LLM_API_KEY || "",
     model: saved.model || process.env.LLM_MODEL || DEFAULT_RARA_CONFIG.llm.model,
     fallbackModel: saved.fallbackModel || process.env.LLM_FALLBACK_MODEL || DEFAULT_RARA_CONFIG.llm.fallbackModel,
   };
@@ -678,15 +698,17 @@ export function getRaraConfig(): RaraConfig {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
       const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
+      const secrets = readSecrets();
       const merged: RaraConfig = {
         ...DEFAULT_RARA_CONFIG,
         ...raw,
         visual: { ...DEFAULT_RARA_CONFIG.visual, ...(raw.visual || {}) },
-        llm: mergeLlmConfig(raw.llm),
+        llm: mergeLlmConfig(raw.llm, secrets.llmApiKey),
         voice: {
           ...DEFAULT_RARA_CONFIG.voice,
           ...(raw.voice || {}),
-          elevenlabsApiKey: raw.voice?.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "",
+          elevenlabsApiKey:
+            secrets.elevenlabsApiKey || raw.voice?.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || "",
           voiceId: raw.voice?.voiceId || process.env.ELEVENLABS_VOICE_ID || DEFAULT_RARA_CONFIG.voice.voiceId,
         },
         knowledge: {
@@ -696,7 +718,11 @@ export function getRaraConfig(): RaraConfig {
         },
         persona: { ...DEFAULT_RARA_CONFIG.persona, ...(raw.persona || {}) },
         guardrails: { ...DEFAULT_RARA_CONFIG.guardrails, ...(raw.guardrails || {}) },
-        leadRules: { ...DEFAULT_RARA_CONFIG.leadRules, ...(raw.leadRules || {}) },
+        leadRules: {
+          ...DEFAULT_RARA_CONFIG.leadRules,
+          ...(raw.leadRules || {}),
+          vpsWaWebhookSecret: secrets.vpsWaWebhookSecret || raw.leadRules?.vpsWaWebhookSecret || "",
+        },
       };
       if (!merged.knowledge.rawMarkdown) {
         merged.knowledge.rawMarkdown = compileKnowledgeMarkdown({ ...merged.knowledge, activeMode: "structured" });
@@ -718,23 +744,16 @@ export function getRaraConfig(): RaraConfig {
 }
 
 export function saveRaraConfig(nextConfig: RaraConfig): RaraConfig {
-  const current = fs.existsSync(CONFIG_PATH)
-    ? (() => {
-        try {
-          return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
-        } catch {
-          return DEFAULT_RARA_CONFIG;
-        }
-      })()
-    : DEFAULT_RARA_CONFIG;
+  const current = fs.existsSync(CONFIG_PATH) ? getRaraConfig() : DEFAULT_RARA_CONFIG;
 
   // Preserve secret API keys if masked "***" is sent from client
   const llmApiKey =
-    nextConfig.llm?.apiKey === "***MASKED***" ? current.llm?.apiKey || process.env.LLM_API_KEY || "" : nextConfig.llm?.apiKey ?? "";
+    nextConfig.llm?.apiKey === "***MASKED***" ? current.llm?.apiKey || "" : nextConfig.llm?.apiKey ?? "";
   const elevenApiKey =
     nextConfig.voice?.elevenlabsApiKey === "***MASKED***"
-      ? current.voice?.elevenlabsApiKey || process.env.ELEVENLABS_API_KEY || ""
+      ? current.voice?.elevenlabsApiKey || ""
       : nextConfig.voice?.elevenlabsApiKey ?? "";
+  const webhookSecret = nextConfig.leadRules?.vpsWaWebhookSecret ?? "";
 
   const finalConfig: RaraConfig = {
     ...nextConfig,
@@ -758,7 +777,21 @@ export function saveRaraConfig(nextConfig: RaraConfig): RaraConfig {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
-  fs.writeFileSync(CONFIG_PATH, JSON.stringify(finalConfig, null, 2), "utf8");
+  // Keys saved from the dashboard go to the gitignored secrets file; env values are not copied there
+  const secrets: RaraSecrets = {
+    llmApiKey: llmApiKey === process.env.LLM_API_KEY ? "" : llmApiKey,
+    elevenlabsApiKey: elevenApiKey === process.env.ELEVENLABS_API_KEY ? "" : elevenApiKey,
+    vpsWaWebhookSecret: webhookSecret,
+  };
+  fs.writeFileSync(SECRETS_PATH, JSON.stringify(secrets, null, 2), "utf8");
+
+  const publicConfig: RaraConfig = {
+    ...finalConfig,
+    llm: { ...finalConfig.llm, apiKey: "" },
+    voice: { ...finalConfig.voice, elevenlabsApiKey: "" },
+    leadRules: finalConfig.leadRules && { ...finalConfig.leadRules, vpsWaWebhookSecret: "" },
+  };
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(publicConfig, null, 2), "utf8");
 
   // Sync lib/knowledge/haraka.md so legacy readers also stay updated
   try {

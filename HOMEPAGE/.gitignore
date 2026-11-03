@@ -38,3 +38,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 !.env.example
+
+# Rara API keys saved from the dashboard
+/data/rara-secrets.json

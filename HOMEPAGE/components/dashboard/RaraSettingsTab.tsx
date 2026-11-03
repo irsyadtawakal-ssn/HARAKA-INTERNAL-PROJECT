@@ -57,6 +57,13 @@ const VOICE_PRESETS = [
 export default function RaraSettingsTab() {
   const [subTab, setSubTab] = useState<SubTabId>("visual");
   const [config, setConfig] = useState<RaraConfig | null>(null);
+  // Last config the server confirmed; anything different has not reached Rara Live yet
+  const [savedSnapshot, setSavedSnapshot] = useState("");
+  const isDirty = Boolean(config && savedSnapshot && JSON.stringify(config) !== savedSnapshot);
+  const applyServerConfig = (cfg: RaraConfig) => {
+    setConfig(cfg);
+    setSavedSnapshot(JSON.stringify(cfg));
+  };
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ text: string; type: "ok" | "err" } | null>(null);
@@ -148,7 +155,7 @@ export default function RaraSettingsTab() {
       const res = await fetch("/api/rara-config", { cache: "no-store" });
       const json = await res.json();
       if (json.ok && json.config) {
-        setConfig(json.config);
+        applyServerConfig(json.config);
         setHasLlmKey(Boolean(json.meta?.hasLlmApiKey));
         setHasElevenKey(Boolean(json.meta?.hasElevenlabsApiKey));
         setAvailableClips(json.meta?.availableClips || []);
@@ -170,6 +177,13 @@ export default function RaraSettingsTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [isDirty]);
+
   // Load the 9Router model list once a key is saved and the LLM tab is opened
   useEffect(() => {
     if (subTab === "llm" && hasLlmKey && config && !llmModels.length && !llmModelsLoading && !llmModelsError) {
@@ -190,7 +204,7 @@ export default function RaraSettingsTab() {
       });
       const json = await res.json();
       if (json.ok) {
-        setConfig(json.config);
+        applyServerConfig(json.config);
         setHasLlmKey(Boolean(json.meta?.hasLlmApiKey));
         setHasElevenKey(Boolean(json.meta?.hasElevenlabsApiKey));
         setAvailableClips(json.meta?.availableClips || []);
@@ -218,7 +232,7 @@ export default function RaraSettingsTab() {
       });
       const json = await res.json();
       if (json.ok) {
-        setConfig(json.config);
+        applyServerConfig(json.config);
         setCompiledMarkdown(json.meta?.compiledKnowledgeMarkdown || "");
         setCompiledPrompt(json.meta?.compiledSystemPrompt || "");
         showToast("Product Knowledge berhasil disinkronkan dari harakaerfi.com!");
@@ -241,7 +255,7 @@ export default function RaraSettingsTab() {
       });
       const json = await res.json();
       if (json.ok) {
-        setConfig(json.config);
+        applyServerConfig(json.config);
         setCompiledMarkdown(json.meta?.compiledKnowledgeMarkdown || "");
         setCompiledPrompt(json.meta?.compiledSystemPrompt || "");
         showToast("Pengaturan berhasil di-reset ke default harakaerfi.com!");
@@ -300,7 +314,7 @@ export default function RaraSettingsTab() {
         });
         const json = await res.json();
         if (json.ok) {
-          setConfig(json.config);
+          applyServerConfig(json.config);
           setAvailableClips(json.meta?.availableClips || []);
           setPreviewVideo(`/avatar/${json.fileName}`);
           setActiveAvatarState(stateKey);
@@ -599,6 +613,21 @@ export default function RaraSettingsTab() {
           >
             <RotateCcw size={13} /> Reset Preset
           </button>
+          {isDirty && (
+            <span
+              style={{
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: "#9a6100",
+                background: "#fcf1db",
+                padding: "4px 10px",
+                borderRadius: 99,
+                whiteSpace: "nowrap",
+              }}
+            >
+              ● Belum disimpan — Rara Live masih memakai pengaturan lama
+            </span>
+          )}
           <button
             type="button"
             className={styles.btnPrimary}
