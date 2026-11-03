@@ -32,21 +32,26 @@ Dijalankan di VPS Factory 8 GB (terpisah dari VPS WA), di mesin yang sama dengan
 ### 1. Desktop virtual + VNC
 
 ```bash
-sudo apt install -y xvfb xfce4 x11vnc
+sudo apt install -y xvfb x11vnc fluxbox acl fonts-noto-core fonts-noto-color-emoji
 ```
 
-- Jalankan Xvfb di display `:1` (misalnya `Xvfb :1 -screen 0 1440x900x24`) dan desktop ringan di atasnya.
-- `x11vnc` **hanya** listen di `127.0.0.1`. Akses dari laptop lewat SSH tunnel:
+Terpasang di VPS Factory sebagai unit systemd (semua berjalan sebagai user `flow`):
+- `flow-xvfb`: `Xvfb :1 -screen 0 1440x900x24 -nolisten tcp`.
+- `flow-desktop`: `fluxbox` di `:1`.
+- `flow-vnc`: `x11vnc -display :1 -localhost -rfbport 5901`. Listen **hanya** di `127.0.0.1`, tanpa password, karena satu-satunya jalan masuk adalah SSH tunnel. Akses dari laptop:
 
 ```bash
-ssh -L 5901:127.0.0.1:5901 user@vps-factory
+ssh -L 5901:127.0.0.1:5901 root@<ip-vps>
 ```
+
+Lalu buka VNC viewer ke `localhost:5901`.
 
 ### 2. Google Chrome dengan profil khusus
 
 - Pasang Google Chrome stable (bukan Chromium), non-headless.
 - Profil: `/srv/flow-chrome-profile`. Login sekali lewat VNC dengan akun Google render, termasuk 2FA.
-- Setelan Chrome → Downloads: lokasi `/srv/flow-downloads`, matikan "Ask where to save each file".
+- Folder unduhan diatur lewat kebijakan Chrome `/etc/opt/chrome/policies/managed/haraka-flow.json`, dengan isi `{"DownloadDirectory": "/srv/flow-downloads", "PromptForDownloadLocation": false}`.
+- Chrome akan bertanya apakah `labs.google` boleh mengakses jaringan lokal (karena backend ada di `http://localhost`). Jawab **Allow**.
 
 ### 3. Unit systemd (batas memori + restart harian)
 
