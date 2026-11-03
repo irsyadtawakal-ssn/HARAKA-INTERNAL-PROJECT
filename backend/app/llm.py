@@ -71,12 +71,12 @@ def _chat(base_url: str, api_key: str, model: str, messages: list[dict]) -> tupl
 
 
 def complete(
-    db: Session, *, agent: str, slot: Slot, messages: list[dict], expect_json: bool = True
+    db: Session, *, agent: str, slot: Slot, messages: list[dict], expect_json: bool = True, prompt_version: str | None = None
 ) -> dict | list | str:
     """Panggil model slot `slot`; selalu meninggalkan satu baris agent_runs (berhasil maupun gagal)."""
     settings = get_settings()
     model = get_models(db)[f"{slot}_model"]
-    run = AgentRun(agent=agent, model=model or None, input_refs={"slot": slot}, status="running")
+    run = AgentRun(agent=agent, model=model or None, prompt_version=prompt_version, input_refs={"slot": slot}, status="running")
     db.add(run)
     db.flush()
     started = time.monotonic()

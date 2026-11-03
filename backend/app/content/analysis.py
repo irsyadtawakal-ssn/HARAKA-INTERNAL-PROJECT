@@ -66,7 +66,7 @@ def analyze_reference(db: Session, job: ContentJob) -> tuple[AssetAnalysis, Asse
         content = [{"type": "text", "text": f"Tipe konten: {job.type}. Funnel {job.funnel}." + (f"\nTranskrip audio: {transcript}" if transcript else "")}]
         content += [_image_part(f) for f in frames]
         result = llm.complete(
-            db, agent="content_analysis", slot="analysis",
+            db, agent="content_analysis", slot="analysis", prompt_version=PROMPT_VERSION,
             messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": content}],
         )
         if not isinstance(result, dict):
