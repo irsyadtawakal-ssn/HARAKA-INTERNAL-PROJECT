@@ -48,6 +48,16 @@ LEAD_EVENTS = (
     "deal_lost",
     "opt_out",
 )
+RENDER_MODES = ("talking_head", "broll")
+RENDER_SLOTS = ("hook", "body", "cta", "broll")
+# Durasi klip yang bisa dipilih di Google Flow.
+RENDER_DURATIONS = ("4s", "6s", "8s", "10s")
+# Status selama job dipegang extension; lease dihitung dari heartbeat_at.
+RENDER_ACTIVE_STATUSES = ("claimed", "uploading_ref", "generating", "downloading")
+# downloaded: unduhan sudah dipicu, job tidak lagi dipegang device; menunggu file di-ingest (tetap kena lease).
+RENDER_STATUSES = ("queued", *RENDER_ACTIVE_STATUSES, "downloaded", "done", "failed")
+# Status yang bisa dipasangkan dengan file di folder unduhan Chrome.
+RENDER_INGEST_STATUSES = ("downloading", "downloaded")
 APPROVAL_ACTIONS = (
     "claim",
     "testimonial",
@@ -167,6 +177,57 @@ class AgentRun(Base):
     error: Mapped[str | None] = mapped_column(Text)
     duration_ms: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = _created_at()
+
+
+class RenderDevice(Base):
+    """Mesin Chrome + extension Google Flow yang boleh mengambil job render. Token disimpan sebagai hash."""
+
+    __tablename__ = "render_devices"
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = _created_at()
+
+
+class RenderJob(Base):
+    """Satu klip yang dirender di Google Flow dari satu foto referensi (spec §4.2)."""
+
+    __tablename__ = "render_jobs"
+    __table_args__ = (
+        CheckConstraint(_in("mode", RENDER_MODES), name="mode_valid"),
+        CheckConstraint(_in("slot", RENDER_SLOTS), name="slot_valid"),
+        CheckConstraint(_in("status", RENDER_STATUSES), name="status_valid"),
+        CheckConstraint(
+            f"target_duration IS NULL OR {_in('target_duration', RENDER_DURATIONS)}", name="target_duration_valid"
+        ),
+        Index("render_jobs_queue_idx", "status", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    mode: Mapped[str] = mapped_column(String(20), nullable=False)
+    slot: Mapped[str] = mapped_column(String(10), nullable=False)
+    prompt: Mapped[str] = mapped_column(Text, nullable=False)
+    # Kosong = extension menghitung durasi dari panjang dialog.
+    target_duration: Mapped[str | None] = mapped_column(String(4))
+    reference_asset_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("assets.id"), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued")
+    stage_message: Mapped[str | None] = mapped_column(Text)
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    device_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("render_devices.id"))
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    result_asset_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("assets.id"))
+    # Nama file unduhan Chrome yang dilaporkan extension; dipakai ingest untuk memasangkan file ke job yang tepat.
+    download_filename: Mapped[str | None] = mapped_column(String(255))
+    error: Mapped[str | None] = mapped_column(Text)
+    requested_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
 
 
 class AssetAnalysis(Base):

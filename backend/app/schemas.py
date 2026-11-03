@@ -117,3 +117,98 @@ class AssetOut(BaseModel):
 class AssetPage(BaseModel):
     items: list[AssetOut]
     total: int
+
+
+# --- Render Google Flow (spec §4.2) ---
+RenderMode = Literal["talking_head", "broll"]
+RenderSlot = Literal["hook", "body", "cta", "broll"]
+RenderDuration = Literal["4s", "6s", "8s", "10s"]
+
+
+class RenderDeviceIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+
+
+class RenderDeviceUpdate(BaseModel):
+    is_active: bool
+
+
+class RenderDeviceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    is_active: bool
+    last_seen_at: datetime | None
+
+
+class RenderDeviceCreated(RenderDeviceOut):
+    # Hanya muncul sekali, saat device dibuat.
+    token: str
+
+
+class RenderJobIn(BaseModel):
+    reference_asset_id: uuid.UUID
+    mode: RenderMode
+    slot: RenderSlot
+    prompt: str = Field(min_length=1, max_length=4000)
+    target_duration: RenderDuration | None = None
+
+
+class RenderJobOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    mode: RenderMode
+    slot: RenderSlot
+    prompt: str
+    target_duration: RenderDuration | None
+    reference_asset_id: uuid.UUID
+    status: str
+    stage_message: str | None
+    attempts: int
+    error: str | None
+    result_asset_id: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class FlowTask(BaseModel):
+    job_id: uuid.UUID
+    mode: RenderMode
+    slot: RenderSlot
+    prompt: str
+    target_duration: RenderDuration | None
+    reference_asset_id: uuid.UUID
+    reference_url: str
+    reference_filename: str
+
+
+class FlowClaimOut(BaseModel):
+    job: FlowTask | None
+    reason: Literal["ok", "empty", "quota"]
+
+
+class RenderQuotaOut(BaseModel):
+    limit: int
+    used: int
+    remaining: int
+
+
+class FlowStatusIn(BaseModel):
+    stage: Literal["uploading_ref", "generating", "downloading", "downloaded", "failed"]
+    message: str = Field(default="", max_length=300)
+    # Untuk stage downloaded: nama file unduhan Chrome (path lengkap boleh; yang disimpan hanya nama file).
+    filename: str | None = Field(default=None, max_length=1024)
+
+
+class FlowUploadUrlOut(BaseModel):
+    upload_url: str
+    upload_headers: dict[str, str]
+    storage_key: str
+
+
+class FlowUploadedIn(BaseModel):
+    storage_key: str = Field(min_length=1, max_length=300)
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)

@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Haraka Flow Render Bridge",
+  "version": "4.0",
+  "description": "Mengambil job render dari backend Haraka Factory, menjalankannya otomatis di Google Flow (Video + Frames + 9:16 + 720p + x2), lalu mengembalikan klip 720p.",
+  "permissions": [
+    "tabs",
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://flow.google.com/*",
+    "https://labs.google/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://flow.google.com/*",
+        "https://labs.google/*"
+      ],
+      "js": ["lib.js", "content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Haraka Flow Render Bridge"
+  }
+}

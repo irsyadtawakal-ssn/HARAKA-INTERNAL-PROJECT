@@ -3,6 +3,7 @@ Jalankan `docker compose up -d` di root project sebelum `uv run pytest`."""
 
 import os
 import subprocess
+import uuid
 from pathlib import Path
 
 from dotenv import dotenv_values
@@ -25,7 +26,7 @@ from sqlalchemy import text  # noqa: E402
 
 from app.db import Base, get_engine, get_sessionmaker  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import User  # noqa: E402
+from app.models import Asset, GuardrailSetting, RenderJob, User  # noqa: E402
 from app.security import hash_password  # noqa: E402
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
@@ -97,6 +98,122 @@ def as_role(make_user, login):
         return login(user.email)
 
     return _as
+
+
+@pytest.fixture
+def photo_asset(db, make_user):
+    """Foto referensi siap pakai (ready, berlisensi kreator). Hanya baris DB; file S3 tidak diunggah."""
+    # Email sendiri supaya tes tetap bebas memanggil make_user("owner") / as_role("owner").
+    uploader = make_user("creator", "kreator-foto@uji-harka.id")
+    asset_id = uuid.uuid4()
+    asset = Asset(
+        id=asset_id,
+        type="photo",
+        status="ready",
+        storage_key=f"assets/{asset_id}/original.jpg",
+        original_filename="avatar.jpg",
+        mime="image/jpeg",
+        size_bytes=1234,
+        uploaded_by_id=uploader.id,
+        license_status="creator_licensed",
+        funnel="A",
+    )
+    db.add(asset)
+    db.commit()
+    return asset
+
+
+@pytest.fixture
+def owner_headers(make_user, login):
+    """Owner tunggal per tes (email tetap), dipakai bersama oleh fixture render."""
+    return login(make_user("owner", "owner-render@uji-harka.id").email)
+
+
+@pytest.fixture
+def make_device(client, owner_headers):
+    def _make(name: str) -> dict:
+        r = client.post("/render-devices", headers=owner_headers, json={"name": name})
+        assert r.status_code == 201, r.text
+        d = r.json()
+        return {"id": uuid.UUID(d["id"]), "headers": {"X-Device-Token": d["token"]}, "owner_headers": owner_headers}
+
+    return _make
+
+
+@pytest.fixture
+def flow_device(make_device):
+    """Device render terdaftar: {"id", "headers" (X-Device-Token), "owner_headers"}."""
+    return make_device("VPS Flow Uji")
+
+
+@pytest.fixture
+def queued_jobs(client, db, owner_headers, photo_asset):
+    """queued_jobs(n) -> n job talking head berstatus queued (lewat API), urut dari yang tertua."""
+
+    def _make(n: int) -> list[RenderJob]:
+        ids = []
+        for i in range(n):
+            r = client.post(
+                "/render-jobs",
+                headers=owner_headers,
+                json={
+                    "reference_asset_id": str(photo_asset.id),
+                    "mode": "talking_head",
+                    "slot": "hook",
+                    "prompt": f'Close-up of a woman. She says: "Hook nomor {i + 1}"',
+                },
+            )
+            assert r.status_code == 201, r.text
+            ids.append(uuid.UUID(r.json()["id"]))
+        return [db.get(RenderJob, job_id) for job_id in ids]
+
+    return _make
+
+
+@pytest.fixture
+def claimed_job(client, db, flow_device, queued_jobs):
+    """Satu job yang sudah diklaim flow_device lewat /flow/claim."""
+    (job,) = queued_jobs(1)
+    r = client.post("/flow/claim", headers=flow_device["headers"])
+    assert r.json()["job"]["job_id"] == str(job.id), r.text
+    db.refresh(job)
+    return job
+
+
+@pytest.fixture
+def downloading_job(client, db, flow_device, claimed_job):
+    """claimed_job yang sudah melapor stage downloading."""
+    r = client.post(
+        f"/flow/jobs/{claimed_job.id}/status",
+        headers=flow_device["headers"],
+        json={"stage": "downloading", "message": "Mengunduh 720p"},
+    )
+    assert r.status_code == 200, r.text
+    db.refresh(claimed_job)
+    return claimed_job
+
+
+@pytest.fixture
+def second_device(make_device):
+    return make_device("VPS Flow Kedua")
+
+
+@pytest.fixture
+def done_job(db, claimed_job):
+    # Hasil render baru tersedia di Task 6; di sini cukup status akhirnya.
+    claimed_job.status = "done"
+    claimed_job.stage_message = "Selesai"
+    db.commit()
+    return claimed_job
+
+
+@pytest.fixture
+def set_limit(db):
+    def _set(limit: int) -> None:
+        db.merge(GuardrailSetting(key="flow_daily_clip_limit", value={"limit": limit}))
+        db.commit()
+
+    return _set
 
 
 @pytest.fixture(scope="session")
