@@ -41,3 +41,6 @@ yarn-error.log*
 
 # Rara API keys saved from the dashboard
 /data/rara-secrets.json
+
+# Visitor leads and chat transcripts written at runtime
+/data/rara-leads.json
