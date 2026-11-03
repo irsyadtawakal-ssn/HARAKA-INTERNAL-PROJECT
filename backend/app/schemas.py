@@ -197,3 +197,15 @@ class RenderQuotaOut(BaseModel):
 class FlowStatusIn(BaseModel):
     stage: Literal["uploading_ref", "generating", "downloading", "downloaded", "failed"]
     message: str = Field(default="", max_length=300)
+
+
+class FlowUploadUrlOut(BaseModel):
+    upload_url: str
+    upload_headers: dict[str, str]
+    storage_key: str
+
+
+class FlowUploadedIn(BaseModel):
+    storage_key: str = Field(min_length=1, max_length=300)
+    width: int | None = Field(default=None, ge=0)
+    height: int | None = Field(default=None, ge=0)

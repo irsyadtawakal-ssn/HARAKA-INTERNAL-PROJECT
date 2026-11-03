@@ -181,6 +181,19 @@ def claimed_job(client, db, flow_device, queued_jobs):
 
 
 @pytest.fixture
+def downloading_job(client, db, flow_device, claimed_job):
+    """claimed_job yang sudah melapor stage downloading."""
+    r = client.post(
+        f"/flow/jobs/{claimed_job.id}/status",
+        headers=flow_device["headers"],
+        json={"stage": "downloading", "message": "Mengunduh 720p"},
+    )
+    assert r.status_code == 200, r.text
+    db.refresh(claimed_job)
+    return claimed_job
+
+
+@pytest.fixture
 def second_device(make_device):
     return make_device("VPS Flow Kedua")
 

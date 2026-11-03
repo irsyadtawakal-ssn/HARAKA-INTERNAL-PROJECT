@@ -2,6 +2,7 @@
 
 import hashlib
 import re
+import uuid
 from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException, status
@@ -166,3 +167,36 @@ def reset_for_retry(db: Session, job: RenderJob) -> None:
     job.result_asset_id = None
     job.device_id = None
     job.stage_message = "Dijadwalkan render ulang"
+
+
+def result_storage_key(job_id) -> str:
+    return f"renders/{job_id}/{uuid.uuid4()}.mp4"
+
+
+def create_result_asset(db: Session, job: RenderJob, *, storage_key: str, size_bytes: int, filename: str) -> Asset:
+    """Klip hasil Flow jadi aset turunan foto referensi. Pemanggil commit lalu menjalankan process_asset."""
+    reference = db.get(Asset, job.reference_asset_id)
+    asset = Asset(
+        type="video",
+        status="processing",
+        storage_key=storage_key,
+        original_filename=filename,
+        mime="video/mp4",
+        size_bytes=size_bytes,
+        uploaded_by_id=job.requested_by_id,
+        license_status="internal",
+        parent_asset_id=reference.id,
+        funnel=reference.funnel,
+        notes=f"Render Google Flow ({job.mode}/{job.slot}) dari job {job.id}",
+    )
+    db.add(asset)
+    db.flush()
+    job.status = "done"
+    job.result_asset_id = asset.id
+    job.stage_message = "Selesai"
+    job.error = None
+    audit.record(
+        db, actor_type="system", actor_id="render", action="render_job.done", entity="render_job", entity_id=job.id,
+        after={"result_asset_id": str(asset.id), "storage_key": storage_key},
+    )
+    return asset
