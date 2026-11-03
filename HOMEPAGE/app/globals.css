@@ -298,9 +298,11 @@ body {
   /* The brand lives in Rara's status line here, so the top bar gives its row back to her. */
   .page { grid-template-rows: minmax(0, 1fr); }
   .topbar { display: none; }
-  .studio { grid-template-rows: minmax(0, 1fr); gap: 0; padding-top: 4px; }
+  .page { padding-top: 0; }
+  .studio { grid-template-rows: minmax(0, 1fr); gap: 0; padding-top: 0; }
   .studio > .stage, .studio > .chat-slot { grid-area: 1 / 1; }
-  .studio .stage { height: auto; border-radius: 22px; }
+  /* Full bleed to the top of the screen; the hair that runs past it fades out instead of ending on a hard line. */
+  .studio .stage { height: auto; margin: 0 -10px; mask-image: linear-gradient(to bottom, transparent, #000 64px); }
   .studio .avatar-slot { top: 20%; }
   .chat-slot { align-self: end; height: 55%; }
   .chat {
