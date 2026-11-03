@@ -66,26 +66,86 @@ async function elevenLabsError(res: Response): Promise<Error> {
   return new Error(`ElevenLabs gagal: ${res.status}${detail ? ` — ${detail}` : ""}`);
 }
 
-export type ElevenLabsVoice = { voiceId: string; name: string; category: string; description: string; previewUrl: string };
+export type ElevenLabsVoice = {
+  voiceId: string;
+  name: string;
+  description: string;
+  previewUrl: string;
+  /** "account" voices can be used right away; "library" voices must be added to the account first. */
+  source: "account" | "library";
+  publicOwnerId?: string;
+};
 
-/** Voices in the ElevenLabs account: premade ones plus clones and voices added from the Voice Library. */
-export async function listVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
-  if (!apiKey) throw new Error("API Key ElevenLabs belum diisi");
+const labelsOf = (v: Record<string, unknown>) =>
+  (v.labels && typeof v.labels === "object" ? v.labels : {}) as Record<string, string>;
+
+/** The account's own voices (clones, designs, Voice Library voices already added); ElevenLabs' English premade set is left out. */
+async function accountVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
   const res = await fetch("https://api.elevenlabs.io/v1/voices", { headers: { "xi-api-key": apiKey } });
   if (!res.ok) throw await elevenLabsError(res);
   const json = await res.json();
   const voices: Record<string, unknown>[] = Array.isArray(json?.voices) ? json.voices : [];
   return voices
+    .filter((v) => v.voice_id && v.category !== "premade")
     .map((v) => {
-      const labels = (v.labels && typeof v.labels === "object" ? v.labels : {}) as Record<string, string>;
+      const l = labelsOf(v);
       return {
-        voiceId: String(v.voice_id ?? ""),
+        voiceId: String(v.voice_id),
         name: String(v.name ?? ""),
-        category: String(v.category ?? ""),
-        description: [labels.gender, labels.age, labels.accent, labels.use_case ?? labels["use case"]].filter(Boolean).join(", "),
+        description: [l.gender, l.age, l.accent, l.language].filter(Boolean).join(", "),
         previewUrl: String(v.preview_url ?? ""),
+        source: "account" as const,
       };
-    })
-    .filter((v) => v.voiceId)
-    .sort((a, b) => Number(a.category === "premade") - Number(b.category === "premade") || a.name.localeCompare(b.name));
+    });
+}
+
+/** Indonesian female voices from the public ElevenLabs Voice Library. */
+async function libraryVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
+  const res = await fetch("https://api.elevenlabs.io/v1/shared-voices?language=id&gender=female&page_size=50", {
+    headers: { "xi-api-key": apiKey },
+  });
+  if (!res.ok) throw await elevenLabsError(res);
+  const json = await res.json();
+  const voices: Record<string, unknown>[] = Array.isArray(json?.voices) ? json.voices : [];
+  return voices
+    .filter((v) => v.voice_id && v.public_owner_id)
+    .map((v) => {
+      const verified = Array.isArray(v.verified_languages) ? (v.verified_languages as Record<string, string>[]) : [];
+      const idPreview = verified.find((l) => l.language === "id" && l.preview_url)?.preview_url;
+      return {
+        voiceId: String(v.voice_id),
+        name: String(v.name ?? ""),
+        description: [v.age, v.accent, v.use_case].filter(Boolean).map(String).join(", ").replace(/_/g, " "),
+        previewUrl: String(idPreview || v.preview_url || ""),
+        source: "library" as const,
+        publicOwnerId: String(v.public_owner_id),
+      };
+    });
+}
+
+/** Voices Rara can use: the account's own ones first, then Indonesian female voices from the Voice Library. */
+export async function listVoices(apiKey: string): Promise<ElevenLabsVoice[]> {
+  if (!apiKey) throw new Error("API Key ElevenLabs belum diisi");
+  const [own, library] = await Promise.all([accountVoices(apiKey), libraryVoices(apiKey)]);
+  const ownIds = new Set(own.map((v) => v.voiceId));
+  return [
+    ...own.sort((a, b) => a.name.localeCompare(b.name)),
+    ...library.filter((v) => !ownIds.has(v.voiceId)),
+  ];
+}
+
+/** Adds a Voice Library voice to the account (required before text-to-speech can use it); returns its voice id. */
+export async function addLibraryVoice(apiKey: string, publicOwnerId: string, voiceId: string, name: string): Promise<string> {
+  if (!apiKey) throw new Error("API Key ElevenLabs belum diisi");
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/voices/add/${encodeURIComponent(publicOwnerId)}/${encodeURIComponent(voiceId)}`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", "xi-api-key": apiKey },
+      body: JSON.stringify({ new_name: name }),
+    }
+  );
+  if (!res.ok) throw await elevenLabsError(res);
+  const json = await res.json();
+  return String(json?.voice_id || voiceId);
 }

@@ -11,7 +11,7 @@ import {
   type RaraConfig,
 } from "@/lib/raraConfig";
 import { completeChat, listModels, type ChatMessage } from "@/lib/llm";
-import { listVoices, synthesize } from "@/lib/tts";
+import { addLibraryVoice, listVoices, synthesize } from "@/lib/tts";
 import { heuristicLeadSummary, LEAD_MARKER, stripMarker } from "@/lib/lead";
 
 function listAvailableAvatarFiles(): { name: string; sizeKb: number }[] {
@@ -207,11 +207,17 @@ export async function POST(req: Request) {
       }
     }
 
-    if (action === "list_voices") {
+    if (action === "list_voices" || action === "add_voice") {
       const current = getRaraConfig();
       const draftKey = body.voice?.elevenlabsApiKey;
       const apiKey = !draftKey || draftKey === "***MASKED***" ? current.voice.elevenlabsApiKey : draftKey;
-      return NextResponse.json({ ok: true, voices: await listVoices(apiKey) });
+      if (action === "list_voices") return NextResponse.json({ ok: true, voices: await listVoices(apiKey) });
+      const { publicOwnerId, voiceId, name } = body.libraryVoice || {};
+      if (typeof publicOwnerId !== "string" || typeof voiceId !== "string") {
+        return NextResponse.json({ ok: false, error: "Suara Voice Library tidak valid" }, { status: 400 });
+      }
+      const addedId = await addLibraryVoice(apiKey, publicOwnerId, voiceId, `Rara — ${String(name || voiceId).slice(0, 60)}`);
+      return NextResponse.json({ ok: true, voiceId: addedId });
     }
 
     if (action === "simulate_chat") {
@@ -305,6 +311,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "Action tidak dikenali" }, { status: 400 });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Server error";
+    console.error("[rara-config]", msg);
     return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
 }

@@ -109,6 +109,7 @@ export default function RaraSettingsTab() {
   const [voices, setVoices] = useState<ElevenLabsVoice[]>([]);
   const [voicesLoading, setVoicesLoading] = useState(false);
   const [voicesError, setVoicesError] = useState("");
+  const [addingVoice, setAddingVoice] = useState(false);
   const [newPronTerm, setNewPronTerm] = useState("");
   const [newPronPhonetic, setNewPronPhonetic] = useState("");
 
@@ -419,6 +420,41 @@ export default function RaraSettingsTab() {
       setVoicesError(e instanceof Error ? e.message : "Gagal mengambil daftar suara");
     } finally {
       setVoicesLoading(false);
+    }
+  };
+
+  /** Library voices are added to the ElevenLabs account first, since text-to-speech only accepts account voices. */
+  const handlePickVoice = async (picked: ElevenLabsVoice) => {
+    if (!config) return;
+    if (picked.source === "account") {
+      setConfig({ ...config, voice: { ...config.voice, voiceId: picked.voiceId } });
+      return;
+    }
+    setAddingVoice(true);
+    setVoicesError("");
+    try {
+      const res = await fetch("/api/rara-config", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "add_voice", voice: config.voice, libraryVoice: picked }),
+      });
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "Gagal menambahkan suara");
+      setVoices((list) =>
+        list.map((v) => (v.voiceId === picked.voiceId ? { ...v, voiceId: json.voiceId, source: "account" } : v))
+      );
+      setConfig((c) => (c ? { ...c, voice: { ...c.voice, voiceId: json.voiceId } } : c));
+    } catch (e: unknown) {
+      // Still use the library voice id directly, so "Putar Suara" can show whether ElevenLabs accepts it as is
+      setConfig((c) => (c ? { ...c, voice: { ...c.voice, voiceId: picked.voiceId } } : c));
+      const reason = e instanceof Error ? e.message : "Gagal menambahkan suara";
+      setVoicesError(
+        reason.includes("voices_write")
+          ? "Suara belum bisa ditambahkan ke akun: API key belum punya izin Voices: Write. Voice ID tetap diisi — coba Putar Suara Rara untuk cek."
+          : `${reason}. Voice ID tetap diisi — coba Putar Suara Rara untuk cek.`
+      );
+    } finally {
+      setAddingVoice(false);
     }
   };
 
@@ -1737,8 +1773,10 @@ export default function RaraSettingsTab() {
                 <span style={{ fontSize: 11, color: voicesError ? "#b3261e" : "#705e5e" }}>
                   {voicesError ||
                     (voices.length
-                      ? `${voices.length} suara di akun ElevenLabs.`
-                      : "Termasuk clone dan suara dari Voice Library yang sudah ditambahkan.")}
+                      ? addingVoice
+                        ? "Menambahkan suara ke akun ElevenLabs..."
+                        : `${voices.filter((v) => v.source === "library").length} suara Indonesia perempuan dari Voice Library, ${voices.filter((v) => v.source === "account").length} di akun kamu.`
+                      : "Menampilkan suara Indonesia perempuan dari Voice Library dan suara di akun kamu.")}
                 </span>
               </div>
 
@@ -1748,19 +1786,33 @@ export default function RaraSettingsTab() {
                   <div style={{ display: "flex", gap: 8, marginBottom: 6 }}>
                     <select
                       value={voices.some((v) => v.voiceId === config.voice.voiceId) ? config.voice.voiceId : ""}
-                      onChange={(e) =>
-                        e.target.value && setConfig({ ...config, voice: { ...config.voice, voiceId: e.target.value } })
-                      }
+                      onChange={(e) => {
+                        const picked = voices.find((v) => v.voiceId === e.target.value);
+                        if (picked) void handlePickVoice(picked);
+                      }}
+                      disabled={addingVoice}
                       style={{ ...LLM_INPUT_STYLE, flex: 1, width: undefined, fontFamily: "inherit", background: "#fff" }}
                     >
                       <option value="">— Voice ID manual di bawah —</option>
-                      {voices.map((v) => (
-                        <option key={v.voiceId} value={v.voiceId}>
-                          {v.name}
-                          {v.category && v.category !== "premade" ? ` (${v.category})` : ""}
-                          {v.description ? ` — ${v.description}` : ""}
-                        </option>
-                      ))}
+                      {(
+                        [
+                          ["account", "Suara di akun ElevenLabs kamu"],
+                          ["library", "Voice Library — Indonesia, perempuan"],
+                        ] as const
+                      ).map(([source, label]) =>
+                        voices.some((v) => v.source === source) ? (
+                          <optgroup key={source} label={label}>
+                            {voices
+                              .filter((v) => v.source === source)
+                              .map((v) => (
+                                <option key={v.voiceId} value={v.voiceId}>
+                                  {v.name}
+                                  {v.description ? ` — ${v.description}` : ""}
+                                </option>
+                              ))}
+                          </optgroup>
+                        ) : null
+                      )}
                     </select>
                     {selectedVoice?.previewUrl && (
                       <button
@@ -1861,7 +1913,7 @@ export default function RaraSettingsTab() {
                     type="range"
                     min="0.7"
                     max="1.2"
-                    step="0.05"
+                    step="0.01"
                     value={config.voice.speakingSpeed}
                     onChange={(e) =>
                       setConfig({ ...config, voice: { ...config.voice, speakingSpeed: Number(e.target.value) } })

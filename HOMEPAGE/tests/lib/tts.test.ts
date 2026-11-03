@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { listVoices, synthesize } from "@/lib/tts";
+import { addLibraryVoice, listVoices, synthesize } from "@/lib/tts";
 
 beforeEach(() => {
   vi.unstubAllGlobals();
@@ -20,21 +20,47 @@ describe("synthesize", () => {
 });
 
 describe("listVoices", () => {
-  it("lists account voices, own and library voices before premade ones", async () => {
-    const fetchMock = vi.fn(async () =>
-      Response.json({
-        voices: [
-          { voice_id: "p1", name: "Rachel", category: "premade", labels: { gender: "female", accent: "american" }, preview_url: "https://x/p1.mp3" },
-          { voice_id: "c1", name: "Rara Indo", category: "cloned", labels: {}, preview_url: "" },
-        ],
-      })
+  it("lists own account voices, then Indonesian female library voices, and drops English premades", async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.includes("shared-voices")
+        ? Response.json({
+            voices: [
+              { voice_id: "c1", public_owner_id: "o0", name: "Rara Indo (sudah ditambah)" },
+              {
+                voice_id: "lib1",
+                public_owner_id: "o1",
+                name: "Putri",
+                age: "young",
+                use_case: "conversational",
+                preview_url: "https://x/en.mp3",
+                verified_languages: [{ language: "id", preview_url: "https://x/id.mp3" }],
+              },
+            ],
+          })
+        : Response.json({
+            voices: [
+              { voice_id: "p1", name: "Rachel", category: "premade" },
+              { voice_id: "c1", name: "Rara Indo", category: "cloned", labels: { gender: "female" } },
+            ],
+          })
     );
     vi.stubGlobal("fetch", fetchMock);
 
     const voices = await listVoices("k");
 
-    expect(voices.map((v) => v.voiceId)).toEqual(["c1", "p1"]);
-    expect(voices[1]).toMatchObject({ name: "Rachel", description: "female, american", previewUrl: "https://x/p1.mp3" });
-    expect(fetchMock).toHaveBeenCalledWith("https://api.elevenlabs.io/v1/voices", { headers: { "xi-api-key": "k" } });
+    expect(voices.map((v) => [v.voiceId, v.source])).toEqual([["c1", "account"], ["lib1", "library"]]);
+    expect(voices[1]).toMatchObject({ publicOwnerId: "o1", previewUrl: "https://x/id.mp3", description: "young, conversational" });
+    expect(fetchMock.mock.calls.map((c) => c[0])).toContain(
+      "https://api.elevenlabs.io/v1/shared-voices?language=id&gender=female&page_size=50"
+    );
+  });
+});
+
+describe("addLibraryVoice", () => {
+  it("adds the library voice to the account and returns its id", async () => {
+    const fetchMock = vi.fn<(url: string) => Promise<Response>>(async () => Response.json({ voice_id: "added1" }));
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(addLibraryVoice("k", "o1", "lib1", "Rara — Putri")).resolves.toBe("added1");
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.elevenlabs.io/v1/voices/add/o1/lib1");
   });
 });

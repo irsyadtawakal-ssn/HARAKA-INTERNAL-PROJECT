@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-03T04:28:28.225Z",
+  "updatedAt": "2026-11-03T06:00:12.341Z",
   "visual": {
     "mode": "clips",
     "clips": {
@@ -69,14 +69,13 @@
   "voice": {
     "provider": "elevenlabs",
     "elevenlabsApiKey": "",
-    "voiceId": "21m00Tcm4TlvDq8ikWAM",
+    "voiceId": "TrU3igk19A4aIUi2GAA2",
     "modelId": "eleven_multilingual_v2",
     "stability": 75,
-    "similarityBoost": 85,
-    "styleExaggeration": 20,
+    "similarityBoost": 80,
+    "styleExaggeration": 23,
     "useSpeakerBoost": true,
-    "speakingSpeed": 1.05,
-    "autoFallbackBrowserTts": true,
+    "speakingSpeed": 1.04,
     "sttLang": "id-ID",
     "sampleTestText": "Halo Kak! Aku Rara dari PT Haraka Erfi. Mau mulai bikin brand skincare sendiri dengan MOQ seribu pcs dan izin BPOM resmi? Ceritakan konsep produk impian Kakak ya!",
     "pronunciationDictionary": [
@@ -121,8 +120,15 @@
         "term": "UMKM",
         "phonetic": "U M K M",
         "enabled": true
+      },
+      {
+        "id": "pr-1793682093642",
+        "term": "pcs",
+        "phonetic": "pisis",
+        "enabled": true
       }
-    ]
+    ],
+    "autoFallbackBrowserTts": true
   },
   "knowledge": {
     "activeMode": "structured",
