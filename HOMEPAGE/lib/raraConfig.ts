@@ -58,7 +58,7 @@ export type RaraConfig = {
     factOrbs: { big: string; small: string; pos: "left-top" | "left-bottom" | "right-top" | "right-bottom" }[];
   };
   llm: {
-    provider: "gemini" | "openai" | "openrouter" | "9router" | "custom";
+    provider: "9router";
     baseUrl: string;
     apiKey: string;
     model: string;
@@ -659,6 +659,21 @@ export function applyPronunciationDictionary(text: string, rules: PronunciationR
   return out;
 }
 
+/** 9Router is the only LLM engine; endpoint/models saved for another provider are discarded. */
+function mergeLlmConfig(rawLlm: Partial<RaraConfig["llm"]> | undefined): RaraConfig["llm"] {
+  const saved = rawLlm?.provider === "9router" ? rawLlm : { ...rawLlm, baseUrl: "", model: "", fallbackModel: "" };
+  return {
+    ...DEFAULT_RARA_CONFIG.llm,
+    ...saved,
+    provider: "9router",
+    // Fallback to env if saved config has empty key/baseUrl
+    baseUrl: saved.baseUrl || process.env.LLM_BASE_URL || DEFAULT_RARA_CONFIG.llm.baseUrl,
+    apiKey: saved.apiKey || process.env.LLM_API_KEY || "",
+    model: saved.model || process.env.LLM_MODEL || DEFAULT_RARA_CONFIG.llm.model,
+    fallbackModel: saved.fallbackModel || process.env.LLM_FALLBACK_MODEL || DEFAULT_RARA_CONFIG.llm.fallbackModel,
+  };
+}
+
 export function getRaraConfig(): RaraConfig {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
@@ -667,14 +682,7 @@ export function getRaraConfig(): RaraConfig {
         ...DEFAULT_RARA_CONFIG,
         ...raw,
         visual: { ...DEFAULT_RARA_CONFIG.visual, ...(raw.visual || {}) },
-        llm: {
-          ...DEFAULT_RARA_CONFIG.llm,
-          ...(raw.llm || {}),
-          // Fallback to env if saved config has empty key/baseUrl
-          baseUrl: raw.llm?.baseUrl || process.env.LLM_BASE_URL || DEFAULT_RARA_CONFIG.llm.baseUrl,
-          apiKey: raw.llm?.apiKey || process.env.LLM_API_KEY || "",
-          model: raw.llm?.model || process.env.LLM_MODEL || DEFAULT_RARA_CONFIG.llm.model,
-        },
+        llm: mergeLlmConfig(raw.llm),
         voice: {
           ...DEFAULT_RARA_CONFIG.voice,
           ...(raw.voice || {}),

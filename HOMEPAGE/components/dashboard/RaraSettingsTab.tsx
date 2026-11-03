@@ -28,45 +28,23 @@ type SubTabId = "visual" | "llm" | "voice" | "knowledge" | "persona" | "simulato
 
 type AvailableClip = { name: string; sizeKb: number };
 
-const LLM_PRESETS: Record<
-  RaraConfig["llm"]["provider"],
-  { label: string; baseUrl: string; defaultModel: string; fallbackModel: string; desc: string }
-> = {
-  gemini: {
-    label: "Google Gemini (OpenAI Compatible)",
-    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
-    defaultModel: "gemini-2.5-flash",
-    fallbackModel: "gemini-2.0-flash",
-    desc: "Cepat, gratis/hemat biaya, sangat baik dalam Bahasa Indonesia & ekstraksi JSON.",
-  },
-  openai: {
-    label: "OpenAI Official",
-    baseUrl: "https://api.openai.com/v1",
-    defaultModel: "gpt-4o-mini",
-    fallbackModel: "gpt-4o",
-    desc: "Standar industri dengan latensi rendah dan konsistensi instruksi tinggi.",
-  },
-  openrouter: {
-    label: "OpenRouter (Multi-Model Gateway)",
-    baseUrl: "https://openrouter.ai/api/v1",
-    defaultModel: "google/gemini-2.5-flash",
-    fallbackModel: "anthropic/claude-3.5-haiku",
-    desc: "Satu API key untuk akses ratusan model (Gemini, Claude, Llama, DeepSeek).",
-  },
-  "9router": {
-    label: "9Router (Default)",
-    baseUrl: "https://router-okx.akbaralatas.com/v1",
-    defaultModel: "",
-    fallbackModel: "",
-    desc: "Gateway AI internal. Ambil daftar model setelah API Key diisi.",
-  },
-  custom: {
-    label: "Custom OpenAI-Compatible Endpoint",
-    baseUrl: "",
-    defaultModel: "",
-    fallbackModel: "",
-    desc: "Gunakan URL server LLM mandiri (vLLM, Ollama, LiteLLM, Groq, Together).",
-  },
+const NINE_ROUTER_BASE_URL = "https://router-okx.akbaralatas.com/v1";
+
+const LLM_LABEL_STYLE: React.CSSProperties = {
+  display: "block",
+  fontSize: 11.5,
+  fontWeight: 700,
+  color: "#5c4b4b",
+  marginBottom: 4,
+};
+
+const LLM_INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  padding: "8px 12px",
+  borderRadius: 8,
+  border: "1px solid #e8e2de",
+  fontSize: 12.5,
+  fontFamily: "monospace",
 };
 
 const VOICE_PRESETS = [
@@ -191,6 +169,14 @@ export default function RaraSettingsTab() {
     void loadConfig();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Load the 9Router model list once a key is saved and the LLM tab is opened
+  useEffect(() => {
+    if (subTab === "llm" && hasLlmKey && config && !llmModels.length && !llmModelsLoading && !llmModelsError) {
+      void handleListModels();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subTab, hasLlmKey, config === null]);
 
   const handleSave = async (customCfg?: RaraConfig) => {
     const target = customCfg || config;
@@ -1325,106 +1311,54 @@ export default function RaraSettingsTab() {
           ==================================================================== */}
       {subTab === "llm" && (
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 24, alignItems: "start" }}>
-          {/* LEFT: PROVIDER & PARAMETERS */}
+          {/* LEFT: 9ROUTER ENDPOINT & PARAMETERS */}
           <div style={{ background: "#faf8f6", border: "1px solid #e8e2de", borderRadius: 14, padding: 20 }}>
-            <h4 style={{ fontSize: 15, fontWeight: 700, margin: "0 0 6px", color: "#1f1818" }}>
-              Provider & Endpoint Otak AI (OpenAI-Compatible)
-            </h4>
-            <p style={{ fontSize: 12, color: "#705e5e", margin: "0 0 14px" }}>
-              Pilih preset provider LLM atau arahkan ke gateway AI internal VPS Anda.
-            </p>
-
-            {/* Provider Preset Buttons */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 }}>
-              {(Object.keys(LLM_PRESETS) as Array<RaraConfig["llm"]["provider"]>).map((provKey) => {
-                const p = LLM_PRESETS[provKey];
-                const active = config.llm.provider === provKey;
-                return (
-                  <button
-                    key={provKey}
-                    type="button"
-                    onClick={() =>
-                      setConfig({
-                        ...config,
-                        llm: {
-                          ...config.llm,
-                          provider: provKey,
-                          baseUrl: p.baseUrl || config.llm.baseUrl,
-                          model: provKey === config.llm.provider ? config.llm.model : p.defaultModel,
-                          fallbackModel: provKey === config.llm.provider ? config.llm.fallbackModel : p.fallbackModel,
-                        },
-                      })
-                    }
-                    style={{
-                      textAlign: "left",
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      border: "1.5px solid",
-                      borderColor: active ? "#a8666a" : "#e8e2de",
-                      background: active ? "#faeeed" : "#fff",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ fontSize: 12, fontWeight: 800, color: active ? "#a8666a" : "#1f1818" }}>{p.label}</div>
-                    <div style={{ fontSize: 10.5, color: "#705e5e", marginTop: 2 }}>{p.desc}</div>
-                  </button>
-                );
-              })}
+            <div
+              style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}
+            >
+              <h4 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "#1f1818", whiteSpace: "nowrap" }}>
+                Otak AI — 9Router
+              </h4>
+              <span
+                style={{
+                  fontSize: 10.5,
+                  fontWeight: 700,
+                  color: hasLlmKey ? "#0d6a55" : "#9a6100",
+                  background: hasLlmKey ? "#eaf5f1" : "#fcf1db",
+                  padding: "2px 8px",
+                  borderRadius: 99,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {hasLlmKey ? "API Key tersimpan" : "Belum terhubung"}
+              </span>
             </div>
+            <p style={{ fontSize: 12, color: "#705e5e", margin: "6px 0 16px" }}>
+              Semua jawaban Rara diproses lewat gateway 9Router. Isi API Key, ambil daftar model, lalu pilih model
+              utama dan cadangannya.
+            </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <div>
-                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#5c4b4b", marginBottom: 4 }}>
-                  Endpoint Base URL (`LLM_BASE_URL`)
-                </label>
+                <label style={LLM_LABEL_STYLE}>Endpoint 9Router (`LLM_BASE_URL`)</label>
                 <input
                   type="text"
                   value={config.llm.baseUrl}
                   onChange={(e) => setConfig({ ...config, llm: { ...config.llm, baseUrl: e.target.value } })}
-                  placeholder="https://generativelanguage.googleapis.com/v1beta/openai"
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    border: "1px solid #e8e2de",
-                    fontSize: 12.5,
-                    fontFamily: "monospace",
-                  }}
+                  placeholder={NINE_ROUTER_BASE_URL}
+                  style={LLM_INPUT_STYLE}
                 />
               </div>
 
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                  <label style={{ fontSize: 11.5, fontWeight: 700, color: "#5c4b4b" }}>
-                    API Key (`LLM_API_KEY`) — Tersimpan Aman di Server
-                  </label>
-                  <span
-                    style={{
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      color: hasLlmKey ? "#0d6a55" : "#9a6100",
-                      background: hasLlmKey ? "#eaf5f1" : "#fcf1db",
-                      padding: "2px 8px",
-                      borderRadius: 99,
-                    }}
-                  >
-                    {hasLlmKey ? "API Key Aktif" : "Mode Built-in Knowledge (Tanpa API Key)"}
-                  </span>
-                </div>
+                <label style={LLM_LABEL_STYLE}>API Key 9Router (`LLM_API_KEY`)</label>
                 <div style={{ display: "flex", gap: 8 }}>
                   <input
                     type={showLlmKey ? "text" : "password"}
                     value={config.llm.apiKey}
                     onChange={(e) => setConfig({ ...config, llm: { ...config.llm, apiKey: e.target.value } })}
-                    placeholder="Masukkan API Key Gemini / OpenAI / OpenRouter..."
-                    style={{
-                      flex: 1,
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #e8e2de",
-                      fontSize: 12.5,
-                      fontFamily: "monospace",
-                    }}
+                    placeholder={hasLlmKey ? "Memakai key yang tersimpan" : "Tempel API Key dari dashboard 9Router"}
+                    style={{ ...LLM_INPUT_STYLE, flex: 1, width: undefined }}
                   />
                   <button
                     type="button"
@@ -1440,63 +1374,18 @@ export default function RaraSettingsTab() {
                     {showLlmKey ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
+                <span style={{ fontSize: 10.5, color: "#9c8a8a" }}>
+                  Disarankan diisi di file `.env` server agar key tidak ikut tersimpan di data konfigurasi.
+                </span>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#5c4b4b", marginBottom: 4 }}>
-                    Model Utama (`LLM_MODEL`)
-                  </label>
-                  <input
-                    type="text"
-                    list="rara-llm-models"
-                    value={config.llm.model}
-                    onChange={(e) => setConfig({ ...config, llm: { ...config.llm, model: e.target.value } })}
-                    placeholder="Pilih dari daftar model"
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #e8e2de",
-                      fontSize: 12.5,
-                      fontFamily: "monospace",
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "#5c4b4b", marginBottom: 4 }}>
-                    Fallback Model (Cadangan Otomatis)
-                  </label>
-                  <input
-                    type="text"
-                    value={config.llm.fallbackModel}
-                    list="rara-llm-models"
-                    onChange={(e) => setConfig({ ...config, llm: { ...config.llm, fallbackModel: e.target.value } })}
-                    placeholder="Opsional"
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border: "1px solid #e8e2de",
-                      fontSize: 12.5,
-                      fontFamily: "monospace",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <datalist id="rara-llm-models">
-                {llmModels.map((m) => (
-                  <option key={m} value={m} />
-                ))}
-              </datalist>
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                 <button
                   type="button"
                   onClick={handleListModels}
                   disabled={llmModelsLoading}
                   style={{
-                    border: "1px solid #e8e2de",
+                    border: "1px solid #a8666a",
                     background: "#fff",
                     borderRadius: 8,
                     padding: "6px 12px",
@@ -1506,14 +1395,53 @@ export default function RaraSettingsTab() {
                     cursor: llmModelsLoading ? "wait" : "pointer",
                   }}
                 >
-                  {llmModelsLoading ? "Mengambil model..." : "Ambil daftar model"}
+                  {llmModelsLoading ? "Mengambil model..." : llmModels.length ? "Muat ulang model" : "Ambil daftar model"}
                 </button>
                 <span style={{ fontSize: 11, color: llmModelsError ? "#b3261e" : "#705e5e" }}>
                   {llmModelsError ||
                     (llmModels.length
-                      ? `${llmModels.length} model tersedia — klik kolom model untuk memilih.`
-                      : "Memakai Base URL & API Key di atas.")}
+                      ? `${llmModels.length} model tersedia di 9Router.`
+                      : "Daftar model diambil langsung dari 9Router.")}
                 </span>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {(
+                  [
+                    { key: "model", label: "Model Utama (`LLM_MODEL`)", emptyLabel: "— Pilih model —" },
+                    { key: "fallbackModel", label: "Model Cadangan (Fallback)", emptyLabel: "— Tanpa cadangan —" },
+                  ] as const
+                ).map(({ key, label, emptyLabel }) => {
+                  const value = config.llm[key];
+                  const options = value && !llmModels.includes(value) ? [value, ...llmModels] : llmModels;
+                  return (
+                    <div key={key}>
+                      <label style={LLM_LABEL_STYLE}>{label}</label>
+                      {options.length ? (
+                        <select
+                          value={value}
+                          onChange={(e) => setConfig({ ...config, llm: { ...config.llm, [key]: e.target.value } })}
+                          style={{ ...LLM_INPUT_STYLE, background: "#fff" }}
+                        >
+                          <option value="">{emptyLabel}</option>
+                          {options.map((m) => (
+                            <option key={m} value={m}>
+                              {m}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={value}
+                          onChange={(e) => setConfig({ ...config, llm: { ...config.llm, [key]: e.target.value } })}
+                          placeholder="Belum dipilih"
+                          style={LLM_INPUT_STYLE}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Sliders: Temperature & Max Tokens */}

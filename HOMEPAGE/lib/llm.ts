@@ -12,7 +12,7 @@ function resolveConfig(override?: LlmOverride) {
     override?.apiKey && override.apiKey !== "***MASKED***"
       ? override.apiKey
       : cfg?.apiKey || process.env.LLM_API_KEY || "";
-  const model = override?.model ?? cfg?.model ?? process.env.LLM_MODEL ?? "gemini-2.5-flash";
+  const model = override?.model ?? cfg?.model ?? process.env.LLM_MODEL ?? "";
   const fallbackModel = override?.fallbackModel ?? cfg?.fallbackModel ?? "";
   const temperature = override?.temperature ?? cfg?.temperature ?? 0.45;
   const maxTokens = override?.maxTokens ?? cfg?.maxTokens ?? 320;
@@ -49,6 +49,19 @@ export function buildKnowledgeFallbackReply(messages: ChatMessage[]): string {
   return answer;
 }
 
+/** Builds an error carrying the endpoint's own message (e.g. 9Router's "model not found") instead of a bare status. */
+async function llmError(res: Response): Promise<Error> {
+  const text = await res.text().catch(() => "");
+  let detail = text.slice(0, 300);
+  try {
+    const json = JSON.parse(text);
+    detail = json?.error?.message || json?.error || json?.message || detail;
+  } catch {
+    // body is not JSON, keep the raw text
+  }
+  return new Error(`LLM request failed: ${res.status}${detail ? ` — ${String(detail)}` : ""}`);
+}
+
 /** Calls an OpenAI-compatible chat endpoint and returns the reply as a plain-text stream. */
 export async function streamChat(
   messages: ChatMessage[],
@@ -58,8 +71,8 @@ export async function streamChat(
   const { base, key, model, fallbackModel, temperature, maxTokens } = resolveConfig(override);
   const encoder = new TextEncoder();
 
-  // If no API key is set yet, stream from the intelligent local knowledge responder so Rara never breaks
-  if (!base || !key) {
+  // If no API key or model is set yet, stream from the intelligent local knowledge responder so Rara never breaks
+  if (!base || !key || !model) {
     const fallbackText = buildKnowledgeFallbackReply(messages);
     return new ReadableStream<Uint8Array>({
       start(controller) {
@@ -95,7 +108,7 @@ export async function streamChat(
     });
   }
 
-  if (!res.ok || !res.body) throw new Error(`LLM request failed: ${res.status}`);
+  if (!res.ok || !res.body) throw await llmError(res);
 
   const decoder = new TextDecoder();
   let buffer = "";
@@ -122,20 +135,39 @@ export async function streamChat(
   );
 }
 
-/** Lists model ids from the endpoint's OpenAI-compatible `/models` route (9Router, OpenRouter, etc.). */
+/** Lists model ids from 9Router's OpenAI-compatible `/models` route. */
 export async function listModels(override?: LlmOverride): Promise<string[]> {
   const { base, key } = resolveConfig(override);
   if (!base) throw new Error("Endpoint Base URL belum diisi");
   if (!key) throw new Error("API Key belum diisi");
 
   const res = await fetch(`${base}/models`, { headers: { authorization: `Bearer ${key}` } });
-  if (!res.ok) throw new Error(`Gagal mengambil daftar model: ${res.status}`);
+  if (!res.ok) throw new Error(`Gagal mengambil daftar model — ${(await llmError(res)).message.replace("LLM request failed: ", "")}`);
   const json = await res.json();
   const data: unknown[] = Array.isArray(json?.data) ? json.data : [];
   return data
     .map((m) => (m && typeof m === "object" && "id" in m ? String((m as { id: unknown }).id) : ""))
     .filter(Boolean)
     .sort();
+}
+
+/** Reads a completion body; some 9Router models answer with SSE (`data: {...}`) even when not asked to stream. */
+function readCompletionText(body: string): string {
+  if (!body.trimStart().startsWith("data:")) {
+    return JSON.parse(body).choices?.[0]?.message?.content ?? "";
+  }
+  let text = "";
+  for (const line of body.split("\n")) {
+    const payload = line.trim().replace(/^data:/, "").trim();
+    if (!line.trim().startsWith("data:") || !payload || payload === "[DONE]") continue;
+    try {
+      const choice = JSON.parse(payload).choices?.[0];
+      text += choice?.delta?.content ?? choice?.message?.content ?? "";
+    } catch {
+      // ignore keep-alive or partial lines
+    }
+  }
+  return text;
 }
 
 /** Non-streaming completion, used for structured summaries and connection testing. */
@@ -148,6 +180,7 @@ export async function completeChat(
   if (!base || !key) {
     return buildKnowledgeFallbackReply(messages);
   }
+  if (!model) throw new Error("Model utama 9Router belum dipilih. Klik \"Ambil daftar model\" lalu pilih modelnya.");
 
   let res = await fetch(`${base}/chat/completions`, {
     method: "POST",
@@ -173,7 +206,6 @@ export async function completeChat(
     });
   }
 
-  if (!res.ok) throw new Error(`LLM request failed: ${res.status}`);
-  const json = await res.json();
-  return json.choices?.[0]?.message?.content ?? "";
+  if (!res.ok) throw await llmError(res);
+  return readCompletionText(await res.text());
 }
