@@ -1,0 +1,31 @@
+[project]
+name = "harka-factory-backend"
+version = "0.1.0"
+description = "API dan worker Haraka Erfi AI Marketing Factory"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.32.1",
+    "sqlalchemy==2.0.36",
+    "psycopg[binary]==3.2.3",
+    "alembic==1.14.0",
+    "pydantic[email]==2.10.3",
+    "pydantic-settings==2.6.1",
+    "pyjwt==2.10.1",
+    "argon2-cffi==23.1.0",
+    "boto3==1.35.81",
+    "celery[redis]==5.4.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.4",
+    "httpx==0.28.1",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.uv]
+package = false

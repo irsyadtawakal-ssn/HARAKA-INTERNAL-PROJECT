@@ -1,0 +1,352 @@
+<title>Brief Data AI Haraka Erfi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: satu kolom brief, header progres lengket, tiap bagian = daftar item isian */
+:root {
+  --bg: #f1f3f6;
+  --surface: #ffffff;
+  --fg: #1c1f26;
+  --muted: #5d6472;
+  --line: #dde1e8;
+  --accent: #8a4f7d;
+  --accent-soft: #f3e8f0;
+  --must: #b4402f;
+  --must-soft: #fbe9e5;
+  --ok: #2f7a55;
+  --ok-soft: #e4f3ea;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161b; --surface: #1d2027; --fg: #e8eaef; --muted: #9aa1ae; --line: #2e323b;
+    --accent: #d398c4; --accent-soft: #33232f; --must: #f0907e; --must-soft: #3a221e;
+    --ok: #7fcfa3; --ok-soft: #1b3226; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161b; --surface: #1d2027; --fg: #e8eaef; --muted: #9aa1ae; --line: #2e323b;
+  --accent: #d398c4; --accent-soft: #33232f; --must: #f0907e; --must-soft: #3a221e;
+  --ok: #7fcfa3; --ok-soft: #1b3226; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font: 15px/1.6 var(--font-body);
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.wrap {
+  max-width: 860px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header.intro { padding-block: 40px 24px; }
+.eyebrow { font: 500 12px/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 700 clamp(28px, 5vw, 40px)/1.1 var(--font-display); margin: 10px 0 14px; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 65ch; margin: 0; }
+.howto { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 20px; }
+.howto div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
+.howto b { color: var(--fg); display: block; font-weight: 600; margin-bottom: 2px; }
+
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 12px; }
+.progress { flex: 1 1 220px; min-width: 0; }
+.progress-label { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+.progress-label strong { color: var(--fg); }
+.track { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 6px; }
+.fill { height: 100%; width: 100%; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .3s; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.filters button {
+  font: 500 13px var(--font-body); color: var(--muted); background: transparent;
+  border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; cursor: pointer;
+}
+.filters button[aria-pressed="true"] { background: var(--fg); color: var(--surface); border-color: var(--fg); }
+.who { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.who input { font: 14px var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px; width: 150px; }
+
+.notice { margin-top: 16px; padding: 10px 14px; border-radius: 10px; background: var(--must-soft); color: var(--must); font-size: 13.5px; }
+
+section.group { padding-block: 28px 4px; }
+section.group > h2 { font: 700 21px/1.2 var(--font-display); margin: 0 0 4px; display: flex; align-items: baseline; gap: 10px; }
+section.group > h2 .count { font: 500 12px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+section.group > p { color: var(--muted); margin: 0 0 14px; font-size: 14px; max-width: 65ch; }
+
+.item {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px 18px; margin-bottom: 12px; display: grid; gap: 8px;
+}
+.item.done { border-color: color-mix(in srgb, var(--ok) 40%, var(--line)); }
+.item-head { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.item-title { font-weight: 600; font-size: 15.5px; min-width: 0; flex: 1 1 260px; }
+.code { font: 500 11.5px var(--font-mono); color: var(--muted); margin-right: 6px; }
+.tags { display: flex; gap: 6px; flex-shrink: 0; }
+.tag { font: 600 11px/1 var(--font-body); letter-spacing: .04em; text-transform: uppercase; padding: 5px 8px; border-radius: 6px; }
+.tag.wajib { background: var(--must-soft); color: var(--must); }
+.tag.penting { background: var(--accent-soft); color: var(--accent); }
+.tag.opsional { background: var(--bg); color: var(--muted); }
+.tag.status-ok { background: var(--ok-soft); color: var(--ok); }
+.why { font-size: 13.5px; color: var(--muted); margin: 0; }
+.known { font-size: 13px; background: var(--bg); border-radius: 8px; padding: 8px 10px; margin: 0; }
+.known b { font-weight: 600; }
+textarea {
+  width: 100%; min-height: 84px; resize: vertical;
+  font: 14.5px/1.55 var(--font-body); color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+}
+textarea:focus, .who input:focus, .filters button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+textarea:disabled { opacity: .7; }
+.meta { font-size: 12.5px; color: var(--muted); min-height: 1.2em; }
+
+footer { padding-block: 32px 48px; color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
+</style>
+
+<header class="intro wrap">
+  <div class="eyebrow">Brief internal · AI Avatar Website</div>
+  <h1>Data yang dibutuhkan untuk AI avatar Haraka Erfi</h1>
+  <p class="lede">AI avatar di website akan menjawab pertanyaan calon klien soal maklon kosmetik, lalu mengarahkan mereka untuk meninggalkan kontak. Jawabannya hanya akan sebaik data di halaman ini. Isi langsung di kotak jawaban; semua isian tersimpan otomatis dan bisa dilihat seluruh tim.</p>
+  <div class="howto">
+    <div><b>Wajib</b>AI belum bisa dirilis tanpa ini.</div>
+    <div><b>Penting</b>Membuat jawaban jauh lebih meyakinkan.</div>
+    <div><b>Opsional</b>Bagus kalau ada, bisa menyusul.</div>
+    <div><b>Boleh dirahasiakan</b>Tulis "rahasia, arahkan ke sales" bila angka tidak boleh disebut AI.</div>
+  </div>
+  <div class="notice" id="notice" hidden></div>
+</header>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="progress">
+      <div class="progress-label"><span><strong id="doneCount">0</strong> dari <span id="totalCount">0</span> terisi</span><span id="mustLeft"></span></div>
+      <div class="track"><div class="fill" id="fill"></div></div>
+    </div>
+    <div class="filters" role="group" aria-label="Saring item">
+      <button type="button" data-filter="all" aria-pressed="true">Semua</button>
+      <button type="button" data-filter="open" aria-pressed="false">Belum diisi</button>
+      <button type="button" data-filter="wajib" aria-pressed="false">Wajib</button>
+    </div>
+    <label class="who" for="whoName">Nama kamu <input id="whoName" placeholder="mis. Rina (Sales)" autocomplete="name"></label>
+  </div>
+</div>
+
+<main class="wrap" id="groups"></main>
+
+<footer class="wrap">Sumber "Sudah ada di website": harakaerfi.com, dibaca 30 Oktober 2026. Hal yang tidak tercantum di sana ditandai sebagai kebutuhan baru.</footer>
+
+<script>
+const GROUPS = [
+  { id: "A", title: "Identitas & persona", desc: "Siapa yang sedang berbicara dan atas nama perusahaan apa.", items: [
+    { id: "a1", p: "wajib", t: "Nama badan hukum resmi yang dipakai AI",
+      why: "Website memakai tiga nama berbeda. AI harus konsisten saat memperkenalkan diri.",
+      known: "PT Haraka Erfi, unit usaha PT Haraka Multifaedah. Footer menulis \"Hakara Manufacturing\", logo menulis \"PT Haraka Erfi Kosmetindo Abadi\"." },
+    { id: "a2", p: "wajib", t: "Nama dan kepribadian avatar",
+      why: "Nama panggilan avatar, gaya bicara (formal / santai), sapaan ke klien (Kak, Bapak/Ibu), boleh pakai emoji atau tidak.",
+      ph: "mis. Nama: Rara. Ramah, santai tapi profesional, menyapa \"Kak\"." },
+    { id: "a3", p: "penting", t: "Cerita singkat perusahaan",
+      why: "Dipakai saat klien bertanya \"Haraka itu siapa?\". 3 sampai 5 kalimat cukup.",
+      known: "Berdiri 2015, pabrik di Jatisampurna, Bekasi. Positioning: partner strategis dari ide hingga produk siap jual." },
+    { id: "a4", p: "penting", t: "Nomor dan status sertifikat",
+      why: "Klien serius sering menanyakan bukti. Sebutkan yang boleh dibagikan.",
+      known: "Badge di website: BPOM, Halal, CPKB, ISO 22716. Nomor sertifikat tidak dicantumkan." },
+    { id: "a5", p: "opsional", t: "Angka pendukung kredibilitas",
+      why: "Kapasitas produksi per bulan, luas pabrik, jumlah brand yang sudah dibuat, jumlah SKU." },
+  ]},
+  { id: "B", title: "Angka komersial", desc: "Pertanyaan yang paling sering muncul dan paling menentukan lead. Kalau angka tidak boleh disebut, tulis aturannya.", items: [
+    { id: "b1", p: "wajib", t: "MOQ per kategori produk",
+      why: "Pertanyaan nomor satu calon klien. Sebutkan per kategori bila berbeda.",
+      known: "Website hanya menulis \"MOQ fleksibel untuk UMKM\", tanpa angka.",
+      ph: "Skincare: ... pcs\nBodycare: ... pcs\nHaircare: ... pcs\nParfum: ... pcs" },
+    { id: "b2", p: "wajib", t: "Kisaran harga atau aturan menyebut harga",
+      why: "Harga per pcs, harga paket, atau keputusan bahwa AI tidak menyebut harga sama sekali.",
+      ph: "mis. Serum 20ml mulai Rp ... /pcs untuk MOQ ...  ATAU  rahasia, arahkan ke sales" },
+    { id: "b3", p: "wajib", t: "Biaya sampel dan jatah revisi",
+      why: "Apakah sampel berbayar, berapa kali revisi gratis, berapa lama sampel jadi." },
+    { id: "b4", p: "wajib", t: "Estimasi waktu tiap tahap",
+      why: "Klien ingin tahu kapan produk bisa launching.",
+      known: "Ada 6 tahap di website, tanpa durasi.",
+      ph: "Sampel: ... hari\nBPOM: ... hari\nHalal: ...\nHAKI: ...\nProduksi: ...\nTotal kira-kira: ..." },
+    { id: "b5", p: "penting", t: "Biaya pengurusan BPOM, Halal, HAKI",
+      why: "Termasuk paket atau terpisah? Berapa kisarannya?" },
+    { id: "b6", p: "penting", t: "Skema pembayaran",
+      why: "DP berapa persen, pelunasan kapan, metode pembayaran." },
+    { id: "b7", p: "opsional", t: "Detail diskon volume dan benefit partner",
+      known: "Website menyebut prioritas antrian produksi, diskon volume bertahap, dan konsultasi bisnis." },
+  ]},
+  { id: "C", title: "Produk & layanan", desc: "Bahan agar AI bisa memberi ide produk yang realistis untuk dibuat di pabrik Haraka.", items: [
+    { id: "c1", p: "penting", t: "Formula siap pakai (ready formula)",
+      why: "Daftar produk yang bisa langsung dipakai tanpa riset dari nol. Ini mempercepat closing.",
+      known: "Kategori di website: Skincare, Bodycare, Parfum, Haircare beserta contoh jenis produknya." },
+    { id: "c2", p: "penting", t: "Bahan aktif dan tren yang dikuasai",
+      why: "mis. niacinamide, ceramide, retinol, centella, peptide. Juga tren yang sedang banyak dipesan." },
+    { id: "c3", p: "penting", t: "Pilihan kemasan",
+      why: "Jenis botol/jar/tube yang tersedia, ukuran umum, dan MOQ kemasan custom." },
+    { id: "c4", p: "wajib", t: "Yang tidak bisa dibuat atau tidak boleh dijanjikan",
+      why: "Batas aman AI. mis. produk berklaim medis, kategori tertentu, bahan terlarang, klaim \"memutihkan dalam 3 hari\"." },
+    { id: "c5", p: "opsional", t: "Layanan tambahan",
+      why: "Foto produk, desain konten, bantuan marketplace, atau layanan lain yang tidak ada di website." },
+  ]},
+  { id: "D", title: "FAQ & keberatan klien", desc: "Jawaban resmi yang akan dipakai AI kata per kata atau sebagai acuan.", items: [
+    { id: "d1", p: "wajib", t: "Jawaban 5 FAQ yang ada di website",
+      why: "Pertanyaannya ada di website, jawabannya tidak tampil.",
+      ph: "1. Berapa minimal order (MOQ)?\n2. Berapa lama dari sampel hingga siap jual?\n3. Apakah BPOM dan Halal diurus sepenuhnya?\n4. Bagaimana jika belum punya formula atau desain kemasan?\n5. Apakah sampel bisa direvisi?" },
+    { id: "d2", p: "penting", t: "10 pertanyaan yang paling sering masuk ke WhatsApp",
+      why: "Tim CS paling tahu. Tulis pertanyaan beserta jawaban yang biasa diberikan." },
+    { id: "d3", p: "penting", t: "Keberatan umum dan cara menjawabnya",
+      why: "mis. \"kemahalan\", \"takut tidak laku\", \"pabrik lain lebih murah\", \"prosesnya lama\"." },
+  ]},
+  { id: "E", title: "Bukti & portofolio", desc: "Yang boleh disebut AI untuk membangun kepercayaan.", items: [
+    { id: "e1", p: "penting", t: "Brand partner yang boleh disebut namanya",
+      why: "Beberapa klien maklon tidak ingin disebut. Konfirmasi daftar yang aman.",
+      known: "18 logo di website: Narsis, Versident, Pherini, Nature Reaction, Hassya Premiere, Eloni, Umyka Beauty Glow, Djunichol Skincare, Art Glow, Barmen, Thipank, Cloris Men, Sakura Kanaai, Ahel Skincare, Zammit, EpelSkin, Ascha Beauty, D'Gekira Parfume." },
+    { id: "e2", p: "opsional", t: "Testimoni yang boleh dikutip",
+      why: "Kutipan singkat beserta nama brand dan izin pemakaian." },
+    { id: "e3", p: "opsional", t: "Cerita sukses klien",
+      why: "Contoh brand yang mulai dari kecil lalu berkembang. Ini sangat efektif untuk klien pemula." },
+  ]},
+  { id: "F", title: "Lead & aturan main", desc: "Bagaimana percakapan berubah menjadi kontak yang ditindaklanjuti sales.", items: [
+    { id: "f1", p: "wajib", t: "Data lead yang wajib dikumpulkan",
+      why: "Semakin banyak field, semakin sedikit yang mengisi. Tentukan yang benar-benar perlu.",
+      ph: "mis. Nama, No. WhatsApp, Kota, Jenis produk, Perkiraan jumlah, Budget, Target launching" },
+    { id: "f2", p: "wajib", t: "Lead dikirim ke mana",
+      why: "Nomor WhatsApp sales, Google Sheet, CRM, atau email. Siapa penanggung jawabnya.",
+      known: "WhatsApp CS di website: 0831-3703-0656. Email: info@harakamultifaedah.co.id." },
+    { id: "f3", p: "wajib", t: "Jam operasional dan janji waktu respons",
+      why: "Agar AI bisa bilang \"tim kami menghubungi dalam X jam\" dengan jujur." },
+    { id: "f4", p: "wajib", t: "Topik yang dilarang atau dibatasi",
+      why: "mis. tidak menjelek-jelekkan kompetitor, tidak memberi saran medis, tidak menjanjikan harga pasti." },
+    { id: "f5", p: "penting", t: "Bahasa yang dilayani",
+      why: "Bahasa Indonesia saja, atau juga Inggris / Malaysia untuk klien luar negeri." },
+  ]},
+  { id: "G", title: "Visual & suara avatar", desc: "Aset untuk tampilan halaman dan suara AI.", items: [
+    { id: "g1", p: "wajib", t: "Logo resolusi tinggi dan warna brand",
+      why: "File logo (SVG/PNG transparan) dan kode warna resmi, atau link ke folder asetnya." },
+    { id: "g2", p: "wajib", t: "Karakter avatar final",
+      why: "Pilih dari folder REFERENSI MODEL atau brief baru: usia, gaya rambut, kesan (futuristik / natural / glamor)." },
+    { id: "g3", p: "penting", t: "Karakter suara",
+      why: "Perempuan atau laki-laki, kisaran usia, nada (hangat, ceria, tenang), aksen." },
+    { id: "g4", p: "opsional", t: "Foto pabrik, lab, dan produk",
+      why: "Untuk latar halaman atau ditampilkan saat AI membahas fasilitas. Link folder Drive cukup." },
+  ]},
+];
+
+const ALL = GROUPS.flatMap(g => g.items);
+const answers = {};
+let filter = "all";
+let db = null, canWrite = false;
+const pending = {};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const filled = id => (answers[id]?.text || "").trim().length > 0;
+
+function renderShell() {
+  document.getElementById("groups").innerHTML = GROUPS.map(g => `
+    <section class="group" data-group="${g.id}">
+      <h2>${esc(g.title)} <span class="count" data-count="${g.id}"></span></h2>
+      <p>${esc(g.desc)}</p>
+      ${g.items.map(it => `
+        <article class="item" id="item-${it.id}" data-id="${it.id}" data-p="${it.p}">
+          <div class="item-head">
+            <div class="item-title"><span class="code">${it.id.toUpperCase()}</span>${esc(it.t)}</div>
+            <div class="tags"><span class="tag ${it.p}">${it.p}</span><span class="tag status-ok" data-ok hidden>Terisi</span></div>
+          </div>
+          ${it.why ? `<p class="why">${esc(it.why)}</p>` : ""}
+          ${it.known ? `<p class="known"><b>Sudah ada di website:</b> ${esc(it.known)}</p>` : ""}
+          <label class="sr" for="ans-${it.id}" hidden>Jawaban ${esc(it.t)}</label>
+          <textarea id="ans-${it.id}" data-ans="${it.id}" placeholder="${esc(it.ph || "Tulis jawabannya di sini…")}" disabled></textarea>
+          <div class="meta" data-meta="${it.id}"></div>
+        </article>`).join("")}
+    </section>`).join("");
+  document.getElementById("totalCount").textContent = ALL.length;
+}
+
+function fmtTime(iso) {
+  try { return new Date(iso).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }); }
+  catch { return ""; }
+}
+
+function update() {
+  let done = 0, mustLeft = 0;
+  for (const it of ALL) {
+    const card = document.getElementById("item-" + it.id);
+    const ok = filled(it.id);
+    if (ok) done++; else if (it.p === "wajib") mustLeft++;
+    card.classList.toggle("done", ok);
+    card.querySelector("[data-ok]").hidden = !ok;
+    const ta = card.querySelector("textarea");
+    const a = answers[it.id];
+    if (document.activeElement !== ta && !pending[it.id]) ta.value = a?.text || "";
+    const meta = card.querySelector("[data-meta]");
+    if (!pending[it.id]) meta.textContent = a?.updatedAt ? `Terakhir diisi ${a.by ? "oleh " + a.by + ", " : ""}${fmtTime(a.updatedAt)}` : "";
+    card.hidden = (filter === "open" && ok) || (filter === "wajib" && it.p !== "wajib");
+  }
+  for (const g of GROUPS) {
+    const d = g.items.filter(i => filled(i.id)).length;
+    document.querySelector(`[data-count="${g.id}"]`).textContent = `${d}/${g.items.length}`;
+    document.querySelector(`[data-group="${g.id}"]`).hidden = g.items.every(i => document.getElementById("item-" + i.id).hidden);
+  }
+  document.getElementById("doneCount").textContent = done;
+  document.getElementById("mustLeft").textContent = mustLeft ? `${mustLeft} item wajib belum diisi` : "Semua item wajib terisi";
+  document.getElementById("fill").style.transform = `scaleX(${done / ALL.length})`;
+}
+
+function showNotice(msg) { const n = document.getElementById("notice"); n.textContent = msg; n.hidden = false; }
+
+async function save(id, text) {
+  const by = document.getElementById("whoName").value.trim();
+  const body = { text, by, updatedAt: new Date().toISOString() };
+  const meta = document.querySelector(`[data-meta="${id}"]`);
+  try {
+    await db.doc("answers/" + id).set(body);
+    answers[id] = body;
+    meta.textContent = "Tersimpan";
+  } catch (e) {
+    if (e?.code === "invalid_argument") { canWrite = false; setEditable(); showNotice("Akses kamu hanya untuk membaca. Minta akses Contributor atau Editor ke pemilik halaman untuk mengisi."); }
+    else meta.textContent = "Gagal menyimpan. Coba ketik ulang sebentar lagi.";
+  } finally { delete pending[id]; }
+}
+
+function setEditable() {
+  document.querySelectorAll("textarea[data-ans]").forEach(ta => ta.disabled = !canWrite);
+}
+
+function wire() {
+  const timers = {};
+  document.getElementById("groups").addEventListener("input", e => {
+    const id = e.target.dataset.ans; if (!id || !canWrite) return;
+    pending[id] = true;
+    document.querySelector(`[data-meta="${id}"]`).textContent = "Menyimpan…";
+    clearTimeout(timers[id]);
+    timers[id] = setTimeout(() => save(id, e.target.value), 1200);
+  });
+  document.querySelectorAll(".filters button").forEach(b => b.addEventListener("click", () => {
+    filter = b.dataset.filter;
+    document.querySelectorAll(".filters button").forEach(x => x.setAttribute("aria-pressed", x === b));
+    update();
+  }));
+  const who = document.getElementById("whoName");
+  try { who.value = localStorage.getItem("haraka-who") || ""; } catch {}
+  who.addEventListener("change", () => { try { localStorage.setItem("haraka-who", who.value.trim()); } catch {} });
+}
+
+renderShell(); wire(); update();
+
+(async () => {
+  db = window.claude?.use ? await window.claude.use("db") : null;
+  if (!db) { showNotice("Isian tidak bisa dimuat di tampilan ini. Buka halaman ini lewat claude.ai dalam keadaan login untuk mengisi."); return; }
+  const user = await window.claude.use("user");
+  const can = user ? await user.can("data.write") : null;
+  canWrite = can !== false;
+  if (!canWrite) showNotice("Akses kamu hanya untuk membaca. Minta akses Contributor atau Editor ke pemilik halaman untuk mengisi.");
+  setEditable();
+  db.collection("answers").onSnapshot(snap => {
+    for (const d of snap.docs) answers[d.id] = d.data();
+    for (const c of snap.docChanges()) if (c.type === "removed") delete answers[c.doc.id];
+    update();
+  }, () => showNotice("Koneksi ke isian terputus. Muat ulang halaman."));
+})();
+</script>

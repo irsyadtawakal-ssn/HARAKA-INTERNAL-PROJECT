@@ -1,0 +1,409 @@
+{
+  "updatedAt": "2026-11-03T02:50:44.258Z",
+  "visual": {
+    "mode": "clips",
+    "clips": {
+      "idle": [
+        "idle-1.mp4",
+        "idle-2.mp4"
+      ],
+      "listening": [
+        "listening-1.mp4"
+      ],
+      "thinking": [
+        "thinking-1.mp4"
+      ],
+      "speaking": [
+        "speaking-1.mp4",
+        "speaking-2.mp4",
+        "speaking-3.mp4"
+      ]
+    },
+    "cameoFeather": 15,
+    "despillGreen": 78,
+    "dissolveSpeedMs": 400,
+    "avatarScale": 1.22,
+    "bgTheme": "soft-rose",
+    "greeting": "Halo Kak, aku Rara dari PT Haraka Erfi. Ceritakan produk kosmetik impianmu ya!",
+    "quickChips": [
+      "Berapa MOQ maklon?",
+      "Bisa urus BPOM & Halal?",
+      "Berapa lama proses sampai siap jual?",
+      "Apa saja kategori produknya?"
+    ],
+    "topBadge": "CPKB · BPOM · HALAL · ISO 22716",
+    "factOrbs": [
+      {
+        "big": "18+ Brand",
+        "small": "Mitra Portofolio",
+        "pos": "left-top"
+      },
+      {
+        "big": "MOQ 1.000 pcs",
+        "small": "Fleksibel untuk UMKM",
+        "pos": "left-bottom"
+      },
+      {
+        "big": "6 Tahap",
+        "small": "Ide → Siap Jual (±3 Bulan)",
+        "pos": "right-top"
+      },
+      {
+        "big": "Sejak 2015",
+        "small": "Pabrik CPKB Bekasi",
+        "pos": "right-bottom"
+      }
+    ]
+  },
+  "llm": {
+    "provider": "gemini",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+    "apiKey": "",
+    "model": "gemini-2.5-flash",
+    "fallbackModel": "gemini-2.0-flash",
+    "temperature": 0.45,
+    "maxTokens": 320,
+    "targetSentences": "2–4 kalimat yang mengalir alami saat dibacakan suara",
+    "maxQuestionsPerTurn": 1
+  },
+  "voice": {
+    "provider": "elevenlabs",
+    "elevenlabsApiKey": "",
+    "voiceId": "21m00Tcm4TlvDq8ikWAM",
+    "modelId": "eleven_multilingual_v2",
+    "stability": 75,
+    "similarityBoost": 85,
+    "styleExaggeration": 20,
+    "useSpeakerBoost": true,
+    "speakingSpeed": 1.05,
+    "autoFallbackBrowserTts": true,
+    "sttLang": "id-ID",
+    "sampleTestText": "Halo Kak! Aku Rara dari PT Haraka Erfi. Mau mulai bikin brand skincare sendiri dengan MOQ seribu pcs dan izin BPOM resmi? Ceritakan konsep produk impian Kakak ya!",
+    "pronunciationDictionary": [
+      {
+        "id": "pr-1",
+        "term": "BPOM",
+        "phonetic": "Be-Pom",
+        "enabled": true
+      },
+      {
+        "id": "pr-2",
+        "term": "CPKB",
+        "phonetic": "C P K B",
+        "enabled": true
+      },
+      {
+        "id": "pr-3",
+        "term": "MOQ",
+        "phonetic": "M O Q",
+        "enabled": true
+      },
+      {
+        "id": "pr-4",
+        "term": "HAKI",
+        "phonetic": "Ha-Ki",
+        "enabled": true
+      },
+      {
+        "id": "pr-5",
+        "term": "PA++++",
+        "phonetic": "P A plus empat",
+        "enabled": true
+      },
+      {
+        "id": "pr-6",
+        "term": "R&D",
+        "phonetic": "R and D",
+        "enabled": true
+      },
+      {
+        "id": "pr-7",
+        "term": "UMKM",
+        "phonetic": "U M K M",
+        "enabled": true
+      }
+    ]
+  },
+  "knowledge": {
+    "activeMode": "structured",
+    "sourceUrl": "https://harakaerfi.com/",
+    "lastSyncedAt": "2026-11-03T02:50:44.216Z",
+    "company": {
+      "legalName": "PT Haraka Erfi (PT Haraka Erfi Kosmetindo Abadi)",
+      "parentCompany": "PT Haraka Multifaedah (Hakara Manufacturing)",
+      "brandName": "Haraka Erfi",
+      "establishedYear": "2015",
+      "tagline": "Bangun Brand Kosmetikmu. Kami Urus Selebihnya. — Partner Maklon dari Ide Hingga Produk Siap Jual.",
+      "positioning": "Bukan sekadar pabrik maklon produksi, melainkan strategic partner dan konseptor produk dari hulu ke hilir (end-to-end): mulai dari riset bahan aktif di laboratorium R&D, perancangan formula khusus/custom, desain logo & kemasan, pengurusan legalitas izin edar, hingga manufaktur skala penuh.",
+      "certifications": [
+        "CPKB (Cara Pembuatan Kosmetik yang Baik) BPOM RI",
+        "Notifikasi Resmi BPOM",
+        "Sertifikasi Halal MUI / BPJPH",
+        "ISO 22716",
+        "Pendaftaran Merek (HAKI)"
+      ],
+      "address": "Jl. Raya Cimatis No. 80, Kel. Jatikarya, Kec. Jatisampurna, Bekasi, Jawa Barat",
+      "addressLandmark": "Belakang Plaza Cibubur, dekat Citra Grand",
+      "whatsappCs": "0831-3703-0656",
+      "officePhone": "021-39733633",
+      "email": "info@harakamultifaedah.co.id",
+      "operatingHours": "Senin – Jumat (08.00 – 17.00 WIB), Sabtu (08.00 – 14.00 WIB)"
+    },
+    "commercial": [
+      {
+        "id": "com-moq",
+        "label": "MOQ (Jumlah Pemesanan Minimum)",
+        "value": "MOQ standar mulai dari 1.000 pcs (populer & fleksibel untuk UMKM/perintis brand baru). Tersedia opsi simulasi batch awal 500 pcs untuk pemula tertentu dan 5.000+ pcs untuk skala besar dengan diskon volume bertahap.",
+        "allowMention": true,
+        "fallbackInstruction": "Sebutkan MOQ fleksibel mulai 1.000 pcs untuk mempermudah brand baru."
+      },
+      {
+        "id": "com-timeline",
+        "label": "Estimasi Durasi Maklon (Sampel hingga Siap Jual)",
+        "value": "Estimasi total dari ACC sampel hingga produk 100% legal dan siap jual kurang lebih 3 bulan (mencakup pendaftaran BPOM, finalisasi kemasan, dan produksi massal ±30 hari kerja setelah izin terbit).",
+        "allowMention": true,
+        "fallbackInstruction": "Sebutkan estimasi total sekitar 3 bulan dari ACC sampel hingga siap dipasarkan."
+      },
+      {
+        "id": "com-sample",
+        "label": "Kebijakan Sampel R&D & Revisi Formula",
+        "value": "Tim R&D membuatkan sampel formula custom sesuai bahan aktif, tekstur, warna, dan aroma yang diinginkan. Sampel dapat direvisi hingga 100% cocok dan disetujui klien sebelum masuk lini produksi massal.",
+        "allowMention": true,
+        "fallbackInstruction": "Jelaskan sampel bisa direvisi sampai cocok, untuk rincian biaya sampel arahkan ke tim sales."
+      },
+      {
+        "id": "com-price",
+        "label": "Kisaran Harga Produksi / HPP per Pcs",
+        "value": "Harga per pcs dan total paket dihitung secara kustom oleh tim R&D dan Sales sesuai jenis bahan aktif, konsentrasi formula, volume kemasan, dan kuantitas batch.",
+        "allowMention": false,
+        "fallbackInstruction": "Jangan mengarang angka rupiah harga/HPP. Jelaskan bahwa estimasi biaya akurat dihitung langsung oleh tim R&D sesuai bahan aktif dan kemasan, lalu tawarkan konsultasi gratis dengan tim sales."
+      },
+      {
+        "id": "com-legal-cost",
+        "label": "Biaya & Layanan Legalitas (BPOM, Halal, HAKI)",
+        "value": "Notifikasi resmi BPOM wajib & termasuk dalam pendampingan. Sertifikasi Halal MUI/BPJPH dan Pendaftaran Merek (HAKI) serta desain logo & kemasan premium dapat disertakan dalam paket one-stop service.",
+        "allowMention": true,
+        "fallbackInstruction": "Sebutkan BPOM, Halal, dan HAKI diurus penuh oleh tim regulasi Haraka Erfi; rincian biayanya dihitungkan tim sales."
+      }
+    ],
+    "categories": [
+      {
+        "id": "cat-skincare",
+        "name": "Skincare",
+        "items": "Facial Cleanser, Toner, Face Serum, Moisturizer Cream/Gel, Sunscreen / Sunblock, Face Mask (Wash-off / Sheet / Clay), Essence",
+        "heroIngredients": "Niacinamide, Multi-Ceramide, Encapsulated Retinol, Centella Asiatica (Cica), Hyaluronic Acid, Peptide, Alpha Arbutin, Vitamin C, UV Filter SPF 50 PA++++",
+        "packagingOptions": "Botol Dropper Pipet, Airless Pump, Jar Akrilik/Kaca, Tube Kosmetik, Botol Spray/Toner (10ml – 100ml)",
+        "moqNote": "MOQ mulai 1.000 pcs (opsi pemula 500 pcs tersedia sesuai konsultasi)"
+      },
+      {
+        "id": "cat-bodycare",
+        "name": "Bodycare",
+        "items": "Body Lotion, Body Scrub / Lulur, Hand Cream, Body Wash / Shower Gel, Body Butter, Body Serum",
+        "heroIngredients": "Glutathione, Niacinamide, Shea Butter, Kojic Acid, AHA/BHA Body Exfoliant, Vitamin E, Botanical Extracts",
+        "packagingOptions": "Botol Pump Lotion, Jar Scrub, Tube Hand Cream, Pouch Refill (100ml – 500ml)",
+        "moqNote": "MOQ mulai 1.000 pcs"
+      },
+      {
+        "id": "cat-parfume",
+        "name": "Parfum (Perfume & Fragrance)",
+        "items": "Eau de Parfum (EDP), Eau de Toilette (EDT), Body Mist, Cologne, Scented Spray / Hair & Body Fragrance",
+        "heroIngredients": "Fine Fragrance Oils Impor (Floral, Woody, Oriental, Fresh Citrus, Gourmand, Oud, Musk), Fixative Long-Lasting",
+        "packagingOptions": "Botol Kaca Crimp/Spray Eksklusif, Travel Size Pocket Spray, Roll-on, Box Hardcover Custom (15ml – 100ml)",
+        "moqNote": "MOQ mulai 1.000 pcs"
+      },
+      {
+        "id": "cat-haircare",
+        "name": "Haircare",
+        "items": "Shampoo, Conditioner, Hair Serum, Hair Mask / Creambath, Hair Tonic, Hair Oil, Hair Vitamin Mist",
+        "heroIngredients": "Biotin, Ginseng Extract, Keratin, Argan Oil, Candlenut (Kemiri), Rosemary Oil, Panthenol, Anti-Dandruff Actives",
+        "packagingOptions": "Botol Pump/Flip-top Shampoo, Jar Hair Mask, Botol Tonic Spray/Dropper (30ml – 500ml)",
+        "moqNote": "MOQ mulai 1.000 pcs"
+      }
+    ],
+    "services": [
+      {
+        "title": "Pengembangan Formula & Sampel (Custom Formula & Private Label)",
+        "description": "Pengembangan formulasi sampel oleh tim R&D profesional disesuaikan dengan bahan aktif, aroma, dan tekstur keinginan klien, atau pilih formula ready-made agar proses lebih cepat."
+      },
+      {
+        "title": "Konsep & Desain Produk A–Z",
+        "description": "Layanan perancangan desain logo, kemasan produk, dan konsep branding eksklusif dari A sampai Z agar brand tampil menonjol di pasar."
+      },
+      {
+        "title": "Solusi Kemasan & Sourcing",
+        "description": "Konsultasi desain packaging dan sourcing wadah kemasan berkualitas tinggi sesuai konsep dan target harga produk."
+      },
+      {
+        "title": "Manufaktur CPKB, ISO 22716 & QC Ketat",
+        "description": "Produksi massal di pabrik modern berstandar CPKB BPOM RI dan ISO 22716 dengan mesin otomatis canggih serta Quality Control ketat di setiap tahap."
+      }
+    ],
+    "sixSteps": [
+      {
+        "step": 1,
+        "title": "Konsultasi Ide & Konsep Produk",
+        "description": "Diskusikan visi brand, target pasar, bahan aktif utama, serta target harga jual produk impian bersama tim representatif Haraka Erfi."
+      },
+      {
+        "step": 2,
+        "title": "Pembuatan Formula & Sampel R&D",
+        "description": "Tim R&D berpengalaman mengembangkan formula khusus sesuai permintaan dan mengirimkan sampel untuk dievaluasi klien."
+      },
+      {
+        "step": 3,
+        "title": "Approval Formula Final",
+        "description": "Revisi sampel jika diperlukan hingga cocok 100%. Setelah disetujui, dilakukan finalisasi spesifikasi bahan dan kemasan."
+      },
+      {
+        "step": 4,
+        "title": "Registrasi Legalitas (BPOM, Halal, HAKI)",
+        "description": "Seluruh kelengkapan dokumen notifikasi BPOM, sertifikasi Halal MUI/BPJPH, dan pendaftaran merek HAKI diurus oleh tim regulasi."
+      },
+      {
+        "step": 5,
+        "title": "Produksi Skala Penuh (Standar CPKB)",
+        "description": "Setelah izin edar terbit, pabrik memulai produksi massal menggunakan mesin otomatis berstandar CPKB."
+      },
+      {
+        "step": 6,
+        "title": "Quality Control & Pengiriman",
+        "description": "Produk dikemas rapi melalui QC ketat, lalu dikirim aman ke gudang klien dan siap dijual ke pasar."
+      }
+    ],
+    "whyHaraka": [
+      {
+        "title": "Pelayanan Responsif & Cepat",
+        "description": "Akses cepat memantau perkembangan sampel dan jadwal produksi tanpa waktu tunggu lama."
+      },
+      {
+        "title": "Kustomisasi Formula Bebas",
+        "description": "Bebas menentukan bahan aktif, tekstur, aroma, warna, hingga bentuk kemasan didampingi R&D ahli."
+      },
+      {
+        "title": "MOQ Fleksibel untuk UMKM",
+        "description": "Minimum order mulai 1.000 pcs, dirancang untuk mempermudah perintis brand baru tanpa beban modal besar."
+      },
+      {
+        "title": "Benefit Exclusive Partner",
+        "description": "Prioritas antrean produksi, diskon volume bertahap, dan konsultasi bisnis berkelanjutan."
+      },
+      {
+        "title": "Standar CPKB, BPOM & ISO 22716",
+        "description": "Jaminan kualitas produk aman dan tersertifikasi resmi sesuai regulasi BPOM RI."
+      },
+      {
+        "title": "Pendampingan Bisnis A–Z",
+        "description": "Hemat biaya dan efisien karena seluruh kebutuhan R&D, desain, kemasan, dan sertifikasi tersedia satu pintu."
+      }
+    ],
+    "faqs": [
+      {
+        "id": "faq-1",
+        "category": "faq",
+        "question": "Berapa minimal order (MOQ) maklon di PT Haraka Erfi?",
+        "answer": "Jumlah Minimum Pemesanan (MOQ) di Haraka Erfi sangat fleksibel, mulai dari 1.000 pcs (serta tersedia simulasi opsi pemula 500 pcs atau skala besar 5.000+ pcs). Fasilitas ini mempermudah perintis brand baru dan UMKM meluncurkan produk tanpa beban modal awal yang besar."
+      },
+      {
+        "id": "faq-2",
+        "category": "faq",
+        "question": "Berapa lama estimasi total dari pembuatan sampel hingga produk siap jual?",
+        "answer": "Estimasi total dari ACC sampel hingga produk siap jual kurang lebih 3 bulan. Setelah sampel disetujui, produk masuk proses pendaftaran BPOM, finalisasi desain kemasan, dan produksi massal (±30 hari kerja) sehingga produk 100% legal dan siap dipasarkan."
+      },
+      {
+        "id": "faq-3",
+        "category": "faq",
+        "question": "Apakah izin edar BPOM dan sertifikasi Halal diurus sepenuhnya?",
+        "answer": "Ya, betul! Tim legalitas kami mendampingi seluruh proses pendaftaran notifikasi resmi BPOM, pengurusan sertifikasi Halal MUI/BPJPH, serta pendaftaran merek (HAKI) sehingga produk 100% legal dan aman dijual bebas."
+      },
+      {
+        "id": "faq-4",
+        "category": "faq",
+        "question": "Bagaimana jika saya belum punya formula atau desain kemasan sama sekali?",
+        "answer": "Tenang saja! Haraka Erfi adalah partner konseptor A sampai Z. Tim R&D kami membuatkan sampel formula custom sesuai bahan aktif impian Anda, dan tim desainer kami merancang konsep logo serta wadah kemasan yang menarik di pasaran."
+      },
+      {
+        "id": "faq-5",
+        "category": "faq",
+        "question": "Apakah sampel produk bisa direvisi jika aromanya atau teksturnya belum cocok?",
+        "answer": "Tentu bisa! Tim R&D kami memberikan kesempatan revisi sampel hingga tekstur, aroma, warna, dan khasiat formula 100% cocok dengan keinginan dan persetujuan Anda sebelum masuk lini produksi massal."
+      },
+      {
+        "id": "obj-1",
+        "category": "objection",
+        "question": "Takut modal kemahalan atau belum tahu cara hitung biaya awal",
+        "answer": "Jelaskan bahwa maklon jauh lebih hemat biaya dibanding membangun fasilitas sendiri karena semua sudah satu pintu (R&D, desain, kemasan, legalitas) dengan MOQ mulai 1.000 pcs. Tawarkan simulasi estimasi gratis sesuai budget calon klien bersama tim sales."
+      },
+      {
+        "id": "obj-2",
+        "category": "objection",
+        "question": "Khawatir proses pabrik lama atau stok telat saat produk viral",
+        "answer": "Tekankan pelayanan responsif Haraka Erfi, fasilitas mesin otomatis berstandar CPKB & ISO 22716 di Bekasi, serta program Benefit Exclusive Partner yang memberikan prioritas antrean produksi dan diskon volume bertahap."
+      }
+    ],
+    "portfolioBrands": [
+      "Narsis",
+      "Versident",
+      "Pherini",
+      "Nature Reaction",
+      "Hassya Premiere",
+      "Eloni",
+      "Umyka Beauty Glow",
+      "Djunichol Skincare",
+      "Art Glow",
+      "Barmen",
+      "Thipank",
+      "Cloris Men",
+      "Sakura Kanaai",
+      "Ahel Skincare",
+      "Zammit",
+      "EpelSkin",
+      "Ascha Beauty",
+      "D'Gekira Parfume"
+    ],
+    "extraDocs": [],
+    "rawMarkdown": "# Pengetahuan Resmi Haraka Erfi\n\nSumber resmi: https://harakaerfi.com/ (Sinkronisasi terakhir: 3/11/2026)\n\n## 1. Profil Perusahaan & Identitas\n- Nama resmi: PT Haraka Erfi (PT Haraka Erfi Kosmetindo Abadi), unit usaha manufaktur kosmetik terintegrasi di bawah naungan PT Haraka Multifaedah (Hakara Manufacturing).\n- Berpengalaman di industri kosmetik sejak tahun 2015.\n- Tagline: \"Bangun Brand Kosmetikmu. Kami Urus Selebihnya. — Partner Maklon dari Ide Hingga Produk Siap Jual.\"\n- Positioning: Bukan sekadar pabrik maklon produksi, melainkan strategic partner dan konseptor produk dari hulu ke hilir (end-to-end): mulai dari riset bahan aktif di laboratorium R&D, perancangan formula khusus/custom, desain logo & kemasan, pengurusan legalitas izin edar, hingga manufaktur skala penuh.\n- Sertifikasi & Standar Pabrik: CPKB (Cara Pembuatan Kosmetik yang Baik) BPOM RI, Notifikasi Resmi BPOM, Sertifikasi Halal MUI / BPJPH, ISO 22716, Pendaftaran Merek (HAKI).\n- Alamat Pabrik & Head Office: Jl. Raya Cimatis No. 80, Kel. Jatikarya, Kec. Jatisampurna, Bekasi, Jawa Barat (Belakang Plaza Cibubur, dekat Citra Grand).\n- Kontak Resmi: WhatsApp CS 0831-3703-0656 | Telepon Kantor 021-39733633 | Email info@harakamultifaedah.co.id.\n- Jam Operasional: Senin – Jumat (08.00 – 17.00 WIB), Sabtu (08.00 – 14.00 WIB).\n\n## 2. Aturan Komersial, MOQ, Harga & Estimasi Waktu\n- **MOQ (Jumlah Pemesanan Minimum) (BOLEH DISEBUT):** MOQ standar mulai dari 1.000 pcs (populer & fleksibel untuk UMKM/perintis brand baru). Tersedia opsi simulasi batch awal 500 pcs untuk pemula tertentu dan 5.000+ pcs untuk skala besar dengan diskon volume bertahap.\n- **Estimasi Durasi Maklon (Sampel hingga Siap Jual) (BOLEH DISEBUT):** Estimasi total dari ACC sampel hingga produk 100% legal dan siap jual kurang lebih 3 bulan (mencakup pendaftaran BPOM, finalisasi kemasan, dan produksi massal ±30 hari kerja setelah izin terbit).\n- **Kebijakan Sampel R&D & Revisi Formula (BOLEH DISEBUT):** Tim R&D membuatkan sampel formula custom sesuai bahan aktif, tekstur, warna, dan aroma yang diinginkan. Sampel dapat direvisi hingga 100% cocok dan disetujui klien sebelum masuk lini produksi massal.\n- **Kisaran Harga Produksi / HPP per Pcs (RAHASIA / ARAHKAN KE SALES):** Jangan mengarang angka rupiah harga/HPP. Jelaskan bahwa estimasi biaya akurat dihitung langsung oleh tim R&D sesuai bahan aktif dan kemasan, lalu tawarkan konsultasi gratis dengan tim sales.\n- **Biaya & Layanan Legalitas (BPOM, Halal, HAKI) (BOLEH DISEBUT):** Notifikasi resmi BPOM wajib & termasuk dalam pendampingan. Sertifikasi Halal MUI/BPJPH dan Pendaftaran Merek (HAKI) serta desain logo & kemasan premium dapat disertakan dalam paket one-stop service.\n\n## 3. Kategori Produk Maklon, Bahan Aktif & Kemasan\n### Skincare\n- Varian Produk: Facial Cleanser, Toner, Face Serum, Moisturizer Cream/Gel, Sunscreen / Sunblock, Face Mask (Wash-off / Sheet / Clay), Essence.\n- Bahan Aktif Unggulan (R&D): Niacinamide, Multi-Ceramide, Encapsulated Retinol, Centella Asiatica (Cica), Hyaluronic Acid, Peptide, Alpha Arbutin, Vitamin C, UV Filter SPF 50 PA++++.\n- Pilihan Kemasan: Botol Dropper Pipet, Airless Pump, Jar Akrilik/Kaca, Tube Kosmetik, Botol Spray/Toner (10ml – 100ml).\n- Catatan MOQ: MOQ mulai 1.000 pcs (opsi pemula 500 pcs tersedia sesuai konsultasi).\n### Bodycare\n- Varian Produk: Body Lotion, Body Scrub / Lulur, Hand Cream, Body Wash / Shower Gel, Body Butter, Body Serum.\n- Bahan Aktif Unggulan (R&D): Glutathione, Niacinamide, Shea Butter, Kojic Acid, AHA/BHA Body Exfoliant, Vitamin E, Botanical Extracts.\n- Pilihan Kemasan: Botol Pump Lotion, Jar Scrub, Tube Hand Cream, Pouch Refill (100ml – 500ml).\n- Catatan MOQ: MOQ mulai 1.000 pcs.\n### Parfum (Perfume & Fragrance)\n- Varian Produk: Eau de Parfum (EDP), Eau de Toilette (EDT), Body Mist, Cologne, Scented Spray / Hair & Body Fragrance.\n- Bahan Aktif Unggulan (R&D): Fine Fragrance Oils Impor (Floral, Woody, Oriental, Fresh Citrus, Gourmand, Oud, Musk), Fixative Long-Lasting.\n- Pilihan Kemasan: Botol Kaca Crimp/Spray Eksklusif, Travel Size Pocket Spray, Roll-on, Box Hardcover Custom (15ml – 100ml).\n- Catatan MOQ: MOQ mulai 1.000 pcs.\n### Haircare\n- Varian Produk: Shampoo, Conditioner, Hair Serum, Hair Mask / Creambath, Hair Tonic, Hair Oil, Hair Vitamin Mist.\n- Bahan Aktif Unggulan (R&D): Biotin, Ginseng Extract, Keratin, Argan Oil, Candlenut (Kemiri), Rosemary Oil, Panthenol, Anti-Dandruff Actives.\n- Pilihan Kemasan: Botol Pump/Flip-top Shampoo, Jar Hair Mask, Botol Tonic Spray/Dropper (30ml – 500ml).\n- Catatan MOQ: MOQ mulai 1.000 pcs.\n\n## 4. Layanan End-to-End Satu Pintu\n1. **Pengembangan Formula & Sampel (Custom Formula & Private Label):** Pengembangan formulasi sampel oleh tim R&D profesional disesuaikan dengan bahan aktif, aroma, dan tekstur keinginan klien, atau pilih formula ready-made agar proses lebih cepat.\n2. **Konsep & Desain Produk A–Z:** Layanan perancangan desain logo, kemasan produk, dan konsep branding eksklusif dari A sampai Z agar brand tampil menonjol di pasar.\n3. **Solusi Kemasan & Sourcing:** Konsultasi desain packaging dan sourcing wadah kemasan berkualitas tinggi sesuai konsep dan target harga produk.\n4. **Manufaktur CPKB, ISO 22716 & QC Ketat:** Produksi massal di pabrik modern berstandar CPKB BPOM RI dan ISO 22716 dengan mesin otomatis canggih serta Quality Control ketat di setiap tahap.\n\n## 5. Enam (6) Tahapan Prosedur Maklon di Haraka Erfi\n1. **Konsultasi Ide & Konsep Produk:** Diskusikan visi brand, target pasar, bahan aktif utama, serta target harga jual produk impian bersama tim representatif Haraka Erfi.\n2. **Pembuatan Formula & Sampel R&D:** Tim R&D berpengalaman mengembangkan formula khusus sesuai permintaan dan mengirimkan sampel untuk dievaluasi klien.\n3. **Approval Formula Final:** Revisi sampel jika diperlukan hingga cocok 100%. Setelah disetujui, dilakukan finalisasi spesifikasi bahan dan kemasan.\n4. **Registrasi Legalitas (BPOM, Halal, HAKI):** Seluruh kelengkapan dokumen notifikasi BPOM, sertifikasi Halal MUI/BPJPH, dan pendaftaran merek HAKI diurus oleh tim regulasi.\n5. **Produksi Skala Penuh (Standar CPKB):** Setelah izin edar terbit, pabrik memulai produksi massal menggunakan mesin otomatis berstandar CPKB.\n6. **Quality Control & Pengiriman:** Produk dikemas rapi melalui QC ketat, lalu dikirim aman ke gudang klien dan siap dijual ke pasar.\n\n## 6. Keunggulan Utama Mengapa Memilih Haraka Erfi\n- **Pelayanan Responsif & Cepat:** Akses cepat memantau perkembangan sampel dan jadwal produksi tanpa waktu tunggu lama.\n- **Kustomisasi Formula Bebas:** Bebas menentukan bahan aktif, tekstur, aroma, warna, hingga bentuk kemasan didampingi R&D ahli.\n- **MOQ Fleksibel untuk UMKM:** Minimum order mulai 1.000 pcs, dirancang untuk mempermudah perintis brand baru tanpa beban modal besar.\n- **Benefit Exclusive Partner:** Prioritas antrean produksi, diskon volume bertahap, dan konsultasi bisnis berkelanjutan.\n- **Standar CPKB, BPOM & ISO 22716:** Jaminan kualitas produk aman dan tersertifikasi resmi sesuai regulasi BPOM RI.\n- **Pendampingan Bisnis A–Z:** Hemat biaya dan efisien karena seluruh kebutuhan R&D, desain, kemasan, dan sertifikasi tersedia satu pintu.\n\n## 7. Portofolio Brand Mitra\nTelah dipercaya memproduksi berbagai brand skincare, bodycare, haircare, dan parfum di Indonesia, antara lain: Narsis, Versident, Pherini, Nature Reaction, Hassya Premiere, Eloni, Umyka Beauty Glow, Djunichol Skincare, Art Glow, Barmen, Thipank, Cloris Men, Sakura Kanaai, Ahel Skincare, Zammit, EpelSkin, Ascha Beauty, D'Gekira Parfume.\n\n## 8. FAQ Resmi & Panduan Menjawab Keberatan Klien\n- **[FAQ] Berapa minimal order (MOQ) maklon di PT Haraka Erfi?**\n  Jawaban: Jumlah Minimum Pemesanan (MOQ) di Haraka Erfi sangat fleksibel, mulai dari 1.000 pcs (serta tersedia simulasi opsi pemula 500 pcs atau skala besar 5.000+ pcs). Fasilitas ini mempermudah perintis brand baru dan UMKM meluncurkan produk tanpa beban modal awal yang besar.\n- **[FAQ] Berapa lama estimasi total dari pembuatan sampel hingga produk siap jual?**\n  Jawaban: Estimasi total dari ACC sampel hingga produk siap jual kurang lebih 3 bulan. Setelah sampel disetujui, produk masuk proses pendaftaran BPOM, finalisasi desain kemasan, dan produksi massal (±30 hari kerja) sehingga produk 100% legal dan siap dipasarkan.\n- **[FAQ] Apakah izin edar BPOM dan sertifikasi Halal diurus sepenuhnya?**\n  Jawaban: Ya, betul! Tim legalitas kami mendampingi seluruh proses pendaftaran notifikasi resmi BPOM, pengurusan sertifikasi Halal MUI/BPJPH, serta pendaftaran merek (HAKI) sehingga produk 100% legal dan aman dijual bebas.\n- **[FAQ] Bagaimana jika saya belum punya formula atau desain kemasan sama sekali?**\n  Jawaban: Tenang saja! Haraka Erfi adalah partner konseptor A sampai Z. Tim R&D kami membuatkan sampel formula custom sesuai bahan aktif impian Anda, dan tim desainer kami merancang konsep logo serta wadah kemasan yang menarik di pasaran.\n- **[FAQ] Apakah sampel produk bisa direvisi jika aromanya atau teksturnya belum cocok?**\n  Jawaban: Tentu bisa! Tim R&D kami memberikan kesempatan revisi sampel hingga tekstur, aroma, warna, dan khasiat formula 100% cocok dengan keinginan dan persetujuan Anda sebelum masuk lini produksi massal.\n- **[Cara Menjawab Keberatan] Takut modal kemahalan atau belum tahu cara hitung biaya awal**\n  Jawaban: Jelaskan bahwa maklon jauh lebih hemat biaya dibanding membangun fasilitas sendiri karena semua sudah satu pintu (R&D, desain, kemasan, legalitas) dengan MOQ mulai 1.000 pcs. Tawarkan simulasi estimasi gratis sesuai budget calon klien bersama tim sales.\n- **[Cara Menjawab Keberatan] Khawatir proses pabrik lama atau stok telat saat produk viral**\n  Jawaban: Tekankan pelayanan responsif Haraka Erfi, fasilitas mesin otomatis berstandar CPKB & ISO 22716 di Bekasi, serta program Benefit Exclusive Partner yang memberikan prioritas antrean produksi dan diskon volume bertahap."
+  },
+  "persona": {
+    "avatarName": "Rara",
+    "roleTitle": "AI Maklon & Formula Consultant PT Haraka Erfi",
+    "visitorHonorific": "Kak",
+    "toneOfVoice": "Bahasa Indonesia yang ramah, hangat, antusias, dan profesional. Kalimat ringkas dan enak didengar saat diucapkan dengan suara (tanpa daftar bernomor, tanpa simbol markdown bintang/pagar, tanpa emoji, dan tanpa URL mentah).",
+    "languages": "Bahasa Indonesia (utama), dapat merespons Bahasa Inggris dasar bila diajak bicara dalam Bahasa Inggris.",
+    "customSystemPromptOverride": "",
+    "useCustomPromptOverride": false
+  },
+  "guardrails": {
+    "strictBpomMode": true,
+    "noFabricatedNumbers": true,
+    "noMedicalClaims": true,
+    "noCompetitorBash": true,
+    "mandatoryCpkbEducation": true,
+    "forbiddenClaims": [
+      "Putih permanen dalam 3 hari / instan",
+      "Menyembuhkan penyakit kulit medis / eksim / infeksi (klaim obat)",
+      "Menghilangkan bopeng permanen 100% tanpa tindakan klinis",
+      "Bebas bahan kimia 100% (gunakan istilah: teruji aman & berstandar BPOM)",
+      "Menjamin pasti balik modal dalam X hari"
+    ],
+    "allowedTopicsNote": "Hanya melayani topik seputar maklon kosmetik, formulasi skincare/bodycare/haircare/parfum, kemasan, legalitas BPOM/Halal/HAKI, dan prosedur kerja sama di PT Haraka Erfi."
+  },
+  "leadRules": {
+    "triggerAfterTurns": 3,
+    "triggerOnCommercialIntent": true,
+    "requiredQualificationFields": [
+      "Jenis / kategori produk yang ingin dibuat",
+      "Perkiraan jumlah produksi (MOQ)",
+      "Kisaran budget modal awal",
+      "Target waktu launching"
+    ],
+    "whatsappCsNumber": "0831-3703-0656",
+    "whatsappPrefillTemplate": "Halo Admin PT Haraka Erfi, saya sudah berkonsultasi dengan Rara mengenai rencana maklon produk kosmetik. Mohon info estimasi biaya dan sampel R&D.",
+    "notifyEmailTo": "info@harakamultifaedah.co.id",
+    "notifyEmailFrom": "rara@harakaerfi.com",
+    "vpsWaWebhookUrl": "",
+    "vpsWaWebhookSecret": "",
+    "maxUserTurnsPerSession": 20,
+    "ipRateLimitPerMinute": 30,
+    "sessionLimitMessage": "Sesi demo ini sudah mencapai batas. Silakan lanjut via WhatsApp 0831-3703-0656."
+  }
+}

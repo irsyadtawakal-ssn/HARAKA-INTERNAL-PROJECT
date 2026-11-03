@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/*
+ * Haraka Erfi Factory: nuansa lembar batch lab kosmetik.
+ * Latar porselen dingin, tinta hijau pinus, aksi utama berry lipstik.
+ * Warna status = "pigmen" (strip kiri kartu aset dan titik chip status).
+ */
+@theme {
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+
+  --color-porcelain: #eef2f1;
+  --color-surface: #ffffff;
+  --color-well: #e3e9e7;
+  --color-line: #d3dcda;
+  --color-ink: #13302b;
+  --color-ink-soft: #4a625e;
+  --color-ink-faint: #7d918d;
+
+  --color-berry: #a3245b;
+  --color-berry-deep: #7e1a45;
+  --color-berry-wash: #f7e6ee;
+
+  --color-pigment-processing: #b7791f;
+  --color-pigment-ready: #0f7a6a;
+  --color-pigment-analyzed: #3f4bb8;
+  --color-pigment-approved: #2e7d4f;
+  --color-pigment-rejected: #9f1239;
+  --color-pigment-archived: #8a9a97;
+  --color-pigment-failed: #c2410c;
+  --color-amber-wash: #fbf1df;
+  --color-danger-wash: #fbe9e2;
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-porcelain);
+  color: var(--color-ink);
+  font-feature-settings: "tnum" 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-berry);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

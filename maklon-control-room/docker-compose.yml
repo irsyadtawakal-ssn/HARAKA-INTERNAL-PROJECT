@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  maklon-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: maklon-control-room
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./server/.env
+    volumes:
+      # Mount file service account agar tidak perlu rebuild image saat ganti key
+      - ./server/service-account.json:/app/server/service-account.json:ro
+      # Opsional mount web jika ingin update kode web tanpa rebuild
+      - ./web:/app/web:ro

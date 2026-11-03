@@ -1,0 +1,16 @@
+{
+  "name": "Haraka Erfi - Mitra Manufaktur Kosmetik Premium Indonesia",
+  "short_name": "Haraka Erfi",
+  "description": "Contract manufacturing kosmetik terpercaya di Indonesia dengan sertifikasi lengkap",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#D4AF37",
+  "background_color": "#2A2B2A",
+  "display": "standalone",
+  "start_url": "/"
+}

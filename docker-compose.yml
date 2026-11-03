@@ -1,0 +1,88 @@
+﻿# Infrastruktur dev Haraka Erfi AI Marketing Factory.
+# Port sengaja tidak memakai default (5432/6379/9000) karena sudah dipakai project lain di mesin ini.
+#   docker compose up -d                 -> hanya infrastruktur (db, redis, s3)
+#   docker compose --profile app up -d   -> + API dan worker di container
+#
+# Object storage dev memakai zenko/cloudserver (S3-compatible) karena image MinIO tidak bisa di-pull
+# dari mesin ini. Production cukup mengganti S3_* di .env ke penyedia S3 sungguhan; bucket dibuat
+# oleh app (app.storage.ensure_bucket).
+
+name: harka-factory
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: harka
+      POSTGRES_PASSWORD: harka
+      POSTGRES_DB: harka
+    ports: ["127.0.0.1:5442:5432"]
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harka -d harka"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:6390:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  s3:
+    image: zenko/cloudserver:latest
+    environment:
+      S3BACKEND: file
+      S3DATA: file
+      REMOTE_MANAGEMENT_DISABLE: "1"
+      SCALITY_ACCESS_KEY_ID: harka-dev
+      SCALITY_SECRET_ACCESS_KEY: harka-dev-secret
+      ENDPOINT: s3
+      LOG_LEVEL: info
+    ports: ["127.0.0.1:9010:8000"]
+    volumes:
+      - s3_data:/usr/src/app/localData
+      - s3_meta:/usr/src/app/localMetadata
+
+  api:
+    profiles: [app]
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://harka:harka@db:5432/harka
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://s3:8000
+      S3_PUBLIC_ENDPOINT_URL: http://localhost:9010
+      CELERY_EAGER: "false"
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports: ["127.0.0.1:8010:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      s3: { condition: service_started }
+
+  worker:
+    profiles: [app]
+    build: ./backend
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql+psycopg://harka:harka@db:5432/harka
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT_URL: http://s3:8000
+      S3_PUBLIC_ENDPOINT_URL: http://localhost:9010
+      CELERY_EAGER: "false"
+    command: celery -A app.worker.celery_app worker --loglevel=info --concurrency=2
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+volumes:
+  db_data:
+  s3_data:
+  s3_meta:

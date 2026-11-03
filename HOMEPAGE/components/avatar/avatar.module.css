@@ -1,0 +1,81 @@
+.root { position: absolute; inset: 0; }
+
+.head {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 100%;
+  animation: breathe 5s ease-in-out infinite;
+  transition: rotate 0.6s ease;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+.face {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 50%;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  filter: drop-shadow(0 15px 35px rgba(160, 130, 130, 0.16));
+}
+
+/* Eyelids: disabled on still photo to prevent artificial flashing/flicker */
+.lids {
+  display: none;
+}
+
+.ring {
+  position: absolute;
+  left: 50%;
+  top: 43%;
+  width: 92%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 139, 139, 0.45);
+  opacity: 0;
+  transition: transform 80ms linear, opacity 0.3s;
+}
+
+.root[data-state="listening"] .ring { opacity: 1; animation: pulse 1.4s ease-out infinite; }
+.root[data-state="speaking"] .ring { opacity: 0.8; }
+.root[data-state="thinking"] .head { rotate: -2deg; }
+
+.video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: opacity, transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-mask-image: radial-gradient(ellipse 46% 44% at 50% 46%, #000 50%, rgba(0, 0, 0, 0.6) 75%, transparent 95%);
+  mask-image: radial-gradient(ellipse 46% 44% at 50% 46%, #000 50%, rgba(0, 0, 0, 0.6) 75%, transparent 95%);
+}
+
+.video[data-front="true"] {
+  z-index: 2;
+  transition: opacity 400ms ease;
+}
+
+.video[data-front="false"] {
+  z-index: 1;
+  transition: opacity 400ms ease 120ms;
+}
+
+@keyframes breathe {
+  0%, 100% { scale: 1; }
+  50% { scale: 1.012; }
+}
+
+@keyframes pulse {
+  from { scale: 0.92; opacity: 0.9; }
+  to { scale: 1.15; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .head, .ring { animation: none !important; }
+}

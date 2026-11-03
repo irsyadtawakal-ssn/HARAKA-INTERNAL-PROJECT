@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "instrument sans",
+        "createdAt": "2026-10-30T02:05:48.066Z",
+        "reason": "Claude: internal team brief/form page (utilitarian treatment); body face already swapped once, display face Bricolage carries personality"
+      }
+    ]
+  }
+}

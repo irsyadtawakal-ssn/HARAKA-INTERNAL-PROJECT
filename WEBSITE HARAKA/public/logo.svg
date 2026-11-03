@@ -1,0 +1,22 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Globe Icon -->
+  <g>
+    <circle cx="30" cy="30" r="18" stroke="currentColor" stroke-width="1.5" fill="none"/>
+    <!-- Vertical lines -->
+    <line x1="30" y1="12" x2="30" y2="48" stroke="currentColor" stroke-width="1"/>
+    <!-- Horizontal lines -->
+    <line x1="12" y1="30" x2="48" y2="30" stroke="currentColor" stroke-width="1"/>
+    <!-- Curved lines for globe effect -->
+    <path d="M 18 18 Q 30 24 42 18" stroke="currentColor" stroke-width="1" fill="none"/>
+    <path d="M 18 42 Q 30 36 42 42" stroke="currentColor" stroke-width="1" fill="none"/>
+    <path d="M 18 30 Q 24 24 30 30 Q 36 36 42 30" stroke="currentColor" stroke-width="1" fill="none"/>
+  </g>
+  
+  <!-- Haraka Erfi Text -->
+  <text x="65" y="25" font-family="DM Sans, sans-serif" font-size="18" font-weight="600" fill="currentColor">
+    Haraka
+  </text>
+  <text x="65" y="45" font-family="DM Sans, sans-serif" font-size="18" font-weight="400" fill="currentColor">
+    Erfi
+  </text>
+</svg>

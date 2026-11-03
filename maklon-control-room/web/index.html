@@ -1,0 +1,1050 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Maklon Control Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sidebar navigation + working pane; one-column with scrolling tab bar on phones. Lab-green neutrals for a cosmetics factory. */
+:root{
+  --bg:#F3F6F3; --surface:#FFFFFF; --sunken:#EAF0EC; --ink:#15201B; --muted:#5B6A63; --line:#D9E1DC;
+  --accent:#0D6A55; --accent-ink:#FFFFFF; --accent-soft:#DDEFE7;
+  --ok:#1D7A4B; --ok-soft:#E1F3E8; --warn:#9A6100; --warn-soft:#FBEFD6; --bad:#B42318; --bad-soft:#FCE4E1; --info:#2B5C8C; --info-soft:#E1ECF7;
+  --chart-a:#0D6A55; --chart-b:#C8D5CE; --chart-c:#D08A1E;
+  --shadow:0 1px 2px rgba(16,32,26,.06),0 6px 24px rgba(16,32,26,.06);
+  --font-ui:"Plus Jakarta Sans",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-num:"JetBrains Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1412; --surface:#151D1A; --sunken:#1B2521; --ink:#E5ECE8; --muted:#97A69F; --line:#26332E;
+  --accent:#47C29E; --accent-ink:#06261D; --accent-soft:#163A30;
+  --ok:#5FD08F; --ok-soft:#14321F; --warn:#E8B04B; --warn-soft:#352813; --bad:#F2796B; --bad-soft:#3A1916; --info:#7FB3E6; --info-soft:#15283A;
+  --chart-a:#47C29E; --chart-b:#33443D; --chart-c:#E8B04B;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1412; --surface:#151D1A; --sunken:#1B2521; --ink:#E5ECE8; --muted:#97A69F; --line:#26332E;
+  --accent:#47C29E; --accent-ink:#06261D; --accent-soft:#163A30;
+  --ok:#5FD08F; --ok-soft:#14321F; --warn:#E8B04B; --warn-soft:#352813; --bad:#F2796B; --bad-soft:#3A1916; --info:#7FB3E6; --info-soft:#15283A;
+  --chart-a:#47C29E; --chart-b:#33443D; --chart-c:#E8B04B;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+.side{border-right:1px solid var(--line);background:var(--surface);padding:20px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;padding-left:max(14px,env(safe-area-inset-left,0px))}
+.brand{display:flex;flex-direction:column;gap:2px;padding:0 8px}
+.brand b{font-size:15px;letter-spacing:-.01em}
+.brand span{font-size:11.5px;color:var(--muted)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:500}
+.nav a:hover{background:var(--sunken)}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav .cnt{font-family:var(--font-num);font-size:11px;background:var(--bad);color:#fff;border-radius:999px;padding:0 7px;min-width:20px;text-align:center}
+.who{margin-top:auto;font-size:12px;color:var(--muted);padding:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.who b{color:var(--ink);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:4px 10px;font-size:12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+main{min-width:0;padding-block:24px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+h1{font-size:22px;letter-spacing:-.02em;margin:0;text-wrap:balance}
+h2{font-size:15px;margin:0;letter-spacing:-.01em}
+h3{font-size:13.5px;margin:0}
+.sub{color:var(--muted);margin:2px 0 0;font-size:13px;max-width:70ch}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card > .ch{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.card .note{font-size:12px;color:var(--muted)}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,138px),1fr))}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi .l{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-family:var(--font-num);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.bad .v{color:var(--bad)} .kpi.warn .v{color:var(--warn)} .kpi.ok .v{color:var(--ok)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover{background:var(--sunken)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,.nav a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--sunken);color:var(--muted);white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.info{background:var(--info-soft);color:var(--info)} .pill.acc{background:var(--accent-soft);color:var(--accent)}
+.tbl-wrap{overflow-x:auto;margin:0 -4px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;font-family:var(--font-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.click{cursor:pointer} tr.click:hover td{background:var(--sunken)}
+.muted{color:var(--muted)} .small{font-size:12px}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.list{display:flex;flex-direction:column}
+.item{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.item:last-child{border-bottom:0}
+.item .main{min-width:0;flex:1 1 260px;display:flex;flex-direction:column;gap:3px}
+.item .t{font-weight:600}
+.empty{padding:22px 12px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--line);border-radius:8px}
+.bar{height:6px;background:var(--sunken);border-radius:99px;overflow:hidden;min-width:80px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.search{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;min-width:0;width:260px;max-width:100%}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 11px;font-size:12.5px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.stages{display:flex;gap:4px;flex-wrap:wrap}
+.stages span{font-size:11px;padding:2px 7px;border-radius:5px;background:var(--sunken);color:var(--muted)}
+.stages span.done{background:var(--accent-soft);color:var(--accent)}
+.stages span.now{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.tl{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:6px;padding-left:14px}
+.tl .e{position:relative;padding:6px 0 10px}
+.tl .e::before{content:"";position:absolute;left:-20px;top:11px;width:10px;height:10px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+.tl .e .d{font-size:11.5px;color:var(--muted)}
+.msg{white-space:pre-wrap;background:var(--sunken);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.55}
+.chart{width:100%;overflow:visible}
+.chart text{fill:var(--muted);font-family:var(--font-num);font-size:10px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.funnel{display:flex;flex-direction:column;gap:8px}
+.funnel .f{display:grid;grid-template-columns:minmax(120px,190px) 1fr 110px;gap:10px;align-items:center;font-size:13px}
+.funnel .track{height:22px;background:var(--sunken);border-radius:5px;overflow:hidden}
+.funnel .track i{display:block;height:100%;background:var(--accent);opacity:.85}
+.funnel .r{font-family:var(--font-num);text-align:right;font-size:12.5px}
+/* overlay */
+.ov{position:fixed;inset:0;background:rgba(10,20,16,.45);display:flex;justify-content:flex-end;z-index:50;padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) 0}
+.panel{background:var(--bg);width:min(620px,100%);height:100%;overflow:auto;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.panel .ph{position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--line);padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;z-index:2}
+.panel .pb{padding:18px;display:flex;flex-direction:column;gap:14px}
+.form{display:flex;flex-direction:column;gap:12px}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:12.5px;font-weight:600}
+.fld .h{font-size:11.5px;color:var(--muted)}
+.fld input,.fld select,.fld textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;width:100%}
+.fld textarea{min-height:90px;resize:vertical}
+.fld.chk{flex-direction:row;align-items:center;gap:8px}
+.fld.chk input{width:auto}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:12px}
+.toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:13px;z-index:80;box-shadow:var(--shadow)}
+.err{color:var(--bad);font-size:12.5px}
+.banner{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:14px 16px;display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;justify-content:space-between}
+.gate{max-width:520px;margin:12vh auto 0;display:flex;flex-direction:column;gap:14px}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;gap:10px;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));border-right:0;border-bottom:1px solid var(--line);z-index:20;overflow-x:auto;top:env(safe-area-inset-top,0px)}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+  .brand,.who{display:none}
+  .nav{flex-direction:row}
+  .nav a{white-space:nowrap;padding:6px 10px}
+  .funnel .f{grid-template-columns:1fr 90px}
+  .funnel .track{grid-column:1 / -1;order:3}
+}
+@media (prefers-reduced-motion:no-preference){.panel{animation:slide .18s ease-out}@keyframes slide{from{transform:translateX(24px);opacity:.6}to{transform:none;opacity:1}}}
+</style>
+<style>:root{padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}
+@media (max-width:860px){.who{display:flex!important;flex-direction:row;align-items:center;margin:0;border:0;padding:0}.who > div:first-child{display:none}}</style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+<script src="auth-adapter.js"></script>
+<div class="app" id="app">
+  <aside class="side">
+    <div class="brand"><b>Maklon Control Room</b><span id="brandSub">Haraka Erfi · CRM &amp; produksi</span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="who" id="who"></div>
+  </aside>
+  <main><div class="wrap" id="view"><div class="empty">Memuat data…</div></div></main>
+</div>
+<div id="overlay"></div>
+<div id="toastHost"></div>
+
+<script>
+(() => {
+'use strict';
+// ---------- constants ----------
+const STAGES = [
+  {k:'konsultasi',l:'Konsultasi'},
+  {k:'sampel_request',l:'Request sampel'},
+  {k:'sampel_proses',l:'Sampel diproses'},
+  {k:'sampel_dikirim',l:'Sampel dikirim'},
+  {k:'sampel_diterima',l:'Sampel diterima'},
+  {k:'revisi',l:'Revisi sampel'},
+  {k:'deal',l:'Deal / DP'},
+  {k:'produksi',l:'Produksi'},
+  {k:'selesai',l:'Selesai'},
+  {k:'batal',l:'Batal'}];
+const SLABEL = Object.fromEntries(STAGES.map(s=>[s.k,s.l]));
+const SRANK = Object.fromEntries(STAGES.map((s,i)=>[s.k,i]));
+const FLOW = ['konsultasi','sampel_request','sampel_proses','sampel_dikirim','sampel_diterima','deal','produksi','selesai'];
+const STAGE_TONE = {konsultasi:'',sampel_request:'info',sampel_proses:'info',sampel_dikirim:'info',sampel_diterima:'warn',revisi:'warn',deal:'acc',produksi:'acc',selesai:'ok',batal:'bad'};
+const FU_STEPS = [
+  {d:1, t:'Pastikan sampel sudah sampai, jelaskan cara pakai & tes'},
+  {d:3, t:'Minta feedback sampel (aroma, tekstur, hasil di kulit)'},
+  {d:7, t:'Tawarkan revisi atau lanjut produksi, kirim estimasi harga & MOQ'},
+  {d:14,t:'Penawaran closing: slot produksi bulan ini & skema DP'},
+  {d:30,t:'Follow-up terakhir: tanya rencana launching & kendala'}];
+const PABRIK_SAMPEL = [
+  ['sampel_proses','Brief diterima, sampel masuk antrean',10],
+  ['sampel_proses','Formulasi sampel',40],
+  ['sampel_proses','Sampel jadi, cek internal',80],
+  ['sampel_dikirim','Sampel dikirim ke customer',100]];
+const PABRIK_PROD = [
+  ['produksi','Bahan baku & kemasan disiapkan',10],
+  ['produksi','Mixing / produksi bulk',35],
+  ['produksi','Filling',55],
+  ['produksi','QC & uji lab',70],
+  ['produksi','Packing',85],
+  ['produksi','Siap kirim',95],
+  ['selesai','Terkirim ke customer',100]];
+const JENIS = ['Fee sampel','DP','Pelunasan','Ongkir','BPOM/HKI','Halal','Uji lab','Aksesoris','Lainnya'];
+const BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+
+// ---------- state ----------
+const S = {ready:false, customers:[], projects:[], updates:[], followups:[], outbox:[], payments:[], roles:{}, requests:[], leads:{}, settings:{},
+  uid:null, isOwner:false, canWrite:null, role:null, viewAs:null, names:{}, ui:{q:'', projFilter:'aktif', fuFilter:'hari', payFilter:'belum', payYear:'semua', payQ:'', perMode:'bulan', perRef:null, histYear:new Date().getFullYear()-1, imp:null, impText:'', impProg:null, delArm:null}};
+let db=null, user=null, sample=null;
+
+// ---------- helpers ----------
+const $ = (s,r=document)=>r.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2,'0');
+const todayStr = () => { const d=new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const addDays = (ds,n) => { const d=new Date(ds+'T00:00:00'); d.setDate(d.getDate()+n); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const daysBetween = (a,b) => Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00'))/864e5);
+const fmtDate = ds => { if(!ds) return '–'; const d=new Date(String(ds).slice(0,10)+'T00:00:00'); if(isNaN(d)) return '–'; return `${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`; };
+const fmtDT = iso => { if(!iso) return ''; const d=new Date(iso); if(isNaN(d)) return ''; return `${d.getDate()} ${BULAN[d.getMonth()]} · ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const rp = v => 'Rp ' + Math.round(Number(v)||0).toLocaleString('id-ID');
+const rpS = v => { v=Number(v)||0; const a=Math.abs(v); if(a>=1e9) return 'Rp '+(v/1e9).toLocaleString('id-ID',{maximumFractionDigits:2})+' M'; if(a>=1e6) return 'Rp '+(v/1e6).toLocaleString('id-ID',{maximumFractionDigits:1})+' jt'; return rp(v); };
+const pct = (v,d=1) => isFinite(v) ? (v*100).toLocaleString('id-ID',{maximumFractionDigits:d})+'%' : '–';
+const nowISO = () => new Date().toISOString();
+const waNum = s => { let d=String(s||'').replace(/\D/g,''); if(d.startsWith('0')) d='62'+d.slice(1); if(d.startsWith('8')) d='62'+d; return d; };
+const cust = id => S.customers.find(c=>c.id===id);
+const proj = id => S.projects.find(p=>p.id===id);
+const brandName = () => S.settings.namaPerusahaan || 'Haraka Erfi Kosmetindo';
+const custName = id => cust(id)?.nama || '(pelanggan dihapus)';
+const firstName = c => (c?.panggilan || c?.nama || 'Kak').split(/[ (/]/)[0];
+const role = () => S.viewAs || S.role;
+function toast(t){ const h=$('#toastHost'); h.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`; clearTimeout(toast._t); toast._t=setTimeout(()=>h.innerHTML='',2600); }
+function stagePill(k){ return `<span class="pill ${STAGE_TONE[k]||''}">${esc(SLABEL[k]||k)}</span>`; }
+function nameOf(uid){ if(!uid) return 'Sistem'; const n=S.names[uid]; if(n===undefined) wantNames([uid]); return n || 'Seseorang'; }
+let nameQ=new Set(), nameT=null;
+function wantNames(ids){ if(!user) return; ids.forEach(i=>{ if(i && S.names[i]===undefined) nameQ.add(i); }); if(!nameQ.size||nameT) return;
+  nameT=setTimeout(async()=>{ const ids=[...nameQ]; nameQ.clear(); nameT=null; ids.forEach(i=>S.names[i]=S.names[i]??'');
+    try{ const ps=await user.profiles(ids); let ch=false; for(const i of ids){ const n=ps[i]?.name||''; if(n!==S.names[i]){S.names[i]=n; ch=true;} } if(ch) schedule(); }catch(e){} },50); }
+
+// ---------- db ----------
+const col = n => db.collection(n);
+async function write(fn, okMsg){
+  try{ await fn(); if(okMsg) toast(okMsg); return true; }
+  catch(e){ console.error(e); toast(['invalid_argument','permission-denied'].includes(e?.code) ? 'Tidak bisa menyimpan: peran akun ini tidak punya izin untuk data ini.' : 'Gagal menyimpan. Coba lagi sebentar.'); return false; }
+}
+async function logUpdate(projectId, data){ await col('updates').add({projectId, at:nowISO(), by:S.uid, role:role(), ...data}); }
+
+async function createFollowups(p, startDate){
+  const has = S.followups.some(f=>f.projectId===p.id && f.auto && f.status==='pending');
+  if(has) return;
+  const c=cust(p.customerId);
+  for(const st of FU_STEPS){
+    await col('followups').add({projectId:p.id, customerId:p.customerId, due:addDays(startDate, st.d), step:`H+${st.d}`, tujuan:st.t, status:'pending', auto:true,
+      pesan:fuTemplate(c,p,st.t), createdAt:nowISO()});
+  }
+}
+async function cancelFollowups(pid, reason){
+  for(const f of S.followups.filter(f=>f.projectId===pid && f.status==='pending')){
+    await col('followups').doc(f.id).update({status:'cancelled', hasil:reason});
+  }
+}
+async function setStage(p, stage, extra={}, note=''){
+  const patch = {stage, updatedAt:nowISO(), ...extra};
+  if(stage==='deal' && !p.tglDeal) patch.tglDeal = extra.tglDeal || todayStr();
+  if(stage==='sampel_diterima' && !p.tglSampelDiterima) patch.tglSampelDiterima = extra.tglSampelDiterima || todayStr();
+  if(stage==='sampel_request' && !p.tglRequest) patch.tglRequest = todayStr();
+  if(stage==='selesai') patch.progress = 100;
+  await col('projects').doc(p.id).update(patch);
+  await logUpdate(p.id, {stage, tahap:SLABEL[stage], progress:patch.progress ?? p.progress ?? 0, catatan:note});
+  if(stage==='sampel_diterima') await createFollowups({...p,...patch}, patch.tglSampelDiterima || p.tglSampelDiterima);
+  if(['deal','produksi','selesai','batal','revisi'].includes(stage)) await cancelFollowups(p.id, stage==='batal' ? 'Proyek batal' : stage==='revisi' ? 'Sampel direvisi' : 'Sudah deal');
+}
+
+// ---------- message templates & AI ----------
+function fuTemplate(c,p,tujuan){
+  const n=firstName(c), prod=p.produk||'produknya';
+  if(/sampai/i.test(tujuan)) return `Halo Kak ${n}, sampel ${prod} dari ${brandName()} sudah sampai kan? Silakan dicoba dulu ya Kak. Kalau ada pertanyaan soal cara pakai atau hasilnya, langsung kabari saya.`;
+  if(/feedback/i.test(tujuan)) return `Halo Kak ${n}, gimana hasil coba sampel ${prod}-nya? Boleh minta masukan soal aroma, tekstur, dan hasilnya di kulit Kak? Biar kalau perlu revisi bisa langsung kami siapkan.`;
+  if(/revisi|estimasi/i.test(tujuan)) return `Halo Kak ${n}, untuk ${prod} mau lanjut ke produksi atau ada yang mau direvisi dulu Kak? Saya bisa kirimkan estimasi harga dan MOQ-nya supaya Kakak bisa hitung modal.`;
+  if(/closing|slot/i.test(tujuan)) return `Halo Kak ${n}, bulan ini slot produksi kami masih ada untuk ${prod}. Kalau Kakak siap, cukup DP dulu dan produksi langsung kami jadwalkan. Mau saya bantu siapkan penawarannya?`;
+  return `Halo Kak ${n}, mau tanya kabar rencana launching ${prod}-nya Kak. Ada kendala yang bisa kami bantu? Kami siap kapan pun Kakak mau mulai produksi.`;
+}
+function progTemplate(c,p,tahap,progress,catatan){
+  const n=firstName(c);
+  return `Halo Kak ${n}, update dari ${brandName()} untuk ${p.produk||'produk Kakak'}:\n• Tahap: ${tahap}\n• Progres: ${progress}%${catatan?`\n• Catatan: ${catatan}`:''}\n\nNanti kami kabari lagi di tahap berikutnya ya Kak.`;
+}
+async function aiWrite(kind, ctx){
+  if(!sample) throw {code:'not_granted'};
+  const base = `Kamu admin maklon kosmetik "${brandName()}". Tulis SATU pesan WhatsApp untuk pelanggan dalam bahasa Indonesia yang santai tapi sopan, panggil "Kak ${ctx.nama}". Maksimal 70 kata, paling banyak 1 emoji, tanpa salam penutup yang panjang. Jangan menyebut harga atau janji yang tidak ada di data. Balas hanya isi pesannya.`;
+  let task='';
+  if(kind==='followup') task = `Tujuan pesan: ${ctx.tujuan}.\nProduk: ${ctx.produk}. Tahap sekarang: ${ctx.tahap}. Sampel diterima: ${ctx.tglSampel||'-'}.\nCatatan pelanggan: ${ctx.catatan||'-'}.\nRiwayat follow-up sebelumnya: ${ctx.riwayat||'belum ada'}.`;
+  if(kind==='progress') task = `Kabarkan progres produksi/sampel secara jelas.\nProduk: ${ctx.produk}. Tahap: ${ctx.tahap}. Progres: ${ctx.progress}%. Catatan pabrik: ${ctx.catatan||'-'}.`;
+  if(kind==='brief') return (await sample(`Kamu admin maklon kosmetik. Susun brief singkat untuk tim pabrik (formulator) dalam bentuk poin, bahasa Indonesia, maksimal 90 kata, dari data ini. Jangan menambah klaim yang tidak ada.\nPelanggan: ${ctx.nama}. Produk: ${ctx.produk}. Kategori: ${ctx.kategori||'-'}. Target qty: ${ctx.qty||'-'}. Catatan permintaan: ${ctx.catatan||'-'}.`, {modelTier:'quick', cache:false})).text.trim();
+  const r = await sample(base+'\n\n'+task, {modelTier:'quick', cache:false});
+  return r.text.trim();
+}
+function aiErr(e){ if(e?.code==='not_granted') return 'AI tidak tersedia di tampilan ini. Pakai pesan template.'; if(e?.code==='rate_limited') return 'AI sedang sibuk, coba lagi sebentar.'; return 'AI gagal menulis pesan. Pakai pesan template dulu.'; }
+
+// ---------- render scheduling ----------
+let rq=false;
+function schedule(){ if(rq) return; rq=true; requestAnimationFrame(()=>{ rq=false; render(); }); }
+function route(){ const h=(location.hash||'').slice(1); return h; }
+function navItems(){
+  const r=role();
+  if(r==='pabrik') return [['pabrik','Tugas pabrik',pabrikTasks().length],['riwayat','Riwayat update',0]];
+  const items=[['hari-ini','Hari ini',todayCount()],['pelanggan','Pelanggan',0],['proyek','Proyek & sampel',0],['follow-up','Follow-up WA',dueFollowups().length],['pabrik','Progres pabrik',0],['keuangan','Invoice & piutang',0],['analisa','Analisa',0],['data-lama','Data lama & impor',0]];
+  if(S.isOwner) items.push(['akses','Akses & pengaturan',S.requests.filter(q=>!S.roles[q.id]).length]);
+  return items;
+}
+function render(){
+  const v=$('#view');
+  const ae=document.activeElement, aid=ae && v.contains(ae) ? ae.id : null, sel=aid && ae.selectionStart!=null ? [ae.selectionStart, ae.selectionEnd] : null;
+  if(!db){ $('#nav').innerHTML=''; $('#who').innerHTML=''; v.innerHTML=gateNoDb(); return; }
+  if(!S.ready){ return; }
+  if(!role()){ $('#nav').innerHTML=''; whoBox(); v.innerHTML=gateNoRole(); return; }
+  const items=navItems(); let r=route();
+  if(!items.some(i=>i[0]===r)) r=items[0][0];
+  $('#nav').innerHTML=items.map(([k,l,c])=>`<a href="#${k}" ${k===r?'aria-current="page"':''}><span>${esc(l)}</span>${c?`<span class="cnt">${c}</span>`:''}</a>`).join('');
+  whoBox();
+  const views={'hari-ini':vToday,'pelanggan':vCustomers,'proyek':vProjects,'follow-up':vFollowups,'pabrik':role()==='pabrik'?vPabrikTasks:vPabrikAdmin,'keuangan':vPayments,'analisa':vAnalisa,'akses':vAkses,'riwayat':vRiwayat,'data-lama':vHistori};
+  v.innerHTML=(views[r]||vToday)();
+  if(r==='analisa') drawCharts();
+  if(aid){ const el=document.getElementById(aid); if(el){ el.focus(); if(sel && el.setSelectionRange) try{el.setSelectionRange(sel[0],sel[1]);}catch(e){} } }
+}
+function whoBox(){
+  const r=S.role;
+  let h=`<div><b>${esc(nameOf(S.uid)||'Anda')}</b><br>${r==='admin'?'Admin':r==='pabrik'?'Pabrik':'Belum ada akses'}${S.isOwner?' · pemilik':''}</div>`;
+  if(S.isOwner) h+=`<div class="seg" role="group" aria-label="Lihat sebagai"><button data-act="viewas" data-v="" aria-pressed="${!S.viewAs}">Admin</button><button data-act="viewas" data-v="pabrik" aria-pressed="${S.viewAs==='pabrik'}">Pabrik</button></div>`;
+  if(window.maklonLogout) h+=`<button class="btn sm" data-act="logout">Keluar</button>`;
+  $('#who').innerHTML=h;
+}
+function gateNoDb(){ return `<div class="gate card"><h1>Tidak bisa terhubung ke database</h1><p class="sub">Periksa koneksi internet dan konfigurasi Firebase di config.js, lalu muat ulang halaman.</p></div>`; }
+function gateNoRole(){
+  const asked=S.requests.some(q=>q.id===S.uid);
+  return `<div class="gate card"><h1>Belum ada akses</h1><p class="sub">Akun ini sudah masuk, tapi belum ditetapkan sebagai <b>Admin</b> (marketing/CS) atau <b>Pabrik</b> (Haraka Erfi). Kirim permintaan, lalu pemilik akan memilih peran Anda.</p>
+  <div class="fld"><label for="reqNote">Nama & bagian</label><input id="reqNote" placeholder="mis. Nurul – CS maklon"></div>
+  <div class="row"><button class="btn pri" data-act="reqAccess">${asked?'Kirim ulang permintaan':'Minta akses'}</button>${asked?'<span class="pill info">Permintaan sudah terkirim</span>':''}</div></div>`;
+}
+
+// ---------- derived ----------
+function dueFollowups(){ const t=todayStr(); return S.followups.filter(f=>f.status==='pending' && f.due<=t).sort((a,b)=>a.due.localeCompare(b.due)); }
+function overduePayments(){ const t=todayStr(); return S.payments.filter(p=>p.status==='belum' && (p.jatuhTempo ? p.jatuhTempo<t : daysBetween(p.tanggal,t)>30)); }
+function draftOutbox(){ return S.outbox.filter(o=>o.status==='draft'); }
+function todayCount(){ return dueFollowups().length + draftOutbox().length; }
+function pabrikTasks(){ return S.projects.filter(p=>['sampel_request','sampel_proses','revisi','deal','produksi'].includes(p.stage)).sort((a,b)=>(a.updatedAt||'').localeCompare(b.updatedAt||'')); }
+function activeProjects(){ return S.projects.filter(p=>!['selesai','batal'].includes(p.stage)); }
+function nextFu(pid){ return S.followups.filter(f=>f.projectId===pid && f.status==='pending').sort((a,b)=>a.due.localeCompare(b.due))[0]; }
+
+// ---------- views: admin ----------
+function vToday(){
+  const due=dueFollowups(), out=draftOutbox(), od=overduePayments(), t=todayStr();
+  const stuck=S.projects.filter(p=>p.stage==='sampel_dikirim' && p.tglSampelKirim && daysBetween(p.tglSampelKirim,t)>=5);
+  const waitPabrik=S.projects.filter(p=>p.stage==='sampel_request');
+  return `<div class="head"><div><h1>Hari ini</h1><p class="sub">${fmtDate(t)} · yang perlu dikerjakan admin sekarang.</p></div>
+    <div class="row"><button class="btn" data-act="newCustomer">+ Pelanggan</button><button class="btn pri" data-act="newProject">+ Proyek / sampel</button></div></div>
+  <div class="kpis">
+    ${kpi('Follow-up jatuh tempo',due.length, due.length?'warn':'ok','termasuk yang terlewat')}
+    ${kpi('Update progres belum dikirim',out.length, out.length?'warn':'ok','dari laporan pabrik')}
+    ${kpi('Proyek aktif',activeProjects().length,'','belum selesai/batal')}
+    ${kpi('Piutang lewat tempo',rpS(od.reduce((s,p)=>s+p.nilai,0)), od.length?'bad':'ok', od.length+' invoice')}
+  </div>
+  <div class="grid">
+    <section class="card"><div class="ch"><h2>Follow-up WA hari ini</h2><a class="btn sm ghost" href="#follow-up">Semua</a></div>${due.length?`<div class="list">${due.slice(0,8).map(fuItem).join('')}</div>`:`<div class="empty">Tidak ada follow-up jatuh tempo. Jadwal otomatis dibuat saat sampel ditandai diterima.</div>`}</section>
+    <section class="card"><div class="ch"><h2>Update progres untuk pelanggan</h2><span class="note">Dibuat otomatis dari laporan pabrik</span></div>${out.length?`<div class="list">${out.slice(0,8).map(outItem).join('')}</div>`:`<div class="empty">Belum ada laporan baru dari pabrik.</div>`}</section>
+  </div>
+  <div class="grid">
+    <section class="card"><div class="ch"><h2>Menunggu pabrik</h2><span class="note">Request sampel yang belum diproses</span></div>${waitPabrik.length?`<div class="list">${waitPabrik.map(p=>projLine(p)).join('')}</div>`:`<div class="empty">Semua request sampel sudah diproses pabrik.</div>`}</section>
+    <section class="card"><div class="ch"><h2>Sampel dikirim ≥ 5 hari</h2><span class="note">Pastikan sudah diterima pelanggan</span></div>${stuck.length?`<div class="list">${stuck.map(p=>projLine(p,`<button class="btn sm" data-act="markReceived" data-id="${p.id}">Tandai diterima</button>`)).join('')}</div>`:`<div class="empty">Tidak ada sampel yang tertahan di pengiriman.</div>`}</section>
+  </div>`;
+}
+function kpi(l,v,tone,s){ return `<div class="kpi ${tone||''}"><span class="l">${esc(l)}</span><span class="v">${esc(v)}</span>${s?`<span class="s">${esc(s)}</span>`:''}</div>`; }
+function projLine(p,extra=''){ const c=cust(p.customerId); return `<div class="item"><div class="main"><span class="t">${esc(c?.nama||'–')} · ${esc(p.produk)}</span><span class="row">${stagePill(p.stage)}<span class="small muted">diperbarui ${fmtDT(p.updatedAt)}</span></span></div><div class="row">${extra}<button class="btn sm" data-act="openProject" data-id="${p.id}">Buka</button></div></div>`; }
+function fuItem(f){
+  const p=proj(f.projectId), c=cust(f.customerId), late=f.due<todayStr();
+  return `<div class="item"><div class="main"><span class="t">${esc(c?.nama||'–')} <span class="muted small">· ${esc(p?.produk||'')}</span></span>
+  <span class="row"><span class="pill ${late?'bad':'warn'}">${esc(f.step||'Manual')} · ${late?'terlambat '+daysBetween(f.due,todayStr())+' hr':'hari ini'}</span><span class="small muted">${esc(f.tujuan)}</span></span></div>
+  <div class="row"><button class="btn sm pri" data-act="openFu" data-id="${f.id}">Kirim</button></div></div>`;
+}
+function outItem(o){ const c=cust(o.customerId), p=proj(o.projectId);
+  return `<div class="item"><div class="main"><span class="t">${esc(c?.nama||'–')} <span class="muted small">· ${esc(p?.produk||'')}</span></span><span class="small muted">${esc(o.tahap||'')} · ${o.progress??0}% · ${fmtDT(o.at)}</span></div><div class="row"><button class="btn sm pri" data-act="openOut" data-id="${o.id}">Kirim</button></div></div>`; }
+
+function vCustomers(){
+  const q=S.ui.q.toLowerCase();
+  const pay=sumBy(S.payments,'customerId'); const bel=sumBy(S.payments.filter(p=>p.status==='belum'),'customerId');
+  const rows=S.customers.filter(c=>!q || [c.nama,c.brand,c.wa,c.kota,c.catatan].join(' ').toLowerCase().includes(q))
+    .sort((a,b)=>(pay[b.id]||0)-(pay[a.id]||0) || (b.createdAt||'').localeCompare(a.createdAt||''));
+  return `<div class="head"><div><h1>Pelanggan</h1><p class="sub">Setiap kontak WA yang masuk dicatat di sini. ${S.customers.length} pelanggan.</p></div>
+  <div class="row"><input class="search" id="q" type="search" placeholder="Cari nama, brand, nomor WA" value="${esc(S.ui.q)}" aria-label="Cari pelanggan"><button class="btn pri" data-act="newCustomer">+ Pelanggan</button></div></div>
+  <section class="card"><div class="tbl-wrap"><table><thead><tr><th>Pelanggan</th><th>WA</th><th>Sumber</th><th>Proyek aktif</th><th class="n">Total transaksi</th><th class="n">Belum bayar</th></tr></thead><tbody>
+  ${rows.length?rows.map(c=>{ const ap=S.projects.filter(p=>p.customerId===c.id && !['selesai','batal'].includes(p.stage));
+    return `<tr class="click" data-act="openCustomer" data-id="${c.id}"><td><b>${esc(c.nama)}</b>${c.brand?`<div class="small muted">${esc(c.brand)}</div>`:''}</td><td class="num small">${esc(c.wa||'–')}</td><td class="small">${esc(c.sumber||'–')}</td><td>${ap.map(p=>stagePill(p.stage)).join(' ')||'<span class="muted small">–</span>'}</td><td class="n">${pay[c.id]?rpS(pay[c.id]):'–'}</td><td class="n" style="color:${bel[c.id]?'var(--bad)':'inherit'}">${bel[c.id]?rpS(bel[c.id]):'–'}</td></tr>`; }).join('')
+  :`<tr><td colspan="6"><div class="empty">Belum ada pelanggan yang cocok.</div></td></tr>`}
+  </tbody></table></div></section>`;
+}
+function sumBy(arr,key,val='nilai'){ const o={}; for(const x of arr){ o[x[key]]=(o[x[key]]||0)+(Number(x[val])||0); } return o; }
+
+function vProjects(){
+  const f=S.ui.projFilter;
+  const groups={aktif:p=>!['selesai','batal'].includes(p.stage), sampel:p=>['konsultasi','sampel_request','sampel_proses','sampel_dikirim','revisi'].includes(p.stage), followup:p=>p.stage==='sampel_diterima', produksi:p=>['deal','produksi'].includes(p.stage), selesai:p=>p.stage==='selesai', batal:p=>p.stage==='batal', semua:()=>true};
+  const rows=S.projects.filter(groups[f]).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  const lab={aktif:'Aktif',sampel:'Tahap sampel',followup:'Follow-up',produksi:'Produksi',selesai:'Selesai',batal:'Batal',semua:'Semua'};
+  return `<div class="head"><div><h1>Proyek & sampel</h1><p class="sub">Satu proyek = satu produk yang diminta pelanggan, dari sampel sampai produk jadi.</p></div><button class="btn pri" data-act="newProject">+ Proyek / sampel</button></div>
+  <div class="tabs" role="group" aria-label="Filter proyek">${Object.keys(lab).map(k=>`<button data-act="projFilter" data-v="${k}" aria-pressed="${f===k}">${lab[k]} <span class="num muted">${S.projects.filter(groups[k]).length}</span></button>`).join('')}</div>
+  <section class="card"><div class="tbl-wrap"><table><thead><tr><th>Pelanggan · produk</th><th>Tahap</th><th>Progres</th><th>Biaya sampel</th><th>Follow-up berikut</th><th>Update</th></tr></thead><tbody>
+  ${rows.length?rows.map(p=>{ const nf=nextFu(p.id);
+    return `<tr class="click" data-act="openProject" data-id="${p.id}"><td><b>${esc(custName(p.customerId))}</b><div class="small muted">${esc(p.produk)}${p.qtyRencana?` · ${Number(p.qtyRencana).toLocaleString('id-ID')} pcs`:''}</div></td><td>${stagePill(p.stage)}</td><td><div class="bar" title="${p.progress||0}%"><i style="width:${Math.min(100,p.progress||0)}%"></i></div><span class="small muted num">${p.progress||0}%</span></td><td class="small">${p.biayaSampel?rp(p.biayaSampel)+(p.sampelLunas?' <span class="pill ok">lunas</span>':' <span class="pill warn">belum</span>'):'–'}</td><td class="small">${nf?`${fmtDate(nf.due)} <span class="muted">${esc(nf.step)}</span>`:'–'}</td><td class="small muted">${fmtDT(p.updatedAt)}</td></tr>`; }).join('')
+  :`<tr><td colspan="6"><div class="empty">Belum ada proyek di filter ini. Tambah proyek saat pelanggan minta sampel.</div></td></tr>`}
+  </tbody></table></div></section>`;
+}
+
+function vFollowups(){
+  const f=S.ui.fuFilter, t=todayStr();
+  const sets={hari:dueFollowups(), mendatang:S.followups.filter(x=>x.status==='pending'&&x.due>t).sort((a,b)=>a.due.localeCompare(b.due)), terkirim:S.followups.filter(x=>x.status==='sent').sort((a,b)=>(b.sentAt||'').localeCompare(a.sentAt||'')), dilewati:S.followups.filter(x=>['skipped','cancelled'].includes(x.status))};
+  const lab={hari:'Jatuh tempo',mendatang:'Mendatang',terkirim:'Terkirim',dilewati:'Dilewati / dihentikan'};
+  const rows=sets[f];
+  const sent=S.followups.filter(x=>x.status==='sent').length, total=S.followups.filter(x=>x.status!=='cancelled').length;
+  return `<div class="head"><div><h1>Follow-up WA</h1><p class="sub">Jadwal H+1, H+3, H+7, H+14, H+30 dibuat otomatis saat sampel diterima, dan berhenti sendiri begitu pelanggan DP atau proyek batal.</p></div><span class="pill acc">${sent}/${total} terkirim</span></div>
+  <div class="tabs" role="group" aria-label="Filter follow-up">${Object.keys(lab).map(k=>`<button data-act="fuFilter" data-v="${k}" aria-pressed="${f===k}">${lab[k]} <span class="num muted">${sets[k].length}</span></button>`).join('')}</div>
+  <section class="card">${rows.length?`<div class="list">${rows.map(x=>{ const c=cust(x.customerId), p=proj(x.projectId);
+    const tone=x.status==='sent'?'ok':x.status==='pending'?(x.due<t?'bad':x.due===t?'warn':''):'';
+    return `<div class="item"><div class="main"><span class="t">${esc(c?.nama||'–')} <span class="muted small">· ${esc(p?.produk||'')}</span></span><span class="row"><span class="pill ${tone}">${esc(x.step||'Manual')} · ${fmtDate(x.due)}</span><span class="small muted">${esc(x.tujuan)}</span></span>${x.hasil?`<span class="small">Hasil: ${esc(x.hasil)}</span>`:''}</div>
+    <div class="row">${x.status==='pending'?`<button class="btn sm pri" data-act="openFu" data-id="${x.id}">Kirim</button>`:x.status==='sent'?`<span class="small muted">${fmtDT(x.sentAt)}</span>`:''}</div></div>`; }).join('')}</div>`:`<div class="empty">Tidak ada follow-up di sini.</div>`}</section>`;
+}
+
+function vPabrikAdmin(){
+  const ps=S.projects.filter(p=>['sampel_request','sampel_proses','sampel_dikirim','revisi','deal','produksi'].includes(p.stage)).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+  const ups=S.updates.filter(u=>u.role==='pabrik').sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,20);
+  return `<div class="head"><div><h1>Progres pabrik</h1><p class="sub">Yang sedang dikerjakan Haraka Erfi. Setiap laporan pabrik otomatis jadi draf pesan update untuk pelanggan.</p></div></div>
+  <section class="card"><div class="tbl-wrap"><table><thead><tr><th>Pelanggan · produk</th><th>Tahap</th><th>Progres</th><th>Laporan terakhir</th></tr></thead><tbody>
+  ${ps.length?ps.map(p=>{ const u=S.updates.filter(x=>x.projectId===p.id).sort((a,b)=>(b.at||'').localeCompare(a.at||''))[0];
+    return `<tr class="click" data-act="openProject" data-id="${p.id}"><td><b>${esc(custName(p.customerId))}</b><div class="small muted">${esc(p.produk)}</div></td><td>${stagePill(p.stage)}${p.tahapPabrik?`<div class="small muted">${esc(p.tahapPabrik)}</div>`:''}</td><td><div class="bar"><i style="width:${p.progress||0}%"></i></div><span class="small muted num">${p.progress||0}%</span></td><td class="small">${u?`${esc(u.tahap||'')}<div class="muted">${fmtDT(u.at)} · ${esc(nameOf(u.by))}</div>`:'–'}</td></tr>`; }).join('')
+  :`<tr><td colspan="4"><div class="empty">Tidak ada pekerjaan di pabrik saat ini.</div></td></tr>`}
+  </tbody></table></div></section>
+  <section class="card"><div class="ch"><h2>Laporan pabrik terbaru</h2></div>${ups.length?`<div class="tl">${ups.map(u=>`<div class="e"><div><b>${esc(custName(proj(u.projectId)?.customerId))}</b> · ${esc(proj(u.projectId)?.produk||'')}</div><div>${esc(u.tahap||'')} · <span class="num">${u.progress??0}%</span>${u.catatan?` · ${esc(u.catatan)}`:''}</div><div class="d">${fmtDT(u.at)} · ${esc(nameOf(u.by))}</div></div>`).join('')}</div>`:`<div class="empty">Belum ada laporan dari pabrik.</div>`}</section>`;
+}
+
+function vPayments(){
+  const f=S.ui.payFilter, t=todayStr();
+  const filt={belum:p=>p.status==='belum', lewat:p=>overduePayments().includes(p), lunas:p=>p.status==='lunas', semua:()=>true};
+  const yr=S.ui.payYear, q=S.ui.payQ.toLowerCase();
+  const inYQ=p=>(yr==='semua'||(p.tanggal||'').startsWith(yr)) && (!q || [custName(p.customerId),p.noInvoice,p.produk,p.jenis].join(' ').toLowerCase().includes(q));
+  const rows=S.payments.filter(p=>filt[f](p) && inYQ(p)).sort((a,b)=>(b.tanggal||'').localeCompare(a.tanggal||''));
+  const lab={belum:'Belum dibayar',lewat:'Lewat tempo',lunas:'Lunas',semua:'Semua'};
+  const yrs=[...new Set(S.payments.map(p=>(p.tanggal||'').slice(0,4)).filter(Boolean))].sort().reverse();
+  const tot=rows.reduce((s,p)=>s+(p.nilai||0),0);
+  return `<div class="head"><div><h1>Invoice & piutang</h1><p class="sub">Catat setiap tagihan: fee sampel, DP, pelunasan, ongkir, jasa. Status "belum" = masuk piutang (baris kuning di Excel). Invoice tahun lalu bisa diubah dari sini atau diimpor sekaligus di Data lama.</p></div><div class="row"><a class="btn" href="#data-lama">Impor data lama</a><button class="btn pri" data-act="newPayment">+ Invoice</button></div></div>
+  <div class="row" style="justify-content:space-between"><div class="tabs" role="group" aria-label="Filter invoice">${Object.keys(lab).map(k=>`<button data-act="payFilter" data-v="${k}" aria-pressed="${f===k}">${lab[k]} <span class="num muted">${S.payments.filter(p=>filt[k](p)&&inYQ(p)).length}</span></button>`).join('')}</div>
+  <div class="row"><select id="payYear" class="search" style="width:auto" aria-label="Tahun"><option value="semua">Semua tahun</option>${yrs.map(y=>`<option ${y===yr?'selected':''}>${y}</option>`).join('')}</select><input id="payQ" class="search" type="search" placeholder="Cari customer, no invoice, produk" value="${esc(S.ui.payQ)}" aria-label="Cari invoice"></div></div>
+  <section class="card"><div class="ch"><h2>${lab[f]}</h2><span class="num">${rp(tot)}</span></div><div class="tbl-wrap"><table><thead><tr><th>Tanggal</th><th>No. invoice</th><th>Pelanggan</th><th>Jenis</th><th>Produk</th><th class="n">Nilai</th><th>Jatuh tempo</th><th>Status</th><th></th></tr></thead><tbody>
+  ${rows.length?rows.slice(0,400).map(p=>{ const late=p.status==='belum' && (p.jatuhTempo? p.jatuhTempo<t : daysBetween(p.tanggal,t)>30);
+    return `<tr><td class="small num">${fmtDate(p.tanggal)}</td><td class="small num">${esc(p.noInvoice||'–')}</td><td>${esc(custName(p.customerId))}</td><td class="small">${esc(p.jenis)}</td><td class="small">${esc(p.produk||'–')}</td><td class="n">${rp(p.nilai)}</td><td class="small ${late?'':'muted'}" style="${late?'color:var(--bad)':''}">${p.jatuhTempo?fmtDate(p.jatuhTempo):'–'}${p.status==='belum'?`<div class="small muted">${daysBetween(p.tanggal,t)} hari</div>`:''}</td><td>${p.status==='lunas'?'<span class="pill ok">Lunas</span>':`<span class="pill ${late?'bad':'warn'}">Belum</span>`}</td><td><div class="row">${p.status==='belum'?`<button class="btn sm" data-act="payLunas" data-id="${p.id}">Lunas</button>`:''}<button class="btn sm ghost" data-act="editPayment" data-id="${p.id}" aria-label="Ubah invoice">Ubah</button></div></td></tr>`; }).join('')
+  :`<tr><td colspan="9"><div class="empty">Tidak ada invoice di filter ini.</div></td></tr>`}
+  </tbody></table></div>${rows.length>400?`<p class="note">Menampilkan 400 terbaru dari ${rows.length}.</p>`:''}</section>`;
+}
+
+// ---------- periode ----------
+const BULAN_FULL=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const MODES={hari:'Harian',minggu:'Mingguan',bulan:'Bulanan',tahun:'Tahunan'};
+const PREV_LABEL={hari:'kemarin',minggu:'minggu lalu',bulan:'bulan lalu',tahun:'tahun lalu'};
+const parseD = s => new Date(s+'T00:00:00');
+const dstr = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fmtShort = s => { const d=parseD(s); return `${d.getDate()} ${BULAN[d.getMonth()]}`; };
+function periodOf(mode, ref){
+  const d=parseD(ref);
+  if(mode==='hari') return {start:ref,end:ref,label:fmtDate(ref)};
+  if(mode==='minggu'){ const s=new Date(d); s.setDate(d.getDate()-((d.getDay()+6)%7)); const e=new Date(s); e.setDate(s.getDate()+6); return {start:dstr(s),end:dstr(e),label:`${fmtShort(dstr(s))} – ${fmtDate(dstr(e))}`}; }
+  if(mode==='bulan') return {start:dstr(new Date(d.getFullYear(),d.getMonth(),1)),end:dstr(new Date(d.getFullYear(),d.getMonth()+1,0)),label:`${BULAN_FULL[d.getMonth()]} ${d.getFullYear()}`};
+  return {start:`${d.getFullYear()}-01-01`,end:`${d.getFullYear()}-12-31`,label:`Tahun ${d.getFullYear()}`};
+}
+function shiftRef(mode, ref, n){
+  const d=parseD(ref);
+  if(mode==='hari') d.setDate(d.getDate()+n);
+  else if(mode==='minggu') d.setDate(d.getDate()+7*n);
+  else if(mode==='bulan'){ d.setDate(1); d.setMonth(d.getMonth()+n); }
+  else { d.setMonth(0,1); d.setFullYear(d.getFullYear()+n); }
+  return dstr(d);
+}
+function buckets(mode, ref){
+  if(mode==='tahun'){ const y=parseD(ref).getFullYear(); return Array.from({length:12},(_,i)=>({...periodOf('bulan',`${y}-${pad(i+1)}-01`), l:BULAN[i]})); }
+  const n=mode==='hari'?14:12, out=[];
+  for(let i=n-1;i>=0;i--){ const r=shiftRef(mode,ref,-i), p=periodOf(mode,r), d=parseD(mode==='minggu'?p.start:r);
+    out.push({...p, l: mode==='bulan' ? `${BULAN[d.getMonth()]} ${String(d.getFullYear()).slice(2)}` : `${d.getDate()}/${d.getMonth()+1}`}); }
+  return out;
+}
+const inR = (d,p) => !!d && d>=p.start && d<=p.end;
+const sumN = arr => arr.reduce((s,x)=>s+(Number(x.nilai)||0),0);
+
+function buildCtx(){
+  const firstPay={};
+  for(const p of S.payments){ if(p.tanggal && (!firstPay[p.customerId] || p.tanggal<firstPay[p.customerId])) firstPay[p.customerId]=p.tanggal; }
+  const baseline=Object.values(firstPay).sort()[0]?.slice(0,7) || '';
+  const prodCust=new Set(S.payments.filter(p=>['DP','Pelunasan'].includes(p.jenis)).map(p=>p.customerId));
+  const appCust=S.customers.filter(c=>!c.imported).map(c=>(c.createdAt||'').slice(0,10)).filter(Boolean).sort();
+  return {firstPay, baseline, prodCust, sysStart: appCust[0] || todayStr()};
+}
+function leadsIn(p, C){
+  let n=0, known=false;
+  let m=parseD(p.start); m.setDate(1);
+  while(dstr(m)<=p.end){
+    const key=`${m.getFullYear()}-${pad(m.getMonth()+1)}`;
+    const ms=dstr(m), me=dstr(new Date(m.getFullYear(),m.getMonth()+1,0));
+    const os= ms>p.start?ms:p.start, oe= me<p.end?me:p.end;
+    const full= os===ms && oe===me;
+    if(full && S.leads[key]!=null){ n+=Number(S.leads[key])||0; known=true; }
+    else { const c=S.customers.filter(x=>!x.imported && inR((x.createdAt||'').slice(0,10),{start:os,end:oe})).length; n+=c; if(c || oe>=C.sysStart) known=true; }
+    m.setMonth(m.getMonth()+1);
+  }
+  return {n, known};
+}
+function metrics(p, C){
+  const pays=S.payments.filter(x=>inR(x.tanggal,p));
+  const L=leadsIn(p,C);
+  const newC=Object.entries(C.firstPay).filter(([id,d])=>inR(d,p) && d.slice(0,7)!==C.baseline).map(x=>x[0]);
+  const projs=S.projects.filter(x=>inR((x.createdAt||'').slice(0,10),p));
+  return {pays, total:sumN(pays), lunas:sumN(pays.filter(x=>x.status==='lunas')), dp:sumN(pays.filter(x=>x.jenis==='DP')), pel:sumN(pays.filter(x=>x.jenis==='Pelunasan')),
+    inv:pays.length, leads:L.n, leadsKnown:L.known, newC, newProd:newC.filter(id=>C.prodCust.has(id)), projs,
+    sampelIn:projs.filter(x=>x.stage!=='konsultasi'||x.tglRequest).length,
+    sampelDiterima:S.projects.filter(x=>inR(x.tglSampelDiterima,p)).length, deal:S.projects.filter(x=>inR(x.tglDeal,p)).length, selesai:S.projects.filter(x=>inR(x.tglSelesai,p)).length,
+    fuSent:S.followups.filter(f=>f.status==='sent' && inR((f.sentAt||'').slice(0,10),p)).length, fuDue:S.followups.filter(f=>f.status!=='cancelled' && inR(f.due,p)).length};
+}
+function delta(cur, prev){ if(!prev) return cur? '<span class="small" style="color:var(--ok)">baru</span>' : ''; const d=cur/prev-1; if(!isFinite(d)) return ''; const up=d>=0; return `<span class="small" style="color:${up?'var(--ok)':'var(--bad)'}">${up?'↑':'↓'} ${pct(Math.abs(d),0)}</span>`; }
+function kpiD(l,v,dHtml,s,tone){ return `<div class="kpi ${tone||''}"><span class="l">${esc(l)}</span><span class="v">${esc(v)}</span><span class="s">${dHtml?dHtml+' ':''}${esc(s||'')}</span></div>`; }
+function dataYears(){ const ys=new Set([new Date().getFullYear()]); S.payments.forEach(p=>p.tanggal&&ys.add(+p.tanggal.slice(0,4))); Object.keys(S.leads).forEach(k=>ys.add(+k.slice(0,4))); const a=[...ys].filter(Boolean).sort(); const lo=Math.min(a[0], new Date().getFullYear()-3); return Array.from({length:new Date().getFullYear()-lo+1},(_,i)=>lo+i); }
+
+function vAnalisa(){
+  const mode=S.ui.perMode, ref=S.ui.perRef||(S.ui.perRef=todayStr()), P=periodOf(mode,ref), C=buildCtx();
+  const M=metrics(P,C), PM=metrics(periodOf(mode,shiftRef(mode,ref,-1)),C);
+  const B=buckets(mode,ref).map(b=>{ const m=metrics(b,C); return {...b, total:m.total, lunas:m.lunas, belum:m.total-m.lunas, dp:m.dp, leads:m.leads, leadsKnown:m.leadsKnown}; });
+  window.__B=B;
+  const piutangAll=S.payments.filter(p=>p.status==='belum'), piutang=sumN(piutangAll), od=sumN(overduePayments());
+  const per=sumBy(M.pays,'customerId'); const ranked=Object.entries(per).sort((a,b)=>b[1]-a[1]);
+  const top1=ranked[0]?ranked[0][1]/(M.total||1):0, top3=ranked.slice(0,3).reduce((s,x)=>s+x[1],0)/(M.total||1);
+  const d=parseD(ref), years=dataYears(), isFuture=P.start>todayStr();
+  const prevL=PREV_LABEL[mode];
+  const picker = mode==='hari'||mode==='minggu' ? `<input type="date" id="perDate" value="${esc(ref)}" aria-label="Pilih tanggal" class="search" style="width:auto">`
+    : mode==='bulan' ? `<select id="perMonth" aria-label="Bulan" class="search" style="width:auto">${BULAN_FULL.map((b,i)=>`<option value="${i+1}" ${i===d.getMonth()?'selected':''}>${b}</option>`).join('')}</select><select id="perYear" aria-label="Tahun" class="search" style="width:auto">${years.map(y=>`<option ${y===d.getFullYear()?'selected':''}>${y}</option>`).join('')}</select>`
+    : `<select id="perYear" aria-label="Tahun" class="search" style="width:auto">${years.map(y=>`<option ${y===d.getFullYear()?'selected':''}>${y}</option>`).join('')}</select>`;
+  const ins=[];
+  if(M.total && ranked[0] && top1>0.4) ins.push(`<b>${esc(custName(ranked[0][0]))}</b> menyumbang ${pct(top1)} penjualan periode ini.`);
+  if(PM.total) ins.push(`Penjualan ${M.total>=PM.total?'naik':'turun'} ${pct(Math.abs(M.total/PM.total-1),0)} dibanding ${prevL} (${rpS(PM.total)} → ${rpS(M.total)}).`);
+  if(PM.dp || M.dp) ins.push(`Order baru (DP) ${rpS(M.dp)}${PM.dp?`, ${M.dp>=PM.dp?'naik':'turun'} ${pct(Math.abs(M.dp/PM.dp-1),0)} dari ${prevL}`:''}.`);
+  if(M.leads) ins.push(`${M.leads.toLocaleString('id-ID')} kontak WA → ${M.newProd.length} customer baru order produksi.`);
+  if(od) ins.push(`Piutang lewat tempo saat ini <b>${rpS(od)}</b>.`);
+  const fn=[['Kontak WA',M.leads],['Proyek baru',M.projs.length],['Sampel diterima',M.sampelDiterima],['Deal / DP',M.deal],['Produk jadi',M.selesai]];
+  const fmax=Math.max(1,...fn.map(x=>x[1]));
+  const yearRows=years.slice().reverse().map(y=>{ const yp=periodOf('tahun',`${y}-01-01`); const ys=S.payments.filter(p=>inR(p.tanggal,yp)); return {y, total:sumN(ys), lunas:sumN(ys.filter(p=>p.status==='lunas')), dp:sumN(ys.filter(p=>p.jenis==='DP')), inv:ys.length, cust:new Set(ys.map(p=>p.customerId)).size, leads:leadsIn(yp,C).n}; }).filter(r=>r.inv||r.leads);
+  const pi=[...piutangAll].sort((a,b)=>a.tanggal.localeCompare(b.tanggal));
+  const chartTitle={hari:'14 hari terakhir',minggu:'12 minggu terakhir',bulan:'12 bulan terakhir',tahun:'per bulan'}[mode];
+  return `<div class="head"><div><h1>Analisa</h1><p class="sub">${esc(P.label)} · dibandingkan dengan ${prevL}.</p></div>
+    <div class="row"><a class="btn sm" href="#data-lama">Input data lama</a></div></div>
+  <div class="card" style="padding:12px 14px"><div class="row" style="justify-content:space-between">
+    <div class="seg" role="group" aria-label="Periode">${Object.entries(MODES).map(([k,l])=>`<button data-act="perMode" data-v="${k}" aria-pressed="${mode===k}">${l}</button>`).join('')}</div>
+    <div class="row"><button class="btn sm" data-act="perShift" data-v="-1" aria-label="Periode sebelumnya">‹</button>${picker}<button class="btn sm" data-act="perShift" data-v="1" aria-label="Periode berikutnya">›</button><button class="btn sm ghost" data-act="perNow">Sekarang</button></div></div></div>
+  ${isFuture?`<div class="empty">Periode ini belum berjalan.</div>`:''}
+  <div class="kpis">
+    ${kpiD('Penjualan',rpS(M.total),delta(M.total,PM.total),`${M.inv} invoice${M.total?' · '+pct(M.lunas/M.total,0)+' lunas':''}`)}
+    ${kpiD('Order baru (DP)',rpS(M.dp),delta(M.dp,PM.dp),'')}
+    ${kpiD('Pelunasan',rpS(M.pel),delta(M.pel,PM.pel),'')}
+    ${kpiD('Kontak WA',M.leadsKnown?M.leads.toLocaleString('id-ID'):'n/a',M.leadsKnown?delta(M.leads,PM.leads):'',M.leadsKnown?'':'belum dicatat')}
+    ${kpiD('Customer baru',M.newC.length,delta(M.newC.length,PM.newC.length),`${M.newProd.length} order produksi`)}
+    ${kpiD('Piutang saat ini',rpS(piutang),'',`${rpS(od)} lewat tempo`,od?'bad':'')}
+  </div>
+  ${ins.length?`<section class="card"><div class="ch"><h2>Ringkasan ${esc(P.label)}</h2></div><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px">${ins.map(i=>`<li>${i}</li>`).join('')}</ul></section>`:''}
+  <div class="grid">
+    <section class="card"><div class="ch"><h2>Penjualan · ${chartTitle}</h2><div class="legend"><span><i style="background:var(--chart-a)"></i>Lunas</span><span><i style="background:var(--bad)"></i>Belum dibayar</span></div></div><div id="chSales" style="min-height:220px"></div></section>
+    <section class="card"><div class="ch"><h2>Order baru (DP) · ${chartTitle}</h2><span class="note">Penanda pelunasan 1–3 bulan ke depan</span></div><div id="chDp" style="min-height:220px"></div></section>
+  </div>
+  <div class="grid">
+    <section class="card"><div class="ch"><h2>Kontak WA · ${chartTitle}</h2><span class="note">${mode==='hari'||mode==='minggu'?'Dari pelanggan yang diinput di sistem':'Data bulanan lama + input di sistem'}</span></div><div id="chLeads" style="min-height:220px"></div></section>
+    <section class="card"><div class="ch"><h2>Funnel · ${esc(P.label)}</h2><span class="note">Follow-up terkirim ${M.fuSent} dari ${M.fuDue} terjadwal</span></div>
+      <div class="funnel">${fn.map(([l,v])=>`<div class="f"><span>${l}</span><div class="track"><i style="width:${v/fmax*100}%"></i></div><span class="r">${v.toLocaleString('id-ID')}</span></div>`).join('')}</div>
+      <p class="note" style="margin-top:10px">Tiap angka dihitung dari kejadian di periode ini (tanggal sampel diterima, tanggal DP, tanggal selesai).</p></section>
+  </div>
+  <div class="grid">
+    <section class="card"><div class="ch"><h2>Customer teratas</h2><span class="note">${esc(P.label)}</span></div><div class="tbl-wrap"><table><thead><tr><th>Customer</th><th class="n">Penjualan</th><th class="n">Share</th></tr></thead><tbody>
+      ${ranked.slice(0,10).map(([id,v])=>`<tr class="click" data-act="openCustomer" data-id="${id}"><td>${esc(custName(id))}</td><td class="n">${rpS(v)}</td><td class="n">${pct(v/(M.total||1))}</td></tr>`).join('')||`<tr><td colspan="3"><div class="empty">Tidak ada invoice di periode ini.</div></td></tr>`}
+      ${ranked.length>2?`<tr><td class="muted small">3 teratas</td><td></td><td class="n">${pct(top3)}</td></tr>`:''}
+    </tbody></table></div></section>
+    <section class="card"><div class="ch"><h2>Customer baru</h2><span class="note">Pertama kali muncul di invoice</span></div><div class="tbl-wrap"><table><thead><tr><th>Customer</th><th>Tanggal</th><th>Jenis</th><th class="n">Total transaksi</th></tr></thead><tbody>
+      ${M.newC.map(id=>[id,sumN(S.payments.filter(p=>p.customerId===id))]).sort((a,b)=>b[1]-a[1]).map(([id,v])=>`<tr class="click" data-act="openCustomer" data-id="${id}"><td>${esc(custName(id))}</td><td class="small">${fmtDate(C.firstPay[id])}</td><td>${C.prodCust.has(id)?'<span class="pill ok">Order produksi</span>':'<span class="pill">Jasa / sampel</span>'}</td><td class="n">${rpS(v)}</td></tr>`).join('')||`<tr><td colspan="4"><div class="empty">Tidak ada customer baru di periode ini.</div></td></tr>`}
+    </tbody></table></div></section>
+  </div>
+  <section class="card"><div class="ch"><h2>Per tahun</h2><span class="note">Semua data yang tersimpan, termasuk data lama</span></div><div class="tbl-wrap"><table><thead><tr><th>Tahun</th><th class="n">Penjualan</th><th class="n">Lunas</th><th class="n">DP</th><th class="n">Invoice</th><th class="n">Customer aktif</th><th class="n">Kontak WA</th><th class="n">vs tahun lalu</th></tr></thead><tbody>
+    ${yearRows.map((r,i)=>{ const prev=yearRows[i+1]; return `<tr class="click" data-act="perPick" data-v="tahun" data-id="${r.y}-01-01"><td><b>${r.y}</b></td><td class="n">${rpS(r.total)}</td><td class="n">${rpS(r.lunas)}</td><td class="n">${rpS(r.dp)}</td><td class="n">${r.inv}</td><td class="n">${r.cust}</td><td class="n">${r.leads?r.leads.toLocaleString('id-ID'):'–'}</td><td class="n">${prev&&prev.total?delta(r.total,prev.total):'–'}</td></tr>`; }).join('')||`<tr><td colspan="8"><div class="empty">Belum ada data.</div></td></tr>`}
+  </tbody></table></div></section>
+  <section class="card"><div class="ch"><h2>Piutang saat ini, dari yang paling lama</h2><span class="num">${rp(piutang)}</span></div><div class="tbl-wrap"><table><thead><tr><th>Invoice</th><th>Tanggal</th><th>Customer</th><th>Jenis</th><th class="n">Nilai</th><th>Jatuh tempo</th><th class="n">Umur</th><th></th></tr></thead><tbody>
+    ${pi.map(p=>{ const age=daysBetween(p.tanggal,todayStr()), late=p.jatuhTempo? p.jatuhTempo<todayStr() : age>30; return `<tr><td class="small num">${esc(p.noInvoice||'–')}</td><td class="small">${fmtDate(p.tanggal)}</td><td>${esc(custName(p.customerId))}</td><td class="small">${esc(p.jenis)}</td><td class="n">${rp(p.nilai)}</td><td class="small" style="${late?'color:var(--bad)':''}">${p.jatuhTempo?fmtDate(p.jatuhTempo):'tanpa tempo'}</td><td class="n" style="${late?'color:var(--bad)':''}">${age} hr</td><td><button class="btn sm" data-act="payLunas" data-id="${p.id}">Lunas</button></td></tr>`; }).join('')||`<tr><td colspan="8"><div class="empty">Tidak ada piutang.</div></td></tr>`}
+  </tbody></table></div></section>`;
+}
+function barChart(el, data, series, opts={}){
+  if(!el) return;
+  const W=Math.max(300, el.clientWidth||600), H=220, m={t:16,r:6,b:22,l:46};
+  const maxV=Math.max(1,...data.map(d=>opts.stacked? series.reduce((s,k)=>s+(d[k.key]||0),0) : Math.max(...series.map(k=>d[k.key]||0))));
+  const nice=niceMax(maxV), ticks=[0,nice/4,nice/2,nice*3/4,nice];
+  const bw=(W-m.l-m.r)/data.length, bar=Math.min(30,bw*.62), showTop=bw>=34;
+  const y=v=>H-m.b-(v/nice)*(H-m.t-m.b);
+  let s=`<svg class="chart" viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="${esc(opts.label||'')}">`;
+  ticks.forEach(t=>{ s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y(t)}" y2="${y(t)}" stroke="var(--line)"/><text x="${m.l-6}" y="${y(t)+3}" text-anchor="end">${esc(opts.fmt?opts.fmt(t):t)}</text>`; });
+  data.forEach((d,i)=>{ const cx=m.l+bw*i+bw/2; let base=0; const miss=opts.missing && opts.missing(d);
+    if(!miss) series.forEach(k=>{ const v=d[k.key]||0; const y0=opts.stacked?base:0; if(opts.stacked) base+=v; if(v>0) s+=`<rect x="${cx-bar/2}" y="${y(y0+v)}" width="${bar}" height="${Math.max(0,y(y0)-y(y0+v))}" rx="3" fill="${k.color}"><title>${esc(d.label||d.l)} · ${esc(k.name)}: ${esc(opts.tip?opts.tip(v):v)}</title></rect>`; });
+    if(miss) s+=`<text x="${cx}" y="${H-m.b-6}" text-anchor="middle">n/a</text>`;
+    else if(opts.top && showTop){ const tv=opts.stacked?base:(d[series[0].key]||0); if(tv) s+=`<text x="${cx}" y="${y(tv)-4}" text-anchor="middle" style="fill:var(--ink)">${esc(opts.top(tv))}</text>`; }
+    if(bw>=44 || i%2===(data.length-1)%2) s+=`<text x="${cx}" y="${H-6}" text-anchor="middle">${esc(d.l)}</text>`; });
+  s+='</svg>'; el.innerHTML=s;
+}
+function niceMax(v){ const e=Math.pow(10,Math.floor(Math.log10(v))); const f=v/e; const n=f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10; return n*e; }
+const axisRp = v => v>=1e9 ? (v/1e9).toLocaleString('id-ID',{maximumFractionDigits:1})+' M' : v>=1e6 ? Math.round(v/1e6)+' jt' : v>=1e3 ? Math.round(v/1e3)+' rb' : String(Math.round(v));
+const topRp = v => v>=1e9 ? (v/1e9).toLocaleString('id-ID',{maximumFractionDigits:1})+'M' : v>=1e6 ? Math.round(v/1e6)+'jt' : Math.round(v/1e3)+'rb';
+function drawCharts(){
+  const B=window.__B; if(!B) return;
+  barChart($('#chSales'), B, [{key:'lunas',name:'Lunas',color:'var(--chart-a)'},{key:'belum',name:'Belum dibayar',color:'var(--bad)'}], {stacked:true, fmt:axisRp, tip:rp, top:topRp, label:'Penjualan'});
+  barChart($('#chDp'), B, [{key:'dp',name:'DP',color:'var(--chart-c)'}], {fmt:axisRp, tip:rp, top:topRp, label:'DP'});
+  barChart($('#chLeads'), B, [{key:'leads',name:'Kontak WA',color:'var(--info)'}], {fmt:v=>Math.round(v), tip:v=>v, top:v=>v, missing:x=>!x.leadsKnown, label:'Kontak WA'});
+}
+let rzT; window.addEventListener('resize',()=>{ clearTimeout(rzT); rzT=setTimeout(()=>{ if(route()==='analisa') drawCharts(); },150); });
+
+// ---------- data lama & impor ----------
+const IMP_COLS=['Tanggal','No Invoice','Pelanggan','Jenis','Produk','Qty','Nilai','PPN','Status','Jatuh Tempo'];
+const MON_IDX={jan:1,feb:2,mar:3,apr:4,mei:5,may:5,jun:6,jul:7,agu:8,ags:8,aug:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
+function parseDateAny(s){
+  s=String(s||'').trim(); if(!s) return '';
+  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if(m) return `${m[1]}-${pad(m[2])}-${pad(m[3])}`;
+  m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/); if(m){ const y=m[3].length===2?'20'+m[3]:m[3]; return `${y}-${pad(m[2])}-${pad(m[1])}`; }
+  m=s.match(/^(\d{1,2})[\s\-]+([A-Za-z]{3})[A-Za-z]*[\s\-]+(\d{4})$/); if(m && MON_IDX[m[2].toLowerCase()]) return `${m[3]}-${pad(MON_IDX[m[2].toLowerCase()])}-${pad(m[1])}`;
+  return null;
+}
+function parseNum(s){ s=String(s??'').trim(); if(!s) return 0; s=s.replace(/rp/i,'').replace(/\s/g,''); if(/^-?\d+[.,]\d{1,2}$/.test(s)) return Math.round(parseFloat(s.replace(',','.'))); const neg=s.startsWith('-'); const d=s.replace(/[^\d]/g,''); return d? (neg?-1:1)*Number(d) : NaN; }
+function splitRows(text){
+  const lines=text.replace(/\r/g,'').split('\n').filter(l=>l.trim());
+  if(!lines.length) return [];
+  const sep = lines[0].includes('\t') ? '\t' : (lines[0].split(';').length > lines[0].split(',').length ? ';' : ',');
+  return lines.map(l=>{ if(sep==='\t') return l.split('\t'); const out=[]; let cur='', q=false; for(let i=0;i<l.length;i++){ const ch=l[i]; if(ch==='"'){ if(q && l[i+1]==='"'){cur+='"'; i++;} else q=!q; } else if(ch===sep && !q){ out.push(cur); cur=''; } else cur+=ch; } out.push(cur); return out; });
+}
+function normJenis(s){ const t=String(s||'').toLowerCase(); if(/^dp|uang muka/.test(t)) return 'DP'; if(/pelun/.test(t)) return 'Pelunasan'; if(/ongkir|kirim/.test(t)) return 'Ongkir'; if(/sampel|sample/.test(t)) return 'Fee sampel'; if(/bpom|hki|merek/.test(t)) return 'BPOM/HKI'; if(/halal/.test(t)) return 'Halal'; if(/lab/.test(t)) return 'Uji lab'; if(/aksesor|botol|kemasan/.test(t)) return 'Aksesoris'; return 'Lainnya'; }
+function parseImport(text){
+  let rows=splitRows(text); if(!rows.length) return null;
+  if(rows[0].some(c=>/tanggal|pelanggan|nilai/i.test(c))) rows=rows.slice(1);
+  const byName=new Map(S.customers.map(c=>[c.nama.trim().toLowerCase(), c.id]));
+  const invNos=new Set(S.payments.map(p=>(p.noInvoice||'').trim()).filter(Boolean));
+  const seen=new Set(); const newNames=new Set();
+  const out=rows.map((r,i)=>{ const [tg,no,pel,jen,prod,qty,nil,ppn,st,jt]=r.map(x=>String(x??'').trim());
+    const errs=[]; const tanggal=parseDateAny(tg); if(!tanggal) errs.push('tanggal tidak terbaca');
+    const nilai=parseNum(nil); if(!(nilai>0)) errs.push('nilai kosong');
+    if(!pel) errs.push('pelanggan kosong');
+    const jatuhTempo = jt ? parseDateAny(jt) : ''; if(jt && jatuhTempo===null) errs.push('jatuh tempo tidak terbaca');
+    const dup = no && (invNos.has(no) || seen.has(no)); if(no) seen.add(no);
+    const cid = byName.get(pel.toLowerCase()); if(pel && !cid) newNames.add(pel);
+    return {line:i+1, tanggal, noInvoice:no, pelanggan:pel, customerId:cid||null, jenis:normJenis(jen), produk:prod, qty:parseNum(qty)||0, nilai, ppn:parseNum(ppn)||0,
+      status:/lunas|paid|sudah/i.test(st)?'lunas':'belum', jatuhTempo:jatuhTempo||'', errs, dup};
+  });
+  return {rows:out, ok:out.filter(r=>!r.errs.length && !r.dup), bad:out.filter(r=>r.errs.length), dups:out.filter(r=>!r.errs.length && r.dup), newNames:[...newNames]};
+}
+function vHistori(){
+  const y=S.ui.histYear, I=S.ui.imp, prog=S.ui.impProg;
+  const years=dataYears();
+  return `<div class="head"><div><h1>Data lama & impor</h1><p class="sub">Isi atau perbarui data tahun-tahun sebelumnya. Semua yang masuk di sini langsung ikut dihitung di Analisa.</p></div></div>
+  <section class="card"><div class="ch"><h2>Kontak WA per bulan</h2><label class="row small">Tahun <select id="histYear" class="search" style="width:auto">${years.map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select></label></div>
+    <p class="note" style="margin:0 0 10px">Jumlah kontak masuk per bulan (seperti sheet ADD). Kosongkan bulan yang tidak ada datanya. Bulan yang diisi di sini menggantikan hitungan otomatis dari pelanggan yang diinput.</p>
+    <div class="kpis" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,110px),1fr))">${BULAN.map((b,i)=>{ const k=`${y}-${pad(i+1)}`; return `<div class="fld"><label for="ld_${i+1}">${b}</label><input id="ld_${i+1}" type="number" inputmode="numeric" min="0" value="${S.leads[k]??''}"></div>`; }).join('')}</div>
+    <div class="row" style="margin-top:12px"><button class="btn pri" data-act="saveLeads">Simpan kontak WA ${y}</button></div></section>
+  <section class="card"><div class="ch"><h2>Impor invoice lama</h2><span class="note">Dari Excel: blok kolom, salin, tempel di bawah. Atau pilih file CSV.</span></div>
+    <p class="small" style="margin:0 0 6px">Urutan kolom (baris judul boleh ikut):</p>
+    <div class="row" style="margin-bottom:10px"><code class="msg small" style="flex:1 1 300px" id="impHead">${IMP_COLS.join('\t')}</code><button class="btn sm" data-act="copyHead">Salin judul kolom</button></div>
+    <p class="note" style="margin:0 0 10px">Tanggal: 2025-03-14 atau 14/03/2025. Status: LUNAS atau BELUM. Jenis: DP, Pelunasan, Ongkir, Fee sampel, BPOM, Halal, dll. Nama pelanggan yang belum ada akan dibuat otomatis. No invoice yang sudah ada dilewati supaya tidak dobel.</p>
+    <div class="fld"><label for="impText">Data</label><textarea id="impText" style="min-height:140px;font-family:var(--font-num);font-size:12px" placeholder="2025-03-14	045/HMF-INV/III/25	CV Contoh	DP	Serum 30ml	1000	25.000.000	2.475.000	LUNAS	2025-03-28">${esc(S.ui.impText)}</textarea></div>
+    <div class="row" style="margin-top:8px"><label class="btn sm" for="impFile">Pilih file CSV</label><input id="impFile" type="file" accept=".csv,.tsv,.txt" hidden><button class="btn pri" data-act="impCheck">Periksa data</button>${I?`<button class="btn" data-act="impClear">Bersihkan</button>`:''}</div>
+    ${I?`<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+      <div class="row"><span class="pill ok">${I.ok.length} siap diimpor · ${rpS(sumN(I.ok))}</span>${I.dups.length?`<span class="pill warn">${I.dups.length} sudah ada (dilewati)</span>`:''}${I.bad.length?`<span class="pill bad">${I.bad.length} baris bermasalah</span>`:''}${I.newNames.length?`<span class="pill info">${I.newNames.length} pelanggan baru</span>`:''}</div>
+      <div class="tbl-wrap" style="max-height:340px;overflow:auto"><table><thead><tr><th>#</th><th>Tanggal</th><th>No</th><th>Pelanggan</th><th>Jenis</th><th class="n">Nilai</th><th>Status</th><th>Cek</th></tr></thead><tbody>
+      ${I.rows.slice(0,300).map(r=>`<tr><td class="small muted">${r.line}</td><td class="small">${r.tanggal?fmtDate(r.tanggal):'–'}</td><td class="small num">${esc(r.noInvoice||'–')}</td><td>${esc(r.pelanggan)}${!r.customerId&&r.pelanggan?' <span class="pill info">baru</span>':''}</td><td class="small">${esc(r.jenis)}</td><td class="n">${isNaN(r.nilai)?'–':rp(r.nilai)}</td><td>${r.status==='lunas'?'<span class="pill ok">Lunas</span>':'<span class="pill warn">Belum</span>'}</td><td class="small" style="color:${r.errs.length?'var(--bad)':r.dup?'var(--warn)':'var(--ok)'}">${r.errs.length?esc(r.errs.join(', ')):r.dup?'sudah ada':'ok'}</td></tr>`).join('')}
+      </tbody></table></div>
+      ${prog?`<div class="row"><div class="bar" style="flex:1"><i style="width:${prog.done/prog.total*100}%"></i></div><span class="small num">${prog.done}/${prog.total}</span></div>`:''}
+      <div class="row"><button class="btn pri" data-act="impRun" ${!I.ok.length||prog?'disabled':''}>Impor ${I.ok.length} invoice</button></div></div>`:''}
+  </section>`;
+}
+async function runImport(){
+  const I=S.ui.imp; if(!I||!I.ok.length) return;
+  S.ui.impProg={done:0,total:I.ok.length}; schedule();
+  const created={};
+  try{
+    for(const name of I.newNames){ if(!I.ok.some(r=>r.pelanggan===name)) continue; const first=I.ok.filter(r=>r.pelanggan===name).map(r=>r.tanggal).sort()[0];
+      const ref=await col('customers').add({nama:name, panggilan:'', wa:'', brand:'', kota:'', sumber:'Data lama (import)', catatan:'', createdAt:first+'T00:00:00', imported:true, createdBy:S.uid}); created[name]=ref.id; }
+    for(const r of I.ok){
+      await col('payments').add({customerId:r.customerId||created[r.pelanggan], tanggal:r.tanggal, jenis:r.jenis, kategori:r.jenis, produk:r.produk, qty:r.qty, nilai:r.nilai, ppn:r.ppn, status:r.status, jatuhTempo:r.jatuhTempo, noInvoice:r.noInvoice, tglLunas:r.status==='lunas'?r.tanggal:'', source:'import-lama', createdAt:nowISO(), createdBy:S.uid});
+      S.ui.impProg.done++; if(S.ui.impProg.done%10===0) schedule();
+    }
+    toast(`${I.ok.length} invoice diimpor`); S.ui.imp=null; S.ui.impText='';
+  }catch(e){ console.error(e); toast(`Impor berhenti di ${S.ui.impProg.done}/${I.ok.length}. Periksa lagi lalu impor sisanya.`); S.ui.imp=parseImport(S.ui.impText); }
+  S.ui.impProg=null; schedule();
+}
+
+// ---------- akses ----------
+function vAkses(){
+  const reqs=S.requests.filter(q=>!S.roles[q.id]); const rs=Object.entries(S.roles);
+  wantNames([...reqs.map(q=>q.id), ...rs.map(r=>r[0])]);
+  return `<div class="head"><div><h1>Akses & pengaturan</h1><p class="sub">Minta tim membuat akun di halaman login, atau buatkan akun langsung di bawah ini. Admin melihat CRM, invoice, dan analisa; Pabrik hanya melihat tugas sampel & produksi.</p></div></div>
+  <section class="card"><div class="ch"><h2>Buat Akun Tim Langsung (Tanpa Email)</h2></div>
+    <div class="form"><div class="two">
+      <div class="fld"><label for="newUserName">Nama & bagian</label><input id="newUserName" placeholder="mis. Budi – Pabrik"></div>
+      <div class="fld"><label for="newUserLogin">Username</label><input id="newUserLogin" placeholder="mis. budi (tanpa spasi)"></div>
+    </div>
+    <div class="two">
+      <div class="fld"><label for="newUserPass">Password</label><input id="newUserPass" type="password" placeholder="minimal 6 karakter"></div>
+      <div class="fld"><label for="newUserRole">Peran</label><select id="newUserRole"><option value="pabrik">Pabrik (Produksi / Formulasi)</option><option value="admin">Admin (CS / Marketing / Keuangan)</option></select></div>
+    </div>
+    <div><button class="btn pri" data-act="createDirectUser">Buat Akun Langsung</button></div>
+    </div></section>
+  <section class="card"><div class="ch"><h2>Permintaan akses masuk</h2></div>${reqs.length?`<div class="list">${reqs.map(q=>`<div class="item"><div class="main"><span class="t">${esc(nameOf(q.id))}</span><span class="small muted">${esc(q.catatan||'')} · ${fmtDT(q.at)}</span></div><div class="row"><button class="btn sm pri" data-act="setRole" data-id="${q.id}" data-v="admin">Jadikan Admin</button><button class="btn sm" data-act="setRole" data-id="${q.id}" data-v="pabrik">Jadikan Pabrik</button></div></div>`).join('')}</div>`:`<div class="empty">Tidak ada permintaan baru.</div>`}</section>
+  <section class="card"><div class="ch"><h2>Tim</h2></div>${rs.length?`<div class="list">${rs.map(([id,r])=>`<div class="item"><div class="main"><span class="t">${esc(nameOf(id))}</span><span class="small muted">${r.role==='admin'?'Admin':'Pabrik'}</span></div><div class="row"><button class="btn sm" data-act="setRole" data-id="${id}" data-v="${r.role==='admin'?'pabrik':'admin'}">Ubah ke ${r.role==='admin'?'Pabrik':'Admin'}</button><button class="btn sm danger" data-act="setRole" data-id="${id}" data-v="">Cabut</button></div></div>`).join('')}</div>`:`<div class="empty">Belum ada anggota tim. Pemilik otomatis jadi Admin.</div>`}</section>
+  <section class="card"><div class="ch"><h2>Pengaturan pesan</h2></div><div class="form"><div class="two">
+    <div class="fld"><label for="setBrand">Nama perusahaan di pesan WA</label><input id="setBrand" value="${esc(brandName())}"></div>
+    <div class="fld"><label for="setAdmin">Nama pengirim</label><input id="setAdmin" value="${esc(S.settings.namaAdmin||'')}" placeholder="mis. Nurul"></div></div>
+    <div><button class="btn pri" data-act="saveSettings">Simpan pengaturan</button></div></div></section>`;
+}
+
+// ---------- pabrik views ----------
+function vPabrikTasks(){
+  const ts=pabrikTasks();
+  const sampel=ts.filter(p=>['sampel_request','sampel_proses','revisi'].includes(p.stage)), prod=ts.filter(p=>['deal','produksi'].includes(p.stage));
+  const card=p=>{ const isProd=['deal','produksi'].includes(p.stage); const steps=isProd?PABRIK_PROD:PABRIK_SAMPEL; const cur=steps.findIndex(s=>s[1]===p.tahapPabrik);
+    return `<div class="item"><div class="main"><span class="t">${esc(p.produk)} <span class="muted small">· ${esc(custName(p.customerId))}</span></span>
+    <span class="row">${stagePill(p.stage)}${p.qtyRencana?`<span class="small muted">${Number(p.qtyRencana).toLocaleString('id-ID')} pcs</span>`:''}<span class="small muted">masuk ${fmtDate(isProd?p.tglDeal:p.tglRequest)}</span></span>
+    <div class="stages">${steps.map((s,i)=>`<span class="${i<cur?'done':i===cur?'now':''}">${esc(s[1])}</span>`).join('')}</div>
+    ${p.brief?`<details><summary class="small">Brief</summary><div class="msg small">${esc(p.brief)}</div></details>`:''}</div>
+    <div class="row"><button class="btn sm pri" data-act="pabrikUpdate" data-id="${p.id}">Lapor progres</button></div></div>`; };
+  return `<div class="head"><div><h1>Tugas pabrik</h1><p class="sub">Laporkan setiap tahap. Laporan langsung masuk ke admin dan jadi pesan update untuk pelanggan.</p></div></div>
+  <div class="kpis">${kpi('Sampel antre/diproses',sampel.length,'','')}${kpi('Produksi berjalan',prod.length,'','')}</div>
+  <section class="card"><div class="ch"><h2>Sampel</h2></div>${sampel.length?`<div class="list">${sampel.map(card).join('')}</div>`:`<div class="empty">Tidak ada request sampel.</div>`}</section>
+  <section class="card"><div class="ch"><h2>Produksi</h2></div>${prod.length?`<div class="list">${prod.map(card).join('')}</div>`:`<div class="empty">Tidak ada produksi berjalan.</div>`}</section>`;
+}
+function vRiwayat(){
+  const ups=S.updates.filter(u=>u.role==='pabrik').sort((a,b)=>(b.at||'').localeCompare(a.at||'')).slice(0,60);
+  return `<div class="head"><div><h1>Riwayat update</h1><p class="sub">Laporan yang sudah dikirim pabrik.</p></div></div>
+  <section class="card">${ups.length?`<div class="tl">${ups.map(u=>`<div class="e"><div><b>${esc(proj(u.projectId)?.produk||'')}</b> · ${esc(custName(proj(u.projectId)?.customerId))}</div><div>${esc(u.tahap||'')} · <span class="num">${u.progress??0}%</span>${u.catatan?` · ${esc(u.catatan)}`:''}</div><div class="d">${fmtDT(u.at)} · ${esc(nameOf(u.by))}</div></div>`).join('')}</div>`:`<div class="empty">Belum ada laporan.</div>`}</section>`;
+}
+
+// ---------- panels ----------
+function openPanel(title, body, actions=''){
+  $('#overlay').innerHTML=`<div class="ov" data-act="closeOv"><div class="panel" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="ph"><h2>${esc(title)}</h2><div class="row">${actions}<button class="btn sm ghost" data-act="close" aria-label="Tutup">Tutup</button></div></div><div class="pb">${body}</div></div></div>`;
+  const f=$('#overlay input, #overlay select, #overlay textarea'); if(f) f.focus();
+}
+function closePanel(){ $('#overlay').innerHTML=''; panelCtx=null; }
+let panelCtx=null;
+function fld(f){
+  const v=f.value ?? '';
+  if(f.type==='select') return `<div class="fld"><label for="f_${f.id}">${esc(f.label)}</label><select id="f_${f.id}" name="${f.id}">${f.options.map(o=>{ const [val,lab]=Array.isArray(o)?o:[o,o]; return `<option value="${esc(val)}" ${String(val)===String(v)?'selected':''}>${esc(lab)}</option>`; }).join('')}</select>${f.hint?`<span class="h">${esc(f.hint)}</span>`:''}</div>`;
+  if(f.type==='textarea') return `<div class="fld"><label for="f_${f.id}">${esc(f.label)}</label><textarea id="f_${f.id}" name="${f.id}" placeholder="${esc(f.ph||'')}">${esc(v)}</textarea>${f.hint?`<span class="h">${esc(f.hint)}</span>`:''}</div>`;
+  if(f.type==='checkbox') return `<div class="fld chk"><input type="checkbox" id="f_${f.id}" name="${f.id}" ${v?'checked':''}><label for="f_${f.id}">${esc(f.label)}</label></div>`;
+  return `<div class="fld"><label for="f_${f.id}">${esc(f.label)}${f.req?' *':''}</label><input id="f_${f.id}" name="${f.id}" type="${f.type||'text'}" value="${esc(v)}" placeholder="${esc(f.ph||'')}" ${f.type==='number'?'inputmode="decimal" step="any"':''}>${f.hint?`<span class="h">${esc(f.hint)}</span>`:''}</div>`;
+}
+function formPanel(title, fields, submitLabel, onSubmit, extraTop='', extraBtns=''){
+  const rows=[]; for(const f of fields){ if(Array.isArray(f)) rows.push(`<div class="two">${f.map(fld).join('')}</div>`); else rows.push(fld(f)); }
+  openPanel(title, `${extraTop}<form class="form" id="pform" novalidate>${rows.join('')}<div class="err" id="ferr" role="alert"></div><div class="row"><button class="btn pri" type="submit">${esc(submitLabel)}</button><button class="btn" type="button" data-act="close">Batal</button>${extraBtns}</div></form>`);
+  $('#pform').addEventListener('submit', async e=>{ e.preventDefault(); const flat=fields.flat(); const vals={};
+    for(const f of flat){ const el=$('#f_'+f.id); vals[f.id]= f.type==='checkbox' ? el.checked : f.type==='number' ? (el.value===''?null:Number(el.value)) : el.value.trim(); }
+    const miss=flat.filter(f=>f.req && (vals[f.id]===''||vals[f.id]==null)); if(miss.length){ $('#ferr').textContent='Lengkapi: '+miss.map(f=>f.label).join(', '); return; }
+    const btn=e.submitter||$('#pform button[type=submit]'); btn.disabled=true; const ok=await onSubmit(vals); btn.disabled=false; if(ok!==false) closePanel(); });
+}
+function custOptions(){ return [...S.customers].sort((a,b)=>a.nama.localeCompare(b.nama)).map(c=>[c.id,c.nama]); }
+
+function customerForm(c){
+  formPanel(c?'Ubah pelanggan':'Pelanggan baru',[
+    {id:'nama',label:'Nama pelanggan',req:true,value:c?.nama,ph:'mis. Bu Rina / CV Sinar Abadi'},
+    [{id:'panggilan',label:'Nama panggilan di WA',value:c?.panggilan,ph:'mis. Rina'},{id:'wa',label:'Nomor WhatsApp',type:'tel',value:c?.wa,ph:'0812…'}],
+    [{id:'brand',label:'Brand / produk yang dibangun',value:c?.brand},{id:'kota',label:'Kota',value:c?.kota}],
+    {id:'sumber',label:'Sumber kontak',type:'select',value:c?.sumber||'Instagram',options:['Instagram','TikTok','Facebook Ads','Website','Referral','Pameran','Repeat order','Data 2026 (import)','Lainnya']},
+    {id:'catatan',label:'Catatan',type:'textarea',value:c?.catatan,ph:'Kebutuhan, budget, target launching…'}],
+    c?'Simpan':'Tambah pelanggan', async v=>{
+      if(c) return write(()=>col('customers').doc(c.id).update({...v, updatedAt:nowISO()}),'Pelanggan disimpan');
+      return write(()=>col('customers').add({...v, createdAt:nowISO(), createdBy:S.uid, imported:false}),'Pelanggan ditambahkan');
+    }, '', c?`<button class="btn danger" type="button" data-act="delCustomer" data-id="${c.id}" style="margin-left:auto">Hapus pelanggan</button>`:'');
+}
+function projectForm(p, presetCust){
+  if(!S.customers.length){ toast('Tambah pelanggan dulu.'); customerForm(); return; }
+  formPanel(p?'Ubah proyek':'Proyek / sampel baru',[
+    {id:'customerId',label:'Pelanggan',type:'select',options:custOptions(),value:p?.customerId||presetCust||''},
+    {id:'produk',label:'Produk yang diminta',req:true,value:p?.produk,ph:'mis. Serum niacinamide 30ml'},
+    [{id:'kategori',label:'Kategori',type:'select',value:p?.kategori||'Skincare',options:['Skincare','Bodycare','Parfum','Deodorant','Haircare','Kosmetik dekoratif','Herbal / pangan','Lainnya']},{id:'qtyRencana',label:'Rencana qty (pcs)',type:'number',value:p?.qtyRencana}],
+    [{id:'biayaSampel',label:'Biaya sampel (Rp)',type:'number',value:p?.biayaSampel},{id:'sampelLunas',label:'Biaya sampel sudah dibayar',type:'checkbox',value:p?.sampelLunas}],
+    ...(p?[]:[{id:'kirimPabrik',label:'Langsung kirim request sampel ke pabrik',type:'checkbox',value:true}]),
+    {id:'catatan',label:'Permintaan detail',type:'textarea',value:p?.catatan,ph:'Aroma, tekstur, klaim, kemasan, target harga…',hint:'Dipakai untuk brief pabrik.'}],
+    p?'Simpan':'Buat proyek', async v=>{
+      const kirim=v.kirimPabrik; delete v.kirimPabrik;
+      if(p) return write(()=>col('projects').doc(p.id).update({...v, updatedAt:nowISO()}),'Proyek disimpan');
+      return write(async()=>{
+        const ref=await col('projects').add({...v, stage:kirim?'sampel_request':'konsultasi', progress:0, tglRequest:kirim?todayStr():'', createdAt:nowISO(), updatedAt:nowISO(), createdBy:S.uid});
+        await logUpdate(ref.id,{stage:kirim?'sampel_request':'konsultasi', tahap:kirim?'Request sampel dikirim ke pabrik':'Proyek dibuat', progress:0, catatan:v.catatan||''});
+        if(v.biayaSampel) { /* fee sampel dicatat sebagai invoice */
+          await col('payments').add({customerId:v.customerId, projectId:ref.id, tanggal:todayStr(), jenis:'Fee sampel', produk:v.produk, qty:1, nilai:v.biayaSampel, ppn:0, status:v.sampelLunas?'lunas':'belum', jatuhTempo:'', noInvoice:'', source:'app', createdAt:nowISO()});
+        }
+        if(kirim) makeBrief(ref.id, v);
+      }, kirim?'Proyek dibuat & request sampel masuk ke pabrik':'Proyek dibuat');
+    }, '', p?`<button class="btn danger" type="button" data-act="delProject" data-id="${p.id}" style="margin-left:auto">Hapus proyek</button>`:'');
+}
+async function makeBrief(pid, v){
+  const c=cust(v.customerId);
+  let brief=`• Pelanggan: ${c?.nama||'-'}\n• Produk: ${v.produk}\n• Kategori: ${v.kategori||'-'}\n• Rencana qty: ${v.qtyRencana||'-'} pcs\n• Permintaan: ${v.catatan||'-'}`;
+  try{ if(sample){ brief=await aiWrite('brief',{nama:c?.nama, produk:v.produk, kategori:v.kategori, qty:v.qtyRencana, catatan:v.catatan}); } }catch(e){}
+  try{ await col('projects').doc(pid).update({brief}); }catch(e){}
+}
+
+function openCustomer(id){
+  const c=cust(id); if(!c) return;
+  const ps=S.projects.filter(p=>p.customerId===id), pays=S.payments.filter(p=>p.customerId===id).sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  const tot=pays.reduce((s,p)=>s+p.nilai,0), bel=pays.filter(p=>p.status==='belum').reduce((s,p)=>s+p.nilai,0);
+  const wa=waNum(c.wa);
+  openPanel(c.nama, `
+    <div class="kpis">${kpi('Total transaksi',rpS(tot),'','')}${kpi('Belum dibayar',rpS(bel),bel?'bad':'ok','')}${kpi('Proyek',ps.length,'','')}</div>
+    <div class="card"><div class="two small"><div><span class="muted">WA</span><br><span class="num">${esc(c.wa||'–')}</span></div><div><span class="muted">Brand</span><br>${esc(c.brand||'–')}</div><div><span class="muted">Sumber</span><br>${esc(c.sumber||'–')}</div><div><span class="muted">Kota</span><br>${esc(c.kota||'–')}</div></div>${c.catatan?`<p class="small" style="margin:10px 0 0">${esc(c.catatan)}</p>`:''}</div>
+    <div class="row">${wa?`<a class="btn" href="https://wa.me/${wa}" target="_blank" rel="noopener">Buka chat WA</a>`:''}<button class="btn" data-act="editCustomer" data-id="${c.id}">Ubah data</button><button class="btn pri" data-act="newProjectFor" data-id="${c.id}">+ Proyek / sampel</button><button class="btn" data-act="newPaymentFor" data-id="${c.id}">+ Invoice</button><button class="btn danger" type="button" data-act="delCustomer" data-id="${c.id}" style="margin-left:auto">Hapus pelanggan</button></div>
+    <section class="card"><div class="ch"><h3>Proyek</h3></div>${ps.length?`<div class="list">${ps.map(p=>projLine(p)).join('')}</div>`:`<div class="empty">Belum ada proyek.</div>`}</section>
+    <section class="card"><div class="ch"><h3>Invoice</h3></div>${pays.length?`<div class="tbl-wrap"><table><tbody>${pays.slice(0,40).map(p=>`<tr><td class="small">${fmtDate(p.tanggal)}</td><td class="small">${esc(p.jenis)}<div class="muted">${esc(p.produk||'')}</div></td><td class="n">${rp(p.nilai)}</td><td>${p.status==='lunas'?'<span class="pill ok">Lunas</span>':'<span class="pill warn">Belum</span>'}</td></tr>`).join('')}</tbody></table></div>`:`<div class="empty">Belum ada invoice.</div>`}</section>`);
+}
+
+function openProject(id){
+  const p=proj(id); if(!p) return; const c=cust(p.customerId);
+  const ups=S.updates.filter(u=>u.projectId===id).sort((a,b)=>(b.at||'').localeCompare(a.at||''));
+  const fus=S.followups.filter(f=>f.projectId===id).sort((a,b)=>a.due.localeCompare(b.due));
+  const ri=FLOW.indexOf(p.stage);
+  const next={konsultasi:['sampel_request','Kirim request sampel ke pabrik'],sampel_dikirim:['sampel_diterima','Sampel diterima pelanggan'],sampel_diterima:['deal','Pelanggan deal / DP'],revisi:['sampel_request','Kirim revisi ke pabrik']}[p.stage];
+  openPanel(`${c?.nama||''} · ${p.produk}`, `
+    <div class="row">${stagePill(p.stage)}<span class="small muted">Progres ${p.progress||0}%${p.tahapPabrik?` · ${esc(p.tahapPabrik)}`:''}</span></div>
+    <div class="stages">${FLOW.map((k,i)=>`<span class="${p.stage==='batal'?'':i<ri?'done':i===ri?'now':''}">${esc(SLABEL[k])}</span>`).join('')}</div>
+    <div class="row">${next?`<button class="btn pri" data-act="advance" data-id="${p.id}" data-v="${next[0]}">${esc(next[1])}</button>`:''}
+      ${p.stage==='sampel_diterima'?`<button class="btn" data-act="advance" data-id="${p.id}" data-v="revisi">Minta revisi sampel</button>`:''}
+      <button class="btn" data-act="addFu" data-id="${p.id}">+ Follow-up manual</button>
+      <button class="btn" data-act="editProject" data-id="${p.id}">Ubah</button>
+      <button class="btn" data-act="stagePick" data-id="${p.id}">Ubah tahap</button>
+      <button class="btn danger" type="button" data-act="delProject" data-id="${p.id}" style="margin-left:auto">Hapus proyek</button></div>
+    <section class="card"><div class="two small">
+      <div><span class="muted">Request sampel</span><br>${fmtDate(p.tglRequest)}</div><div><span class="muted">Sampel dikirim</span><br>${fmtDate(p.tglSampelKirim)}${p.resi?` · resi <span class="num">${esc(p.resi)}</span>`:''}</div>
+      <div><span class="muted">Sampel diterima</span><br>${fmtDate(p.tglSampelDiterima)}</div><div><span class="muted">Deal / DP</span><br>${fmtDate(p.tglDeal)}</div>
+      <div><span class="muted">Biaya sampel</span><br>${p.biayaSampel?rp(p.biayaSampel)+(p.sampelLunas?' · lunas':' · belum'):'–'}</div><div><span class="muted">Rencana qty</span><br>${p.qtyRencana?Number(p.qtyRencana).toLocaleString('id-ID')+' pcs':'–'}</div></div>
+      ${p.catatan?`<p class="small" style="margin:10px 0 0">${esc(p.catatan)}</p>`:''}</section>
+    ${p.brief?`<section class="card"><div class="ch"><h3>Brief untuk pabrik</h3></div><div class="msg small">${esc(p.brief)}</div></section>`:''}
+    <section class="card"><div class="ch"><h3>Jadwal follow-up</h3></div>${fus.length?`<div class="list">${fus.map(f=>`<div class="item"><div class="main"><span class="row"><span class="pill ${f.status==='sent'?'ok':f.status==='pending'?(f.due<todayStr()?'bad':''):''}">${esc(f.step||'Manual')} · ${fmtDate(f.due)}</span><span class="small muted">${f.status==='sent'?'terkirim':f.status==='pending'?'menunggu':f.status==='cancelled'?'dihentikan':'dilewati'}</span></span><span class="small">${esc(f.tujuan)}</span>${f.hasil?`<span class="small muted">Hasil: ${esc(f.hasil)}</span>`:''}</div>${f.status==='pending'?`<button class="btn sm pri" data-act="openFu" data-id="${f.id}">Kirim</button>`:''}</div>`).join('')}</div>`:`<div class="empty">Jadwal follow-up otomatis dibuat saat sampel ditandai diterima.</div>`}</section>
+    <section class="card"><div class="ch"><h3>Timeline</h3></div>${ups.length?`<div class="tl">${ups.map(u=>`<div class="e"><div><b>${esc(u.tahap||SLABEL[u.stage]||'')}</b>${u.progress!=null?` · <span class="num">${u.progress}%</span>`:''}</div>${u.catatan?`<div class="small">${esc(u.catatan)}</div>`:''}<div class="d">${fmtDT(u.at)} · ${esc(nameOf(u.by))} · ${u.role==='pabrik'?'Pabrik':'Admin'}</div></div>`).join('')}</div>`:`<div class="empty">Belum ada aktivitas.</div>`}</section>`);
+}
+
+function openFollowup(id){
+  const f=S.followups.find(x=>x.id===id); if(!f) return; const c=cust(f.customerId), p=proj(f.projectId); const wa=waNum(c?.wa);
+  panelCtx={kind:'fu', id};
+  openPanel(`Follow-up ${f.step||''} · ${c?.nama||''}`, `
+    <div class="small"><b>Tujuan:</b> ${esc(f.tujuan)}<br><span class="muted">${esc(p?.produk||'')} · jatuh tempo ${fmtDate(f.due)} · WA <span class="num">${esc(c?.wa||'belum diisi')}</span></span></div>
+    <div class="fld"><label for="msgBox">Pesan</label><textarea id="msgBox" style="min-height:150px">${esc(f.pesan||fuTemplate(c,p||{},f.tujuan))}</textarea></div>
+    <div class="row"><button class="btn" data-act="aiFu" data-id="${f.id}">Tulis ulang dengan AI</button><button class="btn" data-act="copyMsg">Salin pesan</button>${wa?`<a class="btn" id="waLink" href="https://wa.me/${wa}?text=${encodeURIComponent(f.pesan||'')}" target="_blank" rel="noopener">Buka WhatsApp</a>`:'<span class="small muted">Isi nomor WA pelanggan untuk membuka chat langsung.</span>'}</div>
+    <div class="fld"><label for="fuHasil">Hasil / respons pelanggan</label><input id="fuHasil" placeholder="mis. minta revisi aroma, mau DP minggu depan"></div>
+    <div class="row"><button class="btn pri" data-act="fuSent" data-id="${f.id}">Tandai terkirim</button><button class="btn" data-act="fuSkip" data-id="${f.id}">Lewati</button><button class="btn" data-act="fuSnooze" data-id="${f.id}">Tunda 2 hari</button></div>
+    <p class="small muted">Setelah dikirim lewat WhatsApp, tandai terkirim supaya tercatat di analisa.</p>`);
+  syncWaLink();
+}
+function openOutbox(id){
+  const o=S.outbox.find(x=>x.id===id); if(!o) return; const c=cust(o.customerId); const wa=waNum(c?.wa);
+  panelCtx={kind:'out', id};
+  openPanel(`Update progres · ${c?.nama||''}`, `
+    <div class="small"><b>${esc(o.tahap||'')}</b> · ${o.progress??0}% · dilaporkan ${fmtDT(o.at)}${o.catatan?`<br><span class="muted">Catatan pabrik: ${esc(o.catatan)}</span>`:''}</div>
+    <div class="fld"><label for="msgBox">Pesan untuk pelanggan</label><textarea id="msgBox" style="min-height:150px">${esc(o.pesan||'')}</textarea></div>
+    <div class="row"><button class="btn" data-act="aiOut" data-id="${o.id}">Tulis ulang dengan AI</button><button class="btn" data-act="copyMsg">Salin pesan</button>${wa?`<a class="btn" id="waLink" href="https://wa.me/${wa}" target="_blank" rel="noopener">Buka WhatsApp</a>`:'<span class="small muted">Nomor WA pelanggan belum diisi.</span>'}</div>
+    <div class="row"><button class="btn pri" data-act="outSent" data-id="${o.id}">Tandai terkirim</button><button class="btn" data-act="outSkip" data-id="${o.id}">Tidak perlu dikirim</button></div>`);
+  syncWaLink();
+}
+function syncWaLink(){ const a=$('#waLink'), t=$('#msgBox'); if(!a||!t) return; const base=a.href.split('?')[0]; a.href=base+'?text='+encodeURIComponent(t.value); }
+
+function pabrikUpdateForm(id){
+  const p=proj(id); if(!p) return; const isProd=['deal','produksi'].includes(p.stage); const steps=isProd?PABRIK_PROD:PABRIK_SAMPEL;
+  const cur=steps.findIndex(s=>s[1]===p.tahapPabrik); const nextI=Math.min(steps.length-1,cur+1);
+  formPanel(`Lapor progres · ${p.produk}`,[
+    {id:'step',label:'Tahap',type:'select',value:String(nextI),options:steps.map((s,i)=>[String(i),`${s[1]} (${s[2]}%)`])},
+    {id:'resi',label:'No. resi (jika dikirim)',value:p.resi||''},
+    {id:'catatan',label:'Catatan untuk admin & pelanggan',type:'textarea',ph:'mis. bahan baku sudah datang, estimasi selesai Kamis'}],
+    'Kirim laporan', async v=>{
+      const s=steps[Number(v.step)]; const [stage,tahap,progress]=s;
+      return write(async()=>{
+        const patch={stage, tahapPabrik:tahap, progress, updatedAt:nowISO()};
+        if(stage==='sampel_dikirim'){ patch.tglSampelKirim=todayStr(); if(v.resi) patch.resi=v.resi; }
+        if(stage==='selesai'){ patch.tglSelesai=todayStr(); if(v.resi) patch.resiProduk=v.resi; }
+        await col('projects').doc(p.id).update(patch);
+        await logUpdate(p.id,{stage, tahap, progress, catatan:v.catatan||''});
+        const c=cust(p.customerId);
+        await col('outbox').add({projectId:p.id, customerId:p.customerId, tahap, progress, catatan:v.catatan||'', at:nowISO(), status:'draft', pesan:progTemplate(c,p,tahap,progress,[v.catatan, v.resi&&('No. resi: '+v.resi)].filter(Boolean).join(' · '))});
+      },'Laporan terkirim ke admin');
+    }, `<div class="small muted">${esc(custName(p.customerId))} · ${stagePill(p.stage)}</div>${p.brief?`<details><summary class="small">Brief</summary><div class="msg small">${esc(p.brief)}</div></details>`:''}`);
+}
+
+function paymentForm(p, presetCust, preset){
+  if(!S.customers.length){ toast('Tambah pelanggan dulu.'); return; }
+  const d=p||preset||{};
+  const cid=d.customerId||presetCust||'';
+  const pOpts=[['','(tanpa proyek)'],...S.projects.filter(x=>!cid||x.customerId===cid).map(x=>[x.id,`${custName(x.customerId)} · ${x.produk}`])];
+  formPanel(p?'Ubah invoice':'Invoice baru',[
+    {id:'customerId',label:'Pelanggan',type:'select',options:custOptions(),value:cid},
+    {id:'projectId',label:'Proyek',type:'select',options:pOpts,value:d.projectId||'',hint:'Pilih proyek supaya DP otomatis menandai proyek deal.'},
+    [{id:'jenis',label:'Jenis tagihan',type:'select',options:JENIS,value:d.jenis||'DP'},{id:'noInvoice',label:'No. invoice',value:d.noInvoice,ph:'mis. 336/HMF-INV/X/26'}],
+    {id:'produk',label:'Produk',value:d.produk},
+    [{id:'qty',label:'Qty',type:'number',value:d.qty},{id:'nilai',label:'Nilai ditagih (Rp, termasuk PPN)',type:'number',req:true,value:d.nilai}],
+    [{id:'ppn',label:'PPN di dalamnya (Rp)',type:'number',value:d.ppn},{id:'tanggal',label:'Tanggal invoice',type:'date',req:true,value:d.tanggal||todayStr()}],
+    [{id:'jatuhTempo',label:'Jatuh tempo',type:'date',value:p?(p.jatuhTempo||''):addDays(todayStr(),14),hint:'Wajib diisi supaya piutang terpantau.'},{id:'status',label:'Status',type:'select',options:[['belum','Belum dibayar (piutang)'],['lunas','Lunas']],value:d.status||'belum'}]],
+    p?'Simpan':'Simpan invoice', async v=>{
+      v.nilai=Number(v.nilai)||0; v.ppn=Number(v.ppn)||0; v.qty=Number(v.qty)||0;
+      if(p) return write(()=>col('payments').doc(p.id).update({...v, tglLunas: v.status==='lunas' ? (p.tglLunas||todayStr()) : '', updatedAt:nowISO()}),'Invoice disimpan');
+      return write(async()=>{
+        await col('payments').add({...v, tglLunas:v.status==='lunas'?todayStr():'', source:'app', createdAt:nowISO(), createdBy:S.uid});
+        const pr=proj(v.projectId);
+        if(pr && v.jenis==='DP' && SRANK[pr.stage]<SRANK.deal) await setStage(pr,'deal',{tglDeal:v.tanggal},`DP ${rp(v.nilai)} dicatat`);
+        if(pr && v.jenis==='Fee sampel' && v.status==='lunas') await col('projects').doc(pr.id).update({sampelLunas:true});
+      },'Invoice disimpan');
+    }, '', p?`<button class="btn danger" type="button" data-act="delPay" data-id="${p.id}" style="margin-left:auto">Hapus invoice</button>`:'');
+}
+
+// ---------- events ----------
+document.addEventListener('click', async e=>{
+  const t=e.target.closest('[data-act]'); if(!t) return;
+  const a=t.dataset.act, id=t.dataset.id, v=t.dataset.v;
+  if(a==='closeOv'){ if(e.target===t) closePanel(); return; }
+  if(t.tagName==='SELECT') return;
+  switch(a){
+    case 'close': closePanel(); break;
+    case 'logout': if(window.maklonLogout) window.maklonLogout(); break;
+    case 'viewas': S.viewAs=v||null; location.hash=''; schedule(); break;
+    case 'reqAccess': { const note=$('#reqNote')?.value.trim()||''; await write(()=>col('requests').doc(S.uid).set({at:nowISO(), catatan:note}),'Permintaan akses terkirim'); break; }
+    case 'createDirectUser': {
+      const name = $('#newUserName')?.value.trim();
+      const username = $('#newUserLogin')?.value.trim();
+      const password = $('#newUserPass')?.value || '';
+      const role = $('#newUserRole')?.value || 'pabrik';
+      if(!username || !password){ toast('Username dan password wajib diisi'); break; }
+      if(password.length < 6){ toast('Password minimal 6 karakter'); break; }
+      try {
+        const token = await firebase.auth().currentUser.getIdToken();
+        const res = await fetch('/api/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+          body: JSON.stringify({ name, username, password, role })
+        });
+        const j = await res.json();
+        if(!res.ok) throw new Error(j.error || 'Gagal');
+        toast(`Akun @${j.username} berhasil dibuat sebagai ${role}!`);
+        if($('#newUserName')) $('#newUserName').value = '';
+        if($('#newUserLogin')) $('#newUserLogin').value = '';
+        if($('#newUserPass')) $('#newUserPass').value = '';
+        schedule();
+      } catch(e) {
+        toast('Gagal: ' + e.message);
+      }
+      break;
+    }
+    case 'setRole': await write(()=> v ? col('roles').doc(id).set({role:v, at:nowISO()}) : col('roles').doc(id).delete(), v?'Peran disimpan':'Akses dicabut'); break;
+    case 'saveSettings': await write(()=>db.doc('meta/settings').set({namaPerusahaan:$('#setBrand').value.trim(), namaAdmin:$('#setAdmin').value.trim()}),'Pengaturan disimpan'); break;
+    case 'newCustomer': customerForm(); break;
+    case 'editCustomer': customerForm(cust(id)); break;
+    case 'openCustomer': openCustomer(id); break;
+    case 'newProject': projectForm(); break;
+    case 'newProjectFor': projectForm(null,id); break;
+    case 'editProject': projectForm(proj(id)); break;
+    case 'openProject': openProject(id); break;
+    case 'newPayment': paymentForm(); break;
+    case 'newPaymentFor': paymentForm(null,id); break;
+    case 'editPayment': paymentForm(S.payments.find(x=>x.id===id)); break;
+    case 'payLunas': await write(()=>col('payments').doc(id).update({status:'lunas', tglLunas:todayStr()}),'Ditandai lunas'); break;
+    case 'projFilter': S.ui.projFilter=v; schedule(); break;
+    case 'fuFilter': S.ui.fuFilter=v; schedule(); break;
+    case 'payFilter': S.ui.payFilter=v; schedule(); break;
+    case 'markReceived': { const p=proj(id); if(p) await write(()=>setStage(p,'sampel_diterima',{tglSampelDiterima:todayStr()},'Sampel diterima pelanggan'),'Sampel diterima · jadwal follow-up dibuat'); break; }
+    case 'advance': { const p=proj(id); if(!p) break;
+      if(v==='sampel_diterima'){ formPanel('Sampel diterima pelanggan',[{id:'tgl',label:'Tanggal diterima',type:'date',value:todayStr(),req:true},{id:'catatan',label:'Catatan',type:'textarea'}],'Simpan & buat jadwal follow-up', vals=>write(()=>setStage(p,'sampel_diterima',{tglSampelDiterima:vals.tgl},vals.catatan),'Jadwal follow-up H+1 s/d H+30 dibuat')); break; }
+      if(v==='deal'){ paymentForm(null, p.customerId, {projectId:p.id, jenis:'DP', produk:p.produk, qty:p.qtyRencana, status:'lunas'}); break; }
+      if(v==='sampel_request' || v==='revisi'){ formPanel(v==='revisi'?'Minta revisi sampel':'Kirim request sampel ke pabrik',[{id:'catatan',label:v==='revisi'?'Apa yang perlu direvisi':'Permintaan detail untuk pabrik',type:'textarea',value:v==='revisi'?'':p.catatan||''}],'Kirim ke pabrik', async vals=>{
+          return write(async()=>{ await setStage(p, v==='revisi'?'revisi':'sampel_request', {tahapPabrik:'', progress:0}, vals.catatan); if(v==='sampel_request') makeBrief(p.id,{...p, catatan:vals.catatan||p.catatan}); else await col('projects').doc(p.id).update({brief:(p.brief?p.brief+'\n\n':'')+'REVISI: '+(vals.catatan||'-')}); }, 'Terkirim ke pabrik'); }); break; }
+      break; }
+    case 'stagePick': { const p=proj(id); if(!p) break; formPanel('Ubah tahap',[{id:'stage',label:'Tahap',type:'select',options:STAGES.map(s=>[s.k,s.l]),value:p.stage},{id:'catatan',label:'Catatan',type:'textarea'}],'Simpan', vals=>write(()=>setStage(p,vals.stage,{},vals.catatan),'Tahap diubah')); break; }
+    case 'addFu': { const p=proj(id); if(!p) break; formPanel('Follow-up manual',[{id:'due',label:'Tanggal',type:'date',value:addDays(todayStr(),1),req:true},{id:'tujuan',label:'Tujuan follow-up',req:true,ph:'mis. Kirim penawaran harga revisi'}],'Jadwalkan', vals=>write(()=>col('followups').add({projectId:p.id, customerId:p.customerId, due:vals.due, step:'Manual', tujuan:vals.tujuan, status:'pending', auto:false, pesan:fuTemplate(cust(p.customerId),p,vals.tujuan), createdAt:nowISO()}),'Follow-up dijadwalkan')); break; }
+    case 'openFu': openFollowup(id); break;
+    case 'openOut': openOutbox(id); break;
+    case 'copyMsg': { const tx=$('#msgBox'); if(!tx) break; try{ await navigator.clipboard.writeText(tx.value); toast('Pesan disalin'); }catch(err){ tx.focus(); tx.select(); toast('Tekan Ctrl/Cmd+C untuk menyalin'); } break; }
+    case 'aiFu': case 'aiOut': {
+      const box=$('#msgBox'); t.disabled=true; const old=t.textContent; t.textContent='AI sedang menulis…';
+      try{
+        let txt;
+        if(a==='aiFu'){ const f=S.followups.find(x=>x.id===id), c=cust(f.customerId), p=proj(f.projectId)||{};
+          const riw=S.followups.filter(x=>x.projectId===f.projectId && x.status==='sent').map(x=>`${x.step}: ${x.hasil||'terkirim'}`).join('; ');
+          txt=await aiWrite('followup',{nama:firstName(c), tujuan:f.tujuan, produk:p.produk, tahap:SLABEL[p.stage], tglSampel:p.tglSampelDiterima, catatan:[c?.catatan,p.catatan].filter(Boolean).join(' | '), riwayat:riw}); }
+        else { const o=S.outbox.find(x=>x.id===id), c=cust(o.customerId), p=proj(o.projectId)||{};
+          txt=await aiWrite('progress',{nama:firstName(c), produk:p.produk, tahap:o.tahap, progress:o.progress, catatan:o.catatan}); }
+        if(box && txt){ box.value=txt; syncWaLink(); }
+      }catch(err){ toast(aiErr(err)); }
+      t.disabled=false; t.textContent=old; break; }
+    case 'fuSent': { const msg=$('#msgBox')?.value||'', hasil=$('#fuHasil')?.value.trim()||''; const ok=await write(()=>col('followups').doc(id).update({status:'sent', sentAt:nowISO(), pesan:msg, hasil, sentBy:S.uid}),'Follow-up tercatat terkirim'); if(ok) closePanel(); break; }
+    case 'fuSkip': { const ok=await write(()=>col('followups').doc(id).update({status:'skipped', hasil:$('#fuHasil')?.value.trim()||'Dilewati'}),'Follow-up dilewati'); if(ok) closePanel(); break; }
+    case 'fuSnooze': { const f=S.followups.find(x=>x.id===id); const ok=await write(()=>col('followups').doc(id).update({due:addDays(todayStr(),2), pesan:$('#msgBox')?.value||f.pesan}),'Ditunda 2 hari'); if(ok) closePanel(); break; }
+    case 'outSent': { const ok=await write(()=>col('outbox').doc(id).update({status:'sent', sentAt:nowISO(), pesan:$('#msgBox')?.value||'', sentBy:S.uid}),'Update tercatat terkirim'); if(ok) closePanel(); break; }
+    case 'outSkip': { const ok=await write(()=>col('outbox').doc(id).update({status:'skipped'}),'Ditandai tidak perlu dikirim'); if(ok) closePanel(); break; }
+    case 'pabrikUpdate': pabrikUpdateForm(id); break;
+    case 'perMode': S.ui.perMode=v; schedule(); break;
+    case 'perShift': S.ui.perRef=shiftRef(S.ui.perMode,S.ui.perRef,Number(v)); schedule(); break;
+    case 'perNow': S.ui.perRef=todayStr(); schedule(); break;
+    case 'perPick': S.ui.perMode=v; S.ui.perRef=id; window.scrollTo({top:0}); schedule(); break;
+    case 'delPay': if(S.ui.delArm!==id){ S.ui.delArm=id; t.textContent='Klik lagi untuk menghapus'; setTimeout(()=>{ if(S.ui.delArm===id){ S.ui.delArm=null; if(t.isConnected) t.textContent='Hapus invoice'; } },4000); break; }
+      S.ui.delArm=null; if(await write(()=>col('payments').doc(id).delete(),'Invoice dihapus')) closePanel(); break;
+    case 'delCustomer': if(S.ui.delArm!==id){ S.ui.delArm=id; t.textContent='Klik lagi untuk menghapus'; setTimeout(()=>{ if(S.ui.delArm===id){ S.ui.delArm=null; if(t.isConnected) t.textContent='Hapus pelanggan'; } },4000); break; }
+      S.ui.delArm=null; if(await write(()=>col('customers').doc(id).delete(),'Pelanggan dihapus')) closePanel(); break;
+    case 'delProject': if(S.ui.delArm!==id){ S.ui.delArm=id; t.textContent='Klik lagi untuk menghapus'; setTimeout(()=>{ if(S.ui.delArm===id){ S.ui.delArm=null; if(t.isConnected) t.textContent='Hapus proyek'; } },4000); break; }
+      S.ui.delArm=null; if(await write(()=>col('projects').doc(id).delete(),'Proyek dihapus')) closePanel(); break;
+    case 'saveLeads': { const y=S.ui.histYear; await write(async()=>{ for(let i=1;i<=12;i++){ const k=`${y}-${pad(i)}`, raw=$('#ld_'+i)?.value.trim(); const cur=S.leads[k];
+        if(raw===''||raw==null){ if(cur!=null) await col('leads').doc(k).delete(); }
+        else { const n=Math.max(0,Math.round(Number(raw)||0)); if(n!==cur) await col('leads').doc(k).set({count:n, updatedAt:nowISO(), by:S.uid}); } } }, `Kontak WA ${y} disimpan`); break; }
+    case 'copyHead': try{ await navigator.clipboard.writeText(IMP_COLS.join('\t')); toast('Judul kolom disalin, tempel di baris pertama Excel'); }catch(err){ toast('Pilih teks judul kolom lalu salin manual'); } break;
+    case 'impCheck': { S.ui.impText=$('#impText')?.value||''; const r=parseImport(S.ui.impText); if(!r){ toast('Tempel data dulu'); break; } S.ui.imp=r; schedule(); break; }
+    case 'impClear': S.ui.imp=null; S.ui.impText=''; schedule(); break;
+    case 'impRun': runImport(); break;
+  }
+});
+document.addEventListener('input', e=>{ if(e.target.id==='q'){ S.ui.q=e.target.value; schedule(); } if(e.target.id==='payQ'){ S.ui.payQ=e.target.value; schedule(); } if(e.target.id==='impText'){ S.ui.impText=e.target.value; } if(e.target.id==='msgBox') syncWaLink(); });
+document.addEventListener('change', async e=>{ const id=e.target.id;
+  if(id==='perDate' && e.target.value){ S.ui.perRef=e.target.value; schedule(); }
+  if(id==='perMonth' || id==='perYear'){ const m=$('#perMonth')?.value || '1', y=$('#perYear')?.value; S.ui.perRef=`${y}-${pad(m)}-01`; schedule(); }
+  if(id==='payYear'){ S.ui.payYear=e.target.value; schedule(); }
+  if(id==='histYear'){ S.ui.histYear=Number(e.target.value); schedule(); }
+  if(id==='impFile' && e.target.files[0]){ const f=e.target.files[0]; if(f.size>2e6){ toast('File terlalu besar (maks 2 MB)'); return; } S.ui.impText=await f.text(); S.ui.imp=parseImport(S.ui.impText); schedule(); }
+  if(e.target.id==='f_customerId' && $('#f_projectId')){ const cid=e.target.value; const s=$('#f_projectId'); s.innerHTML=[['','(tanpa proyek)'],...S.projects.filter(x=>x.customerId===cid).map(x=>[x.id,x.produk])].map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(''); } });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && $('#overlay').innerHTML) closePanel(); });
+window.addEventListener('hashchange', schedule);
+
+// ---------- boot ----------
+async function boot(){
+  render();
+  [db,user,sample]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('sample')]);
+  if(!db){ render(); return; }
+  try{ S.uid=user? await user.id() : null; S.isOwner=user? await user.isOwner() : false; }catch(e){}
+  if(S.uid) wantNames([S.uid]);
+  let pending=new Set(['customers','projects','updates','followups','outbox','payments','roles','requests','leads','settings']);
+  const done=k=>{ if(pending.delete(k) && !pending.size){ S.ready=true; } computeRole(); schedule(); };
+  const sub=(name, q)=> (q||col(name)).onSnapshot(snap=>{ S[name]=snap.docs.map(d=>({id:d.id,...d.data()})); done(name); }, err=>{ console.warn(name,err); done(name); });
+  sub('customers'); sub('projects'); sub('followups'); sub('outbox'); sub('payments'); sub('requests');
+  sub('updates', col('updates').orderBy('at','desc').limit(600));
+  col('roles').onSnapshot(snap=>{ S.roles=Object.fromEntries(snap.docs.map(d=>[d.id,d.data()])); done('roles'); }, ()=>done('roles'));
+  col('leads').onSnapshot(snap=>{ S.leads=Object.fromEntries(snap.docs.map(d=>[d.id, d.data().count])); done('leads'); }, ()=>done('leads'));
+  db.doc('meta/settings').onSnapshot(d=>{ S.settings=(d.exists && d.data())||{}; done('settings'); }, ()=>done('settings'));
+  setTimeout(()=>{ if(!S.ready){ S.ready=true; computeRole(); schedule(); } }, 8000);
+}
+function computeRole(){ S.role = S.isOwner ? 'admin' : (S.roles[S.uid]?.role || null); }
+boot();
+})();
+</script>
+</body>
+</html>
