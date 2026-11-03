@@ -58,6 +58,10 @@ RENDER_ACTIVE_STATUSES = ("claimed", "uploading_ref", "generating", "downloading
 RENDER_STATUSES = ("queued", *RENDER_ACTIVE_STATUSES, "downloaded", "done", "failed")
 # Status yang bisa dipasangkan dengan file di folder unduhan Chrome.
 RENDER_INGEST_STATUSES = ("downloading", "downloaded")
+CONTENT_TYPES = ("video_ads", "talking_head", "hard_sell")
+CONTENT_STATUSES = ("queued", "analyzing", "writing", "rendering", "failed")
+# Posisi klip dalam satu Generate; mode broll memaksa render_jobs.slot = "broll", jadi urutan dibawa kolom ini.
+CONTENT_SLOTS = ("hook1", "hook2", "hook3", "body", "cta")
 APPROVAL_ACTIONS = (
     "claim",
     "testimonial",
@@ -203,6 +207,7 @@ class RenderJob(Base):
         CheckConstraint(
             f"target_duration IS NULL OR {_in('target_duration', RENDER_DURATIONS)}", name="target_duration_valid"
         ),
+        CheckConstraint(f"content_slot IS NULL OR {_in('content_slot', CONTENT_SLOTS)}", name="content_slot_valid"),
         Index("render_jobs_queue_idx", "status", "created_at"),
     )
 
@@ -223,6 +228,37 @@ class RenderJob(Base):
     # Nama file unduhan Chrome yang dilaporkan extension; dipakai ingest untuk memasangkan file ke job yang tepat.
     download_filename: Mapped[str | None] = mapped_column(String(255))
     error: Mapped[str | None] = mapped_column(Text)
+    requested_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
+    content_job_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("content_jobs.id"))
+    content_slot: Mapped[str | None] = mapped_column(String(10))
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
+class ContentJob(Base):
+    """Satu Generate: satu konsep dari satu referensi, menjadi 3 variasi hook (spec §3.3)."""
+
+    __tablename__ = "content_jobs"
+    __table_args__ = (
+        CheckConstraint(_in("type", CONTENT_TYPES), name="type_valid"),
+        CheckConstraint(_in("funnel", FUNNELS), name="funnel_valid"),
+        CheckConstraint(_in("status", CONTENT_STATUSES), name="status_valid"),
+    )
+
+    id: Mapped[uuid.UUID] = _uuid_pk()
+    type: Mapped[str] = mapped_column(String(20), nullable=False)
+    funnel: Mapped[str] = mapped_column(String(4), nullable=False)
+    reference_asset_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("assets.id"), nullable=False)
+    # Foto yang dikirim ke Flow: foto referensi itu sendiri, atau frame terbaik dari video referensi.
+    start_asset_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("assets.id"))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued")
+    error: Mapped[str | None] = mapped_column(Text)
+    # script_id: versi yang dirender langsung. pending_script_id: versi dengan klaim baru, menunggu approval.
+    script_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("scripts.id"))
+    pending_script_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("scripts.id"))
+    claim_approval_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("approvals.id"))
     requested_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = _created_at()
     updated_at: Mapped[datetime] = mapped_column(

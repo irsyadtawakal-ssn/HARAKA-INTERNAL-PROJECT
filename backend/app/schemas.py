@@ -169,6 +169,31 @@ class RenderJobOut(BaseModel):
     attempts: int
     error: str | None
     result_asset_id: uuid.UUID | None
+    content_slot: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ContentJobIn(BaseModel):
+    type: Literal["video_ads", "talking_head", "hard_sell"]
+    funnel: Literal["A", "B"]
+    reference_asset_id: uuid.UUID
+
+
+class ContentJobOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    type: str
+    funnel: str
+    status: str
+    error: str | None
+    reference_asset_id: uuid.UUID
+    start_asset_id: uuid.UUID | None
+    script_id: uuid.UUID | None
+    pending_script_id: uuid.UUID | None
+    claim_approval_id: uuid.UUID | None
+    render_jobs: list[RenderJobOut] = []
     created_at: datetime
     updated_at: datetime
 
