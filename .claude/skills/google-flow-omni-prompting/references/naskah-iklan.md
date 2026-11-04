@@ -119,7 +119,7 @@ Omni hanya membuat 4–10 detik per klip, jadi naskah dipecah:
 | 15–20 detik | Klip **Hook** (8–10 detik: hook + masalah) + klip **CTA** (6–10 detik: solusi + CTA) — sesuai slot hook/CTA autopilot |
 | 30 detik | 3 klip × 10 detik (Hook / Bukti / CTA), atau 1 klip + extension sampai 30 detik |
 
-- Autopilot menentukan durasi dari jumlah kata dialog dalam tanda kutip (≤9 → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s). Dialog per klip maksimal ±21–24 kata.
+- Autopilot menentukan durasi dari total kata **semua dialog** (kutipan yang klausanya memuat kata kerja bicara: says, replies, counts, berkata, …; teks layar dalam kutip tidak dihitung) (≤9 → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s). Dialog per klip maksimal ±21–24 kata.
 - Setiap klip memakai karakter dan deskripsi suara yang **sama persis** (lihat character sheet di `panduan-lengkap.md` §11) supaya sambungannya mulus.
 - Teks layar di naskah ditulis di prompt Omni dalam tanda kutip beserta posisinya (lihat `panduan-lengkap.md` §5).
 

@@ -35,7 +35,7 @@ Kosakata dari contoh resmi: `one continuous shot`, `oner`, `static`, `locked off
 - Hal yang berlaku sepanjang klip ditulis **di luar** timeline: style, rasio, set, shot, pengunci identitas, `Sound design`, larangan.
 - Dialog ditaruh di dalam beat dengan rentang yang cukup panjang (±2,2 kata/detik). Kalau terlalu sempit, bicara jadi terburu-buru atau beat berikutnya terpotong.
 - Cue audio ditulis di beat atau di `Sound design`: `synced to the beat`, `launch boom at 6s`.
-- **Autopilot proyek ini:** timeline tidak boleh melewati durasi yang dipilih autopilot dari jumlah kata dalam kutip (≤9 → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s).
+- **Autopilot proyek ini:** timeline tidak boleh melewati durasi yang dipilih autopilot dari total kata **semua dialog** (kutipan yang klausanya memuat kata kerja bicara: says, replies, counts, berkata, …; teks layar dalam kutip tidak dihitung) (≤9 → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s).
 - Extension: timecode mulai lagi dari 0s.
 - Teks layar di editing ditaruh di detik yang sama dengan beat-nya.
 - Kalau hasilnya kaku, generate juga versi tanpa timeline lalu pilih yang lebih rapi.
@@ -56,7 +56,7 @@ Sound design: <ambience + cue di detik tertentu>, no music. No text overlay on s
 - **Dialog — dua versi yang bertentangan:**
   - [komunitas] Pakai titik dua tanpa kutip: `She says: Pagi, Mas!` — kutip disebut bikin teks muncul di layar.
   - Contoh resmi DeepMind memakai kutip: `replies: "Did your father go out on the boat too?"`
-  - ⚠️ **Proyek ini:** extension autopilot (`skill google flow.md`) menghitung durasi klip dari jumlah kata **di dalam tanda kutip** (≤9 kata → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s). Selama pipeline itu dipakai, **tetap tulis dialog dalam tanda kutip**, atau sesuaikan dulu `computeTargetDuration`.
+  - ⚠️ **Proyek ini:** extension autopilot (`skill google flow.md`) menghitung durasi klip dari total kata **semua dialog** (kutipan yang klausanya memuat kata kerja bicara: says, replies, counts, berkata, …; teks layar dalam kutip tidak dihitung) (≤9 kata → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s). Selama pipeline itu dipakai, **tetap tulis dialog dalam tanda kutip setelah kata kerja bicara**.
 - Dialog yang lebih panjang dari durasi klip akan terpotong.
 - Upload audio sebagai referensi tidak didukung; audio di video referensi diabaikan.
 - Konsistensi suara: salin deskripsi suara **kata per kata** di setiap prompt.
@@ -78,6 +78,7 @@ Sound design: <ambience + cue di detik tertentu>, no music. No text overlay on s
 
 ## 7. Referensi (ingredients) & frame
 
+- **Mode Flow menentukan tag yang berlaku.** Mode **Frames** = gambar di slot Start/End jadi frame pertama/terakhir (pakai template A2). Mode **Ingredients** = gambar jadi referensi penampilan (pakai `[# References …]`, template A). Autopilot proyek ini selalu Frames dengan satu gambar Start.
 - Tag: `<FIRST_FRAME>`, `<LAST_FRAME>`, `<IMAGE_REF_0>`, `<VIDEO_REF_0>` (N mulai dari 0).
 - Deklarasi di awal prompt, contoh: `[# References <IMAGE_REF_0>@Image1]` atau `[# Sources <FIRST_FRAME>@Image1 <LAST_FRAME>@Image2]`.
 - Image-to-video: **jelaskan gerakannya saja**, jangan deskripsikan ulang penampilan di gambar.
@@ -210,7 +211,17 @@ Sheet 16:9 aman karena dipakai sebagai **referensi** (`<IMAGE_REF_0>`), bukan fr
 
 ## 12. Template prompt video
 
-**A. Single take dengan karakter**
+**A2. Single take dengan start frame (mode Frames / autopilot)**
+```
+Use the image as the starting frame.
+<Style>, vertical 9:16. <Shot>, <gerak kamera>. One continuous shot.
+He <aksi 1>, <aksi 2>, and says in <deskripsi suara persis dari blok identitas>: "<dialog>"
+Keep <ciri kunci 1>, <ciri kunci 2>, and <outfit> exactly as in the starting frame.
+Sound design: <ambience>, no music.
+```
+Penampilan dan set tidak dideskripsikan ulang; semuanya sudah ada di start frame.
+
+**A. Single take dengan karakter (mode Ingredients / manual)**
 ```
 [# References <IMAGE_REF_0>@<Nama>Sheet]
 @<Nama> <aksi 1>, <aksi 2>.
@@ -250,7 +261,7 @@ The scene continues: <apa yang terjadi berikutnya>. Keep the same character.
 - [ ] `One continuous shot` bila perlu satu take
 - [ ] Referensi dideklarasikan dengan tag; penampilan tidak dideskripsikan ulang
 - [ ] Baris pengunci identitas + deskripsi suara disalin persis
-- [ ] Dialog muat di durasi klip (dan dalam kutip bila pakai autopilot)
+- [ ] Dialog muat di durasi klip (dalam kutip setelah kata kerja bicara bila pakai autopilot)
 - [ ] `Sound design:` ditulis
 - [ ] Larangan ditulis eksplisit (`No text overlay`, `No scene cuts`)
 - [ ] Edit: satu perubahan + `Keep everything else the same.`

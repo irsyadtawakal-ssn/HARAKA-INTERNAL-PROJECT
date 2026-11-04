@@ -48,7 +48,7 @@ Konsep: HPP mahal = alarm bahaya di roket → Haraka Erfi memperbaiki → roket 
 | Hitung mundur, mesin menyala, G-force, Bagas nyengir mengangkat produk, roket meluncur | Bagas: "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!" | PROSES CEPAT 🚀 |
 | | Operator: "Tiga, dua, satu… meluncur!" | 👉 CHAT WHATSAPP HARAKA ERFI |
 
-Jumlah kata dialog dalam kutip: 13 / 15 / 18 → autopilot memilih 6s / 8s / 8s.
+Jumlah kata semua dialog per klip: 13 / 16 / 15 → autopilot memilih 6s / 8s / 8s.
 
 ### Variasi hook (A/B test, ganti klip 1 saja)
 
@@ -166,7 +166,7 @@ physical switches and a countdown display, warning light on the ceiling, white a
 orange color scheme, practical cinematic lighting. Empty seat, no people, no text.
 ```
 
-**5. Start frame klip 1 · 9:16** (lampirkan potret master + kokpit)
+**5. Start frame klip 1 · 9:16** (lampirkan potret master + kokpit; opsional foto botol produk asli)
 ```
 Photorealistic, vertical 9:16. Kapten Bagas from the reference photo sitting in the
 cockpit from the reference image, visor raised, holding a skincare bottle, looking at
@@ -174,51 +174,81 @@ camera with a worried face, red warning light glowing. Keep his face, mustache, 
 and suit exactly as in the reference. No text.
 ```
 
-Simpan karakter di tab **Character** Flow sebagai `KaptenBagas`.
+**6. Start frame klip 2 · 9:16** (lampirkan potret master + kokpit)
+```
+Photorealistic, vertical 9:16. Kapten Bagas from the reference photo floating slightly
+above the seat in the cockpit from the reference image, visor raised, a calculator
+floating in front of him, calm green cockpit lights, starting to grin at camera.
+Keep his face, mustache, mole, and suit exactly as in the reference. No text.
+```
+
+**7. Start frame klip 3 · 9:16** (lampirkan potret master + kokpit; opsional foto botol produk asli)
+```
+Photorealistic, vertical 9:16. Kapten Bagas from the reference photo strapped into the
+seat in the cockpit from the reference image, visor raised, one hand gripping a launch
+lever, the other holding a skincare bottle, excited grin at camera, orange engine glow.
+Keep his face, mustache, mole, and suit exactly as in the reference. No text.
+```
+
+### Gambar mana yang dipakai di mana
+
+Autopilot memakai mode **Video → Frames** dan hanya mengirim **satu gambar per klip** ke slot **Start**. Gambar itu jadi frame pertama video; character sheet tidak ikut terkirim.
+
+| Gambar | Dipakai untuk | Masuk autopilot? |
+|---|---|---|
+| Potret master (1) | Acuan wajah saat membuat start frame | Tidak |
+| Turnaround & expression sheet (2, 3) | Bantuan pose/ekspresi bila start frame sulit didapat (opsional) | Tidak |
+| Set kokpit (4) | Acuan tempat saat membuat start frame | Tidak |
+| Foto botol produk asli (opsional) | Supaya botol di video sama dengan produk | Tidak |
+| Start frame klip 1, 2, 3 (5, 6, 7) | Slot **Start** per klip | **Ya**, satu per job |
+
+Semua start frame dibuat dari potret master dan set kokpit yang sama, supaya wajah dan tempat konsisten antar klip. Cek ketiganya berdampingan sebelum generate video.
 
 ---
 
 ## Prompt Omni 1.1 Flash
 
-Lampirkan potret master sebagai referensi **pertama**. Teks layar ditambahkan saat editing (CapCut), bukan oleh Omni, supaya angka harga akurat.
+Mode Frames: pasang start frame klip yang sesuai di slot **Start**. Prompt cukup berisi gerakan, dialog, teks, dan suara; penampilan sudah ada di gambar. Teks layar ditambahkan saat editing (CapCut), bukan oleh Omni, supaya angka harga akurat.
+
+Generate manual dengan mode **Ingredients** juga bisa: ganti baris pertama dengan `[# References <IMAGE_REF_0>@KaptenBagas]`, lampirkan potret master sebagai referensi pertama, dan ganti `starting frame` dengan `reference`.
 
 **Klip 1**
 ```
-[# References <IMAGE_REF_0>@KaptenBagas]
+Use the image as the starting frame.
 Photorealistic, vertical 9:16. Inside a cramped rocket cockpit, red alarm lights flashing.
-@KaptenBagas holds a skincare bottle, panicked, looks straight at camera and says
+He holds a skincare bottle, panicked, looks straight at camera and says
 in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
 "HPP skincare lu masih mahal? Pantes untungnya tipis!"
 Operator voice: calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent, replies:
 "Tenang Bos, ke Haraka Erfi aja!"
 Medium close-up, quick punch in on the bottle. One continuous shot.
-Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: alarm beeps, cockpit hum, radio static, no music. No text overlay on screen.
 ```
 
 **Klip 2**
 ```
-[# References <IMAGE_REF_0>@KaptenBagas]
+Use the image as the starting frame.
 Photorealistic, vertical 9:16. Same rocket cockpit, alarm lights turn calm green.
-A calculator floats in zero gravity; @KaptenBagas grabs it, grins, taps it and says
+A calculator floats in zero gravity; he grabs it, grins, taps it and says
 in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
 "Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!"
 Medium shot, slow push in. One continuous shot.
-Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: soft cockpit hum, calculator beeps, no music. No text overlay on screen.
 ```
 
 **Klip 3** (sengaja ada cut ke shot luar, jadi tanpa "One continuous shot")
 ```
-[# References <IMAGE_REF_0>@KaptenBagas]
+Use the image as the starting frame.
 Photorealistic, vertical 9:16. Rocket engines ignite and the cockpit shakes violently;
-@KaptenBagas, pressed back by G-force, grins and lifts a skincare bottle to camera, saying
+Pressed back by G-force, he grins and lifts a skincare bottle to camera, saying
 in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
 "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!"
 Operator voice: calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent, counts:
 "Tiga, dua, satu… meluncur!"
 Ends with an exterior shot of the rocket blasting off. Fast, high energy.
-Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: rising engine roar, launch rumble, no music. No text overlay on screen.
 ```
 
@@ -233,45 +263,45 @@ Alternatif dari prompt di atas. Momen penting jatuh di detik yang pasti, jadi te
 | Klip | Kata dialog | Durasi autopilot | Timeline maksimal |
 |---|---|---|---|
 | 1 | 13 | 6s | `[0-6s]` |
-| 2 | 15 | 8s | `[0-8s]` |
-| 3 | 18 | 8s | `[0-8s]` |
+| 2 | 16 | 8s | `[0-8s]` |
+| 3 | 15 | 8s | `[0-8s]` |
 
 **Klip 1 · 6 detik**
 ```
-[# References <IMAGE_REF_0>@KaptenBagas]
+Use the image as the starting frame.
 Photorealistic, vertical 9:16. Cramped rocket cockpit. One continuous shot, medium close-up.
-[0-1s] Red alarm lights start flashing; @KaptenBagas jolts and grabs a skincare bottle.
+[0-1s] Red alarm lights start flashing; he jolts and grabs a skincare bottle.
 [1-4s] He looks straight at camera, panicked, and says in an energetic, slightly hoarse male voice,
 fast talker, casual Jakarta accent, comedic timing: "HPP skincare lu masih mahal? Pantes untungnya tipis!"
 [4-6s] Quick punch in on his face as the operator voice, calm, deep, slightly amused male voice over
 crackling radio, casual Jakarta accent, replies: "Tenang Bos, ke Haraka Erfi aja!"
-Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: alarm beeps, cockpit hum, radio static, no music. No text overlay on screen.
 ```
 
 **Klip 2 · 8 detik**
 ```
-[# References <IMAGE_REF_0>@KaptenBagas]
+Use the image as the starting frame.
 Photorealistic, vertical 9:16. Same rocket cockpit. One continuous shot, medium shot.
 [0-2s] The alarm lights switch from red to calm green; a calculator floats in zero gravity and he catches it.
 [2-7s] Slow push in as he taps the calculator, grins, and says in an energetic, slightly hoarse male voice,
 fast talker, casual Jakarta accent, comedic timing: "Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!"
 [7-8s] He winks at camera.
-Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: soft cockpit hum, calculator beeps in rhythm with his taps, no music. No text overlay on screen.
 ```
 
 **Klip 3 · 8 detik** (ada satu cut, jadi tanpa "One continuous shot")
 ```
-[# References <IMAGE_REF_0>@KaptenBagas]
+Use the image as the starting frame.
 Photorealistic, vertical 9:16. Same rocket cockpit, high energy.
-[0-4s] Engines ignite and the cockpit shakes; pressed back by G-force, @KaptenBagas grins, lifts a skincare bottle
+[0-4s] Engines ignite and the cockpit shakes; pressed back by G-force, he grins, lifts a skincare bottle
 to camera and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
 "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!"
 [4-6s] The operator voice, calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent,
 counts: "Tiga, dua, satu… meluncur!"
 [6-8s] Cut to exterior: the rocket blasts off into the sky, synced to a big rumble.
-Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: rising engine roar building to a launch boom at 6s, no music. No text overlay on screen.
 ```
 
@@ -285,3 +315,59 @@ Sound design: rising engine roar building to a launch boom at 6s, no music. No t
 | 3 | 0–4 | PROSES CEPAT 🚀 |
 | 3 | 4–6 | Hitung mundur 3-2-1 |
 | 3 | 6–8 | Tombol CHAT WHATSAPP HARAKA ERFI |
+
+---
+
+## Prompt Omni versi timeline + teks dibuat Omni (uji coba)
+
+Semua teks layar dibuat langsung oleh Omni, tanpa CapCut. Teks disingkat (`25RB`, tanpa "Rp"), ditaruh di upper-middle (aman dari UI TikTok), dan "WhatsApp" hanya diucapkan, bukan ditulis. Cek huruf per huruf, terutama "HARAKA ERFI" dan angka. Teks yang tetap salah setelah 2–3 kali generate diperbaiki lewat edit (`Change the text "..." to "...". Keep everything else the same.`) atau dipindah ke CapCut.
+
+Autopilot hanya menghitung dialog, jadi teks layar dalam kutip tidak mengubah durasi: 6s / 8s / 8s.
+
+**Klip 1 · 6 detik**
+```
+Use the image as the starting frame.
+Photorealistic, vertical 9:16. Cramped rocket cockpit. One continuous shot, medium close-up.
+[0-1s] Red alarm lights start flashing; he jolts and grabs a skincare bottle.
+Big bold white text with thick black outline slams into the upper-middle of the frame,
+shaking like an alarm: "HPP MAHAL!"
+[1-4s] He looks straight at camera, panicked, and says in an energetic, slightly hoarse male voice,
+fast talker, casual Jakarta accent, comedic timing: "HPP skincare lu masih mahal? Pantes untungnya tipis!"
+[4-6s] The text disappears. Quick punch in on his face as the operator voice, calm, deep, slightly amused
+male voice over crackling radio, casual Jakarta accent, replies: "Tenang Bos, ke Haraka Erfi aja!"
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
+Crystal clear text, correct spelling, only one text at a time, no other text on screen.
+Sound design: alarm beeps, cockpit hum, radio static, no music.
+```
+
+**Klip 2 · 8 detik**
+```
+Use the image as the starting frame.
+Photorealistic, vertical 9:16. Same rocket cockpit. One continuous shot, medium shot.
+[0-2s] The alarm lights switch from red to calm green; a calculator floats in zero gravity and he catches it.
+[2-7s] Slow push in as he taps the calculator, grins, and says in an energetic, slightly hoarse male voice,
+fast talker, casual Jakarta accent, comedic timing: "Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!"
+Synced to his words, bold white text with black outline pops in at the upper-middle of the frame,
+one line at a time: "HPP 25RB", then "JUAL 50RB", then large yellow text "UNTUNG 25RB".
+[7-8s] He winks at camera; small white text appears at the top: "ILUSTRASI".
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
+Crystal clear text, correct spelling, only one text at a time, no other text on screen.
+Sound design: soft cockpit hum, calculator beeps in rhythm with his taps, a cash-register ding when the yellow text appears, no music.
+```
+
+**Klip 3 · 8 detik**
+```
+Use the image as the starting frame.
+Photorealistic, vertical 9:16. Same rocket cockpit, high energy.
+[0-4s] Engines ignite and the cockpit shakes; pressed back by G-force, he grins, lifts a skincare bottle
+to camera and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
+"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!"
+Bold orange text with white outline zooms in at the upper-middle of the frame: "PROSES CEPAT"
+[4-6s] The operator voice, calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent,
+counts: "Tiga, dua, satu… meluncur!" Huge white numbers flash in the center in sync: "3", "2", "1".
+[6-8s] Cut to exterior: the rocket blasts off into the sky. A rounded green button graphic appears
+in the center with bold white text: "CHAT HARAKA ERFI"
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
+Crystal clear text, correct spelling, only one text at a time, no other text on screen.
+Sound design: rising engine roar building to a launch boom at 6s, no music.
+```

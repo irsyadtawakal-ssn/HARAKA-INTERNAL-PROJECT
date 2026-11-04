@@ -24,7 +24,8 @@ description: Menulis dan mereview naskah iklan video pendek (< 30 detik, hook/bo
 
 ## Aturan khusus proyek ini
 
-- Extension autopilot (`skill google flow.md`, skill `google-flow-autopilot`) menghitung durasi klip dari jumlah kata **di dalam tanda kutip** (≤9 → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s). Untuk prompt yang dijalankan lewat autopilot, **dialog wajib dalam tanda kutip** dan panjangnya disesuaikan dengan durasi target.
+- Extension autopilot (`skill google flow.md`, skill `google-flow-autopilot`) menghitung durasi klip dari total kata **semua dialog** (kutipan yang klausanya memuat kata kerja bicara: says, replies, counts, berkata, …; teks layar dalam kutip tidak dihitung): ≤9 → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s. Untuk prompt lewat autopilot, **dialog wajib dalam tanda kutip dan diawali kata kerja bicara** (`He says ...: "..."`), dan panjangnya disesuaikan dengan durasi target.
+- Autopilot memakai mode **Video → Frames** dan mengirim **satu gambar per klip** ke slot **Start** (mode Ingredients dilarang). Untuk prompt autopilot: buat **start frame 9:16 per klip** dari potret master + set (panduan §11), pakai template **A2** (§12) yang diawali `Use the image as the starting frame.`, tanpa `[# References …]` dan tanpa `@Nama`. Character sheet hanya bahan membuat start frame, tidak ikut terkirim.
 - Format default konten: vertikal 9:16, 720p.
 
 ## Jangan
