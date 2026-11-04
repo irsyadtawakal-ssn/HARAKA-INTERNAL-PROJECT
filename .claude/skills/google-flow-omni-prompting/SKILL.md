@@ -1,14 +1,16 @@
 ---
 name: google-flow-omni-prompting
-description: Menulis dan mereview prompt video Google Flow untuk model Gemini Omni 1.1 Flash — prompt scene, edit video-to-video, start/end frame, scene extension, serta character sheet (blok identitas + turnaround/expression sheet Nano Banana) untuk konsistensi karakter. Gunakan saat diminta membuat, memperbaiki, atau mengecek prompt Flow/Omni, atau menyiapkan karakter untuk video AI.
+description: Menulis dan mereview naskah iklan video pendek (< 30 detik, hook/body/CTA) dan prompt video Google Flow untuk model Gemini Omni 1.1 Flash — prompt scene, edit video-to-video, start/end frame, scene extension, serta character sheet (blok identitas + turnaround/expression sheet Nano Banana) untuk konsistensi karakter. Gunakan saat diminta membuat naskah/hook iklan TikTok/Reels/Shorts, membuat, memperbaiki, atau mengecek prompt Flow/Omni, atau menyiapkan karakter untuk video AI.
 ---
 
 # Google Flow — Omni 1.1 Flash Prompting
 
-Panduan lengkap, template, dan sumber ada di [references/panduan-lengkap.md](references/panduan-lengkap.md). Baca file itu sebelum menulis prompt.
+- Prompt, character sheet, template, dan sumber: [references/panduan-lengkap.md](references/panduan-lengkap.md). Baca sebelum menulis prompt.
+- Naskah iklan < 30 detik (struktur per durasi, bank hook, CTA, contoh, pemecahan ke klip): [references/naskah-iklan.md](references/naskah-iklan.md). Baca sebelum menulis naskah.
 
 ## Cara kerja
 
+0. **Naskah dulu** bila iklannya belum punya naskah: pilih durasi dan framework, tulis 3–5 variasi hook, satu body, satu CTA, lalu pecah ke klip Hook/CTA (atau 3 klip untuk 30 detik) sesuai `naskah-iklan.md` §7.
 1. **Tentukan jenis prompt:** scene baru, edit, start→end frame, extension, atau character sheet.
 2. **Karakter dulu.** Kalau ada karakter berulang dan belum ada sheet-nya, buat **blok identitas** lengkap (§11) lalu prompt turnaround sheet untuk Nano Banana. Character sheet ditulis **sangat detail**; prompt video ditulis **singkat**.
 3. **Tulis prompt video** dengan template §12:
