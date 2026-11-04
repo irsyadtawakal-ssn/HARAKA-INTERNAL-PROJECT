@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "rara-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "HOMEPAGE", "run", "dev"],
+      "port": 6500
+    }
+  ]
+}

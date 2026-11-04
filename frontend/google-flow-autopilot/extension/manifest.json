@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Google Flow Autopilot Bridge (Veo 3.1 Auto-Generate & 720p Download)",
+  "version": "3.0",
+  "description": "100% Hands-Free Autopilot untuk Google Flow (flow.google.com): Auto-Set Video + Frames + 9:16 + 720p + x2, Auto-Upload Start Frame, Auto-Prompt, Auto-Select & Download 720p Berantai.",
+  "permissions": [
+    "tabs",
+    "downloads",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://flow.google.com/*",
+    "https://labs.google/*",
+    "http://localhost:3210/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://flow.google.com/*",
+        "https://labs.google/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Google Flow Autopilot"
+  }
+}
