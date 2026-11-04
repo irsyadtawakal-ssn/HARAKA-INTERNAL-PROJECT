@@ -123,6 +123,54 @@ Omni hanya membuat 4–10 detik per klip, jadi naskah dipecah:
 - Setiap klip memakai karakter dan deskripsi suara yang **sama persis** (lihat character sheet di `panduan-lengkap.md` §11) supaya sambungannya mulus.
 - Teks layar di naskah ditulis di prompt Omni dalam tanda kutip beserta posisinya (lihat `panduan-lengkap.md` §5).
 
+## 8. Font & grafis di video
+
+**Default: tambahkan teks dan grafis saat editing (CapCut), bukan lewat Omni.** Teks buatan Omni sering salah ketik, padahal harga dan nama brand harus akurat. Di prompt Omni tulis `No text overlay on screen.` Omni cukup dipakai untuk grafis yang ada *di dalam* adegan (layar hitung mundur, lampu alarm) tanpa angka penting.
+
+### Font (Google Fonts, lisensi OFL, aman komersial)
+
+| Peran | Pilihan | Catatan |
+|---|---|---|
+| Headline jualan | **Anton**, **Bebas Neue**, Archivo Black | Tinggi, padat, paling terbaca di HP |
+| Angka / harga | **Montserrat ExtraBold**, Anton | Angka lebar dan jelas |
+| Tema futuristik / teknologi | **Orbitron**, **Russo One**, Space Mono | Pakai untuk aksen, jangan untuk kalimat panjang |
+| Subtitle dialog | **Poppins SemiBold**, **Plus Jakarta Sans** Bold | Netral, terbaca di ukuran kecil |
+| Brand premium | Plus Jakarta Sans, DM Sans | Rapi tapi kurang greget untuk hard-selling |
+
+Maksimal **2 font** per video (headline + subtitle). Font Google bisa diunduh lalu diimpor ke CapCut PC.
+
+### Ukuran & keterbacaan (kanvas 1080×1920)
+
+- Headline 90–140 px, angka harga 120–180 px, subtitle 50–64 px, disclaimer 28–34 px.
+- Teks terang + **stroke gelap 6–10 px** atau drop shadow, atau taruh di dalam kotak solid. Jangan teks polos di atas video yang ramai.
+- Maksimal ±6 kata per tampilan teks, satu blok teks sekaligus.
+- Tampil minimal ±1 detik per 3 kata.
+
+### Safe zone TikTok/Reels (perkiraan, cek di preview aplikasi)
+
+- Kosongkan ±250 px atas (tab, nama akun), ±450 px bawah (caption, keranjang), dan ±150 px kanan (tombol like/komen/share).
+- Taruh teks penting di tengah layar.
+
+### Grafis yang bisa dipakai
+
+| Grafis | Fungsi |
+|---|---|
+| Ikon peringatan ⚠️ + kedip merah | Hook masalah |
+| Harga coret → harga baru / label harga | Penawaran, perbandingan |
+| Kalkulasi bertingkat (A → B = hasil) | Bukti angka |
+| Panah, lingkaran, highlight | Mengarahkan mata ke produk |
+| Hitung mundur | Urgensi, transisi |
+| Tombol CTA (kotak bulat + ikon chat) | Penutup |
+| Subtitle otomatis | Penonton tanpa suara |
+
+Logo pihak ketiga (WhatsApp, TikTok Shop) hanya dipakai dalam bentuk resmi tanpa diubah. Kalau ragu, pakai ikon chat generik.
+
+### Animasi teks
+
+- **Pop / scale-in** (0,15–0,25 detik) untuk headline; **shake** singkat untuk alarm; **typewriter** untuk tema teknologi; **angka berjalan** (count-up) untuk hasil.
+- Teks masuk pas dengan ketukan suara atau kata yang diucapkan.
+- Satu gaya animasi utama per video. Terlalu banyak jenis animasi terlihat murahan.
+
 ---
 
 ## Sumber

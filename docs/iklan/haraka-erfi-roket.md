@@ -60,6 +60,46 @@ Jumlah kata dialog dalam kutip: 13 / 15 / 18 → autopilot memilih 6s / 8s / 8s.
 
 ---
 
+## Desain teks & grafis (editing di CapCut)
+
+Semua teks ditambahkan saat editing, bukan oleh Omni. Panduan umum (ukuran, safe zone, animasi) ada di skill `naskah-iklan.md` §8.
+
+### Pilih satu arah desain
+
+**Opsi A · Mission Control** (paling nyambung dengan tema roket)
+- Font: **Russo One** untuk headline, **Space Mono** Bold untuk angka dan label.
+- Warna: putih + oranye `#F26B1D`, alarm merah `#E53935`, status aman hijau `#2ECC71`, panel gelap transparan `#0B1220` 70%.
+- Grafis: bingkai HUD tipis di sudut layar, garis scanline halus, label status ("STATUS: HPP MAHAL" → "STATUS: AMAN").
+- Animasi: typewriter dan glitch singkat.
+- Kelebihan/kekurangan: paling unik dan sinematik, tetapi sedikit kurang "jualan".
+
+**Opsi B · Promo Bold** (paling gampang terbaca, paling hard-selling)
+- Font: **Anton** untuk headline, **Montserrat ExtraBold** untuk angka.
+- Warna: kuning `#FFD400` + hitam, aksen merah untuk peringatan dan harga coret, stroke hitam tebal.
+- Grafis: stempel harga, panah besar, kotak highlight.
+- Animasi: pop-in dan shake.
+- Kelebihan/kekurangan: paling greget untuk TikTok jualan, tetapi tema roketnya kurang terasa di grafis.
+
+**Opsi C · Hybrid (rekomendasi)**
+- Font: **Anton** untuk headline dan angka (terbaca), **Russo One** untuk label HUD dan hitung mundur (tema roket).
+- Warna: putih + oranye `#F26B1D`, merah untuk alarm, kuning `#FFD400` khusus untuk angka untung.
+- Subtitle dialog: **Poppins SemiBold** putih, stroke hitam, kata kunci ("HPP", "25 ribu", "WhatsApp") diwarnai oranye.
+
+### Penerapan per klip (Opsi C)
+
+| Klip | Teks | Gaya | Grafis & animasi |
+|---|---|---|---|
+| 1 · Hook | ⚠️ HPP MAHAL = UNTUNG TIPIS | Anton 130 px putih, kata "MAHAL" merah, stroke hitam | Bingkai merah berkedip di tepi layar, shake 0,2 detik saat alarm |
+| 2 · Bukti | HPP Rp25rb → Jual Rp50rb | Anton 120 px putih; panah oranye | Muncul bertahap mengikuti ucapan |
+| 2 · Bukti | +Rp25rb/pcs | Anton 170 px kuning `#FFD400` | Count-up 0 → 25rb, pop-in |
+| 2 · Bukti | *ilustrasi, belum termasuk biaya lain* | Poppins 30 px putih 80% | Pojok bawah, di atas safe zone |
+| 3 · CTA | PROSES CEPAT 🚀 | Russo One 110 px oranye | Label HUD + hitung mundur 3-2-1 |
+| 3 · CTA | CHAT WHATSAPP HARAKA ERFI | Tombol bulat oranye, teks Anton putih, ikon chat | Pop-in + denyut pelan sampai video selesai |
+
+Grafis di dalam adegan yang boleh dibuat Omni: layar hitung mundur di panel kokpit, lampu alarm merah → hijau. Tanpa angka harga.
+
+---
+
 ## Karakter: Kapten Bagas (fotorealistis, fiktif)
 
 ```
@@ -183,3 +223,65 @@ Sound design: rising engine roar, launch rumble, no music. No text overlay on sc
 ```
 
 Kalau wajah melenceng di satu klip: `Make his face match the reference photo. Keep everything else the same.`
+
+---
+
+## Prompt Omni versi timeline
+
+Alternatif dari prompt di atas. Momen penting jatuh di detik yang pasti, jadi teks layar di CapCut tinggal ditaruh di detik yang sama. Generate kedua versi, pilih yang lebih rapi.
+
+| Klip | Kata dialog | Durasi autopilot | Timeline maksimal |
+|---|---|---|---|
+| 1 | 13 | 6s | `[0-6s]` |
+| 2 | 15 | 8s | `[0-8s]` |
+| 3 | 18 | 8s | `[0-8s]` |
+
+**Klip 1 · 6 detik**
+```
+[# References <IMAGE_REF_0>@KaptenBagas]
+Photorealistic, vertical 9:16. Cramped rocket cockpit. One continuous shot, medium close-up.
+[0-1s] Red alarm lights start flashing; @KaptenBagas jolts and grabs a skincare bottle.
+[1-4s] He looks straight at camera, panicked, and says in an energetic, slightly hoarse male voice,
+fast talker, casual Jakarta accent, comedic timing: "HPP skincare lu masih mahal? Pantes untungnya tipis!"
+[4-6s] Quick punch in on his face as the operator voice, calm, deep, slightly amused male voice over
+crackling radio, casual Jakarta accent, replies: "Tenang Bos, ke Haraka Erfi aja!"
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Sound design: alarm beeps, cockpit hum, radio static, no music. No text overlay on screen.
+```
+
+**Klip 2 · 8 detik**
+```
+[# References <IMAGE_REF_0>@KaptenBagas]
+Photorealistic, vertical 9:16. Same rocket cockpit. One continuous shot, medium shot.
+[0-2s] The alarm lights switch from red to calm green; a calculator floats in zero gravity and he catches it.
+[2-7s] Slow push in as he taps the calculator, grins, and says in an energetic, slightly hoarse male voice,
+fast talker, casual Jakarta accent, comedic timing: "Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!"
+[7-8s] He winks at camera.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Sound design: soft cockpit hum, calculator beeps in rhythm with his taps, no music. No text overlay on screen.
+```
+
+**Klip 3 · 8 detik** (ada satu cut, jadi tanpa "One continuous shot")
+```
+[# References <IMAGE_REF_0>@KaptenBagas]
+Photorealistic, vertical 9:16. Same rocket cockpit, high energy.
+[0-4s] Engines ignite and the cockpit shakes; pressed back by G-force, @KaptenBagas grins, lifts a skincare bottle
+to camera and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
+"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!"
+[4-6s] The operator voice, calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent,
+counts: "Tiga, dua, satu… meluncur!"
+[6-8s] Cut to exterior: the rocket blasts off into the sky, synced to a big rumble.
+Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the reference.
+Sound design: rising engine roar building to a launch boom at 6s, no music. No text overlay on screen.
+```
+
+### Teks layar mengikuti timeline (Opsi C)
+
+| Klip | Detik | Teks |
+|---|---|---|
+| 1 | 0–4 | ⚠️ HPP MAHAL = UNTUNG TIPIS (shake di detik 0) |
+| 2 | 2–5 | HPP Rp25rb → Jual Rp50rb |
+| 2 | 5–8 | +Rp25rb/pcs (count-up) + disclaimer kecil |
+| 3 | 0–4 | PROSES CEPAT 🚀 |
+| 3 | 4–6 | Hitung mundur 3-2-1 |
+| 3 | 6–8 | Tombol CHAT WHATSAPP HARAKA ERFI |

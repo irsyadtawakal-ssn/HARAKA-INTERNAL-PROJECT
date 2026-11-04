@@ -25,9 +25,30 @@ Kosakata dari contoh resmi: `one continuous shot`, `oner`, `static`, `locked off
 
 ## 3. Timing
 
-- Kalimat natural: `After 3 seconds, a woman enters the scene.`
-- Atau beat bertimecode: `[0-3s] ... / [3-6s] ... / [6-10s] ...`
-- Timecode cocok untuk koreografi/beat-sync. Scene sederhana sering lebih bersih tanpa timecode.
+- Kalimat natural: `After 3 seconds, a woman enters the scene.` atau `at 0:06`.
+- Atau beat bertimecode dalam kurung siku (format di contoh resmi Google Flow): `[0-3s] ... [3-6s] ... [6-10s] ...`. Format `[00:00]` tidak ada di contoh resmi.
+- Timecode cocok untuk koreografi, beat-sync, dan momen yang harus pas (punchline, angka muncul, ledakan). Scene sederhana sering lebih bersih tanpa timecode.
+
+### Aturan format timeline
+
+- 2–3 beat per klip, satu event per rentang **[komunitas]**.
+- Hal yang berlaku sepanjang klip ditulis **di luar** timeline: style, rasio, set, shot, pengunci identitas, `Sound design`, larangan.
+- Dialog ditaruh di dalam beat dengan rentang yang cukup panjang (±2,2 kata/detik). Kalau terlalu sempit, bicara jadi terburu-buru atau beat berikutnya terpotong.
+- Cue audio ditulis di beat atau di `Sound design`: `synced to the beat`, `launch boom at 6s`.
+- **Autopilot proyek ini:** timeline tidak boleh melewati durasi yang dipilih autopilot dari jumlah kata dalam kutip (≤9 → 4s, ≤14 → 6s, ≤21 → 8s, >21 → 10s).
+- Extension: timecode mulai lagi dari 0s.
+- Teks layar di editing ditaruh di detik yang sama dengan beat-nya.
+- Kalau hasilnya kaku, generate juga versi tanpa timeline lalu pilih yang lebih rapi.
+
+```
+[# References <IMAGE_REF_0>@<Nama>]
+<Style>, vertical 9:16. <Set>. <Shot>, one continuous shot.
+[0-2s] <event pembuka / aksi>.
+[2-6s] <aksi>, says in <deskripsi suara persis>: "<dialog>"
+[6-8s] <punchline / reaksi / transisi>.
+Keep <ciri kunci> exactly as in the reference.
+Sound design: <ambience + cue di detik tertentu>, no music. No text overlay on screen.
+```
 
 ## 4. Audio & dialog
 
@@ -251,6 +272,8 @@ The scene continues: <apa yang terjadi berikutnya>. Keep the same character.
 - [free-gemini-omni/awesome-gemini-omni-prompts](https://github.com/free-gemini-omni/awesome-gemini-omni-prompts)
 - [Anil-matcha/Awesome-Gemini-Omni-API-Prompts](https://github.com/Anil-matcha/Awesome-Gemini-Omni-API-Prompts)
 - [agbelemi/google-flow-scripting-skill](https://github.com/agbelemi/google-flow-scripting-skill)
+- [Picsart — 30 Gemini Omni prompts (timeline)](https://picsart.com/blog/gemini-omni-prompts/)
+- [agbelemi — FLOW-FEATURES.md (mode timing)](https://github.com/agbelemi/google-flow-scripting-skill/blob/main/reference/FLOW-FEATURES.md)
 - [Promptslove — Omni 1.1 Flash review](https://promptslove.com/blog/gemini-omni-1-1-flash-review/)
 - [Roo — Google Omni prompting guide](https://roo.beehiiv.com/p/google-omni-prompting-guide-every-technique-that-actually-works)
 - [LobeHub — character-consistency-character-sheet](https://lobehub.com/skills/michailbul-laniameda-skills-character-consistency-character-sheet)
