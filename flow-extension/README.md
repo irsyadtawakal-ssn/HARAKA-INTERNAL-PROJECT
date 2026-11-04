@@ -140,9 +140,9 @@ Jika captcha atau lease habis sering muncul, pindahkan mesin render ke mini PC k
 1. Isi `LLM_BASE_URL` dan `LLM_API_KEY` di `backend/.env` di VPS, lalu `docker compose --profile app up -d api worker` (restart keduanya).
 2. Pilih dua model dari endpoint LLM (login sebagai owner):
    `PUT /settings/content-llm` dengan `{"analysis_model": "<model vision>", "writer_model": "<model teks>"}`.
-3. Upload satu foto produk asli lewat Asset Library, lalu `POST /content-jobs` dengan `{"type": "video_ads", "funnel": "A", "reference_asset_id": "<id>"}`.
-4. `GET /content-jobs/<id>`: status berjalan `analyzing -> writing -> rendering`, dan `render_jobs` berisi 5 klip (`hook1..hook3`, `body`, `cta`). Periksa `scripts` dan `agent_runs` (model, token, durasi).
-5. Bila `claim_approval_id` terisi, ada klaim baru: versi alternatif sudah dirender; putuskan lewat `POST /content-jobs/<id>/claim-decision`.
+3. Buka `https://faq.harakaerfi.com/dashboard` → **Asset Library**, upload satu foto produk asli. Lalu **Pembuatan Konten** → pilih foto itu, Video Ads, funnel A → **Generate**. (Lewat API: `POST /content-jobs` dengan `{"type": "video_ads", "funnel": "A", "reference_asset_id": "<id>"}`.)
+4. Di tab Pembuatan Konten (atau `GET /content-jobs/<id>`): status berjalan `analyzing -> writing -> rendering`, dan `render_jobs` berisi 5 klip (`hook1..hook3`, `body`, `cta`). Periksa `scripts` dan `agent_runs` (model, token, durasi).
+5. Bila ada klaim baru, kotak **Klaim baru perlu keputusan** muncul di job itu: versi alternatif sudah dirender; pilih **Setujui** atau **Tolak** (API: `POST /content-jobs/<id>/claim-decision`).
 
 Catat di bawah ini model yang dipakai, hasil, dan kualitas prompt Flow yang dihasilkan.
 

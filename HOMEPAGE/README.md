@@ -56,6 +56,16 @@ Kalau `pg_cron` belum aktif, aktifkan dulu di Database → Extensions.
 
 Lead bisa dilihat di Table Editor → `leads`.
 
+## Deploy di VPS Factory (faq.harakaerfi.com)
+
+Yang berjalan sekarang: pm2 `rara` di `127.0.0.1:6500`, di belakang nginx (`/etc/nginx/sites-available/rara.conf`).
+
+- Kirim kode dari commit yang sudah ada, tanpa folder `data/` (data runtime di server): `git archive HEAD HOMEPAGE ':(exclude)HOMEPAGE/data' | ssh root@<vps> "tar -x -C /opt/haraka"`, lalu di server `cd /opt/haraka/HOMEPAGE && npm ci && npm run build && pm2 restart rara`.
+- nginx mengunci `/dashboard`, `/api/dashboard`, `/api/rara-config`, dan `/api/factory` dengan password admin.
+- Tab **Pembuatan Konten** dan **Asset Library** memanggil backend Factory lewat `/api/factory/*`. Server login sebagai owner memakai `FACTORY_API_URL`, `FACTORY_EMAIL`, dan `FACTORY_PASSWORD` di `.env.local` (mode 600). Token tidak pernah sampai ke browser.
+- File aset (upload dan pemutaran klip) lewat presigned URL di `https://faq.harakaerfi.com/harka-assets/...`. nginx meneruskannya ke zenko `127.0.0.1:9010` tanpa password dan membuang header `Authorization`. Supaya tanda tangan cocok, root `.env` backend berisi `S3_PUBLIC_ENDPOINT_URL=https://faq.harakaerfi.com` dan `S3_ENDPOINTS=s3,faq.harakaerfi.com`.
+- Dashboard `frontend/` tidak dideploy. Isinya dipindah bertahap ke dashboard ini.
+
 ## Deploy ke Vercel
 
 1. Push repo ke GitHub, lalu di vercel.com → Add New Project → import repo ini.
