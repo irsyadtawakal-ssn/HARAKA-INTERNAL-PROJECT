@@ -3188,6 +3188,29 @@ export default function RaraSettingsTab() {
                 </div>
               </div>
 
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 4 }}>
+                  Meta Pixel ID (tracking iklan Facebook/Instagram)
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="contoh: 1234567890123456 — kosongkan untuk mematikan"
+                  value={config.leadRules.metaPixelId || ""}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      leadRules: { ...config.leadRules, metaPixelId: e.target.value.replace(/\D/g, "") },
+                    })
+                  }
+                  style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: "1px solid #e8e2de", fontSize: 12.5, fontFamily: "monospace" }}
+                />
+                <p style={{ fontSize: 11, color: "#8a7a78", margin: "4px 0 0" }}>
+                  Event yang dikirim dari halaman utama: PageView, ChatStarted (pesan pertama pengunjung), dan Lead (klik
+                  tombol WhatsApp). Dashboard tidak ikut dilacak.
+                </p>
+              </div>
+
               <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 6 }}>
                 Poin Kualifikasi Wajib yang Digali Rara:
               </label>

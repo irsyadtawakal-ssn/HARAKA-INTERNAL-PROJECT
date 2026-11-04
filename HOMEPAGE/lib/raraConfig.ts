@@ -143,6 +143,8 @@ export type RaraConfig = {
     maxUserTurnsPerSession: number;
     ipRateLimitPerMinute: number;
     sessionLimitMessage: string;
+    /** Meta (Facebook) Pixel ID for the public page; empty turns tracking off. */
+    metaPixelId: string;
   };
   /** Mira's own persona, voice and greeting; the top-level ones are Rara's. Always filled by getRaraConfig. */
   mira?: AvatarProfileConfig;
@@ -490,6 +492,7 @@ export const DEFAULT_RARA_CONFIG: RaraConfig = {
     maxUserTurnsPerSession: 20,
     ipRateLimitPerMinute: 30,
     sessionLimitMessage: "Sesi demo ini sudah mencapai batas. Silakan lanjut via WhatsApp 0831-3703-0656.",
+    metaPixelId: process.env.META_PIXEL_ID || "",
   },
 };
 

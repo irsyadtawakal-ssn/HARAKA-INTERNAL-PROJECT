@@ -15,6 +15,7 @@ export default function Privasi() {
       </ul>
       <h2>Layanan pihak ketiga</h2>
       <p>Jawaban Rara diproses oleh penyedia model AI, suara dibuat oleh ElevenLabs, dan suara Kakak diubah menjadi teks oleh fitur pengenal suara bawaan browser.</p>
+      <p>Halaman ini juga memakai Meta Pixel untuk mengukur iklan kami di Facebook dan Instagram. Pixel mencatat kunjungan halaman, kapan percakapan dimulai, dan klik tombol WhatsApp, tanpa mengirim isi obrolan, nama, atau nomor telepon. Kakak bisa membatasinya lewat pengaturan iklan akun Meta atau pemblokir pelacak di browser.</p>
       <h2>Hak Kakak</h2>
       <p>Kakak bisa meminta data dihapus kapan saja melalui WhatsApp 0831-3703-0656 atau email info@harakamultifaedah.co.id.</p>
       <p><Link href="/">Kembali ke Rara</Link></p>

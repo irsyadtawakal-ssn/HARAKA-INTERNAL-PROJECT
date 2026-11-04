@@ -5,6 +5,7 @@ import { avatarReducer, type AvatarEvent, type AvatarState } from "./avatarState
 import { createRecognizer } from "./speech";
 import { LEAD_MARKER, stripMarker } from "./lead";
 import { getSessionId } from "./session";
+import { trackPixel } from "./metaPixel";
 import type { ChatMessage } from "./llm";
 import { AVATARS, DEFAULT_AVATAR, greetingFor, type AvatarId } from "./avatars";
 
@@ -195,6 +196,7 @@ export function useConversation(avatar: AvatarId = DEFAULT_AVATAR, greetingText?
     fire("CANCEL");
     fire("SUBMIT");
 
+    if (!messagesRef.current.some((m) => m.role === "user")) trackPixel("ChatStarted", { avatar: avatarRef.current }, true);
     const history: ChatMessage[] = [...messagesRef.current, { role: "user", content: text }];
     messagesRef.current = history;
     setMessages(history);

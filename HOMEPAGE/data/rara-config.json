@@ -410,7 +410,8 @@
     "vpsWaWebhookSecret": "",
     "maxUserTurnsPerSession": 20,
     "ipRateLimitPerMinute": 30,
-    "sessionLimitMessage": "Sesi demo ini sudah mencapai batas. Silakan lanjut via WhatsApp 0831-3703-0656."
+    "sessionLimitMessage": "Sesi demo ini sudah mencapai batas. Silakan lanjut via WhatsApp 0831-3703-0656.",
+    "metaPixelId": "1077666291903414"
   },
   "mira": {
     "persona": {

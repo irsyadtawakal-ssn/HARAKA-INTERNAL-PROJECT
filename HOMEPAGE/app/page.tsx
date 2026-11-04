@@ -1,6 +1,7 @@
 import Backdrop from "@/components/Backdrop";
 import DebugAvatar from "@/components/avatar/DebugAvatar";
 import RaraApp from "@/components/RaraApp";
+import MetaPixel from "@/components/MetaPixel";
 import { getRaraConfig } from "@/lib/raraConfig";
 
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -11,6 +12,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
   const products = knowledge.categories.map(({ id, name, items, heroIngredients, moqNote }) => ({ id, name, items, heroIngredients, moqNote }));
   return (
     <main className="page">
+      <MetaPixel pixelId={leadRules.metaPixelId} />
       <Backdrop />
       <header className="topbar">
         <span className="logo">HARAKA ERFI</span>

@@ -3,6 +3,7 @@
 import type { ChatMessage } from "@/lib/llm";
 import { heuristicLeadSummary } from "@/lib/lead";
 import { getSessionId } from "@/lib/session";
+import { trackPixel } from "@/lib/metaPixel";
 
 export type WhatsAppContact = { number: string; prefill: string };
 
@@ -33,8 +34,9 @@ export function waHref(contact: WhatsAppContact, messages: ChatMessage[], intere
 }
 
 /** Logs the click as a lead once per conversation; sendBeacon survives the tab switching to WhatsApp. */
-export function logWhatsAppClick(messages: ChatMessage[], logged: boolean) {
+export function logWhatsAppClick(messages: ChatMessage[], logged: boolean, interest?: string) {
   if (logged) return;
+  trackPixel("Lead", { content_name: interest || "Chat via WhatsApp", content_category: "Maklon kosmetik" });
   const body = JSON.stringify({ source: "whatsapp_click", sessionId: getSessionId(), messages });
   navigator.sendBeacon?.("/api/lead", new Blob([body], { type: "application/json" }));
 }

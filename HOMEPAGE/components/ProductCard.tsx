@@ -59,7 +59,7 @@ export default function ProductCard({ category, contact, messages, logged, onOpe
           href={waHref(contact, messages, `Maklon ${name}`)}
           target="_blank"
           rel="noreferrer"
-          onClick={() => { logWhatsAppClick(messages, logged); onOpen(); }}
+          onClick={() => { logWhatsAppClick(messages, logged, `Maklon ${name}`); onOpen(); }}
         >
           Konsultasi {name} via WhatsApp
         </a>
