@@ -125,6 +125,16 @@ export default function ContentStudioTab() {
     }
   }, [jobs]);
 
+  // Presigned URL hanya berlaku 15 menit; bila video gagal dimuat, minta URL baru (sekali per kegagalan).
+  const refreshClipUrl = useCallback((aid: string) => {
+    if (requested.current.has(`r:${aid}`)) return;
+    requested.current.add(`r:${aid}`);
+    factory<AssetRecord>(`assets/${aid}`)
+      .then((a) => a.original_url && setClipUrls((m) => ({ ...m, [aid]: a.original_url as string })))
+      .catch(() => {})
+      .finally(() => requested.current.delete(`r:${aid}`));
+  }, []);
+
   const references = assets.filter((a) => REFERENCE_STATUSES.includes(a.status));
   const processing = assets.filter((a) => processingIds.includes(a.id));
 
@@ -362,7 +372,7 @@ export default function ContentStudioTab() {
                           <strong>{slotLabel(clip.content_slot)}</strong>
                           <span>{CLIP_STATUS_LABELS[clip.status] ?? clip.status}</span>
                         </div>
-                        {url && <video src={url} controls playsInline style={{ width: "100%", borderRadius: 8, aspectRatio: "9 / 16", background: "#111" }} />}
+                        {url && <video src={url} controls playsInline onError={() => refreshClipUrl(clip.result_asset_id as string)} style={{ width: "100%", borderRadius: 8, aspectRatio: "9 / 16", background: "#111" }} />}
                         {clip.status !== "done" && (clip.error || clip.stage_message) && (
                           <p style={{ margin: "4px 0", color: clip.status === "failed" ? "#a12a2a" : "#7a6a6a" }}>{clip.error || clip.stage_message}</p>
                         )}

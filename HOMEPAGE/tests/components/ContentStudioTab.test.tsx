@@ -119,6 +119,21 @@ describe("ContentStudioTab", () => {
     expect(post && JSON.parse(String(post.init?.body))).toMatchObject({ decision: "approve" });
   });
 
+  it("refreshes an expired clip URL when the video fails to load", async () => {
+    const clip = { id: "r1", mode: "broll", slot: "broll", prompt: "p", target_duration: "8s", reference_asset_id: "a1", status: "done", stage_message: null, attempts: 1, error: null, result_asset_id: "v1", content_slot: "hook1", created_at: "", updated_at: "" };
+    routes["GET /api/factory/content-jobs"] = () => ({ body: [{ ...baseJob, status: "rendering", render_jobs: [clip] }] });
+    let n = 0;
+    routes["GET /api/factory/assets/v1"] = () => ({ body: { id: "v1", type: "video", original_url: `https://s3/v1?sig=${++n}` } });
+    const { container } = render(<ContentStudioTab />);
+    await screen.findByText("Klip siap");
+    await act(async () => {});
+    const video = container.querySelector("video")!;
+    expect(video.getAttribute("src")).toBe("https://s3/v1?sig=1");
+    fireEvent.error(video);
+    await act(async () => {});
+    expect(container.querySelector("video")!.getAttribute("src")).toBe("https://s3/v1?sig=2");
+  });
+
   it("polls while active and stops when idle", async () => {
     let n = 0;
     routes["GET /api/factory/content-jobs"] = () => ({ body: [n++ === 0 ? baseJob : { ...baseJob, status: "failed", error: "x" }] });
