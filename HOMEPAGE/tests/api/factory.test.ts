@@ -36,7 +36,7 @@ describe("/api/factory/[...path]", () => {
     expect(factoryFetch).toHaveBeenCalledWith("content-jobs", expect.objectContaining({ method: "POST", body }));
   });
 
-  it.each([["users"], ["render-devices"], ["flow", "claim"], ["auth", "login"], ["assets", "..", "users"]])(
+  it.each([["users"], ["flow", "claim"], ["auth", "login"], ["assets", "..", "users"]])(
     "rejects paths outside allowlist: %s",
     async (...path) => {
       const { GET } = await import("@/app/api/factory/[...path]/route");
@@ -45,6 +45,20 @@ describe("/api/factory/[...path]", () => {
       expect(factoryFetch).not.toHaveBeenCalled();
     },
   );
+
+  it("allows GET render-devices", async () => {
+    const { GET } = await import("@/app/api/factory/[...path]/route");
+    const res = await GET(req("render-devices"), ctx(["render-devices"]));
+    expect(res.status).toBe(200);
+    expect(factoryFetch).toHaveBeenCalledWith("render-devices", expect.objectContaining({ method: "GET" }));
+  });
+
+  it("rejects POST render-devices", async () => {
+    const { POST } = await import("@/app/api/factory/[...path]/route");
+    const res = await POST(req("render-devices", { method: "POST", body: "{}", origin: "https://faq.harakaerfi.com" }), ctx(["render-devices"]));
+    expect(res.status).toBe(404);
+    expect(factoryFetch).not.toHaveBeenCalled();
+  });
 
   it("rejects cross-origin write", async () => {
     const { POST } = await import("@/app/api/factory/[...path]/route");

@@ -171,6 +171,8 @@ def decide_claims(
         )
         enqueue_renders(db, job, draft, db.get(Asset, job.start_asset_id))
         original.status = "approved"
+        # Klip versi asli sekarang yang dirender terakhir; script yang tampil ikut versi itu.
+        job.script_id = original.id
     else:
         original.status = "rejected"
     original.reviewed_by_id, original.review_comment = user.id, body.note

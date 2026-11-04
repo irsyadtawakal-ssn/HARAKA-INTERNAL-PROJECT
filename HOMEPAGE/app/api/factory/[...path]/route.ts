@@ -9,12 +9,16 @@ import { sameOrigin } from "@/lib/sameOrigin";
 const ALLOWED =
   /^(assets(\/[\w-]+)*|content-jobs(\/[\w-]+)*|render-jobs\/quota|render-jobs\/[\w-]+(\/retry)?|scripts\/[\w-]+|settings\/content-llm)$/;
 
+// Hanya baca: status mesin render (tanpa token). Membuat/mengubah device tetap lewat backend langsung.
+const READ_ONLY = /^render-devices$/;
+
 type Ctx = { params: Promise<{ path: string[] }> };
 
 async function handle(req: Request, ctx: Ctx) {
   const { path } = await ctx.params;
   const joined = path.join("/");
-  if (!ALLOWED.test(joined)) return NextResponse.json({ detail: "Tidak ditemukan." }, { status: 404 });
+  const allowed = ALLOWED.test(joined) || (req.method === "GET" && READ_ONLY.test(joined));
+  if (!allowed) return NextResponse.json({ detail: "Tidak ditemukan." }, { status: 404 });
   if (req.method !== "GET" && !sameOrigin(req)) return NextResponse.json({ detail: "Permintaan tidak valid." }, { status: 403 });
 
   let res: Response;
