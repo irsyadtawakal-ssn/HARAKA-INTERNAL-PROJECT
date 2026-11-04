@@ -16,7 +16,7 @@ from app.db import get_db
 from app.deps import client_ip, require_roles
 from app.models import Approval, Asset, Claim, ContentJob, GuardrailSetting, RenderJob, Script, User
 from app.render import REFERENCE_STATUSES, TALKING_HEAD_LICENSES, validate_reference
-from app.schemas import ContentJobIn, ContentJobOut, ContentLlmIn, ContentLlmOut, RenderJobOut
+from app.schemas import ContentJobIn, ContentJobOut, ContentLlmIn, ContentLlmOut, RenderJobOut, ScriptOut
 from app.worker import generate_content
 
 router = APIRouter(tags=["content"])
@@ -104,6 +104,14 @@ def list_content_jobs(db: Session = Depends(get_db), _: User = Depends(can_manag
 @router.get("/content-jobs/{job_id}", response_model=ContentJobOut)
 def get_content_job(job_id: uuid.UUID, db: Session = Depends(get_db), _: User = Depends(can_manage_content)) -> ContentJobOut:
     return _out(db, _get(db, job_id))
+
+
+@router.get("/scripts/{script_id}", response_model=ScriptOut)
+def get_script(script_id: uuid.UUID, db: Session = Depends(get_db), _: User = Depends(can_manage_content)) -> Script:
+    script = db.get(Script, script_id)
+    if script is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Script tidak ditemukan.")
+    return script
 
 
 @router.post("/content-jobs/{job_id}/retry", response_model=ContentJobOut)

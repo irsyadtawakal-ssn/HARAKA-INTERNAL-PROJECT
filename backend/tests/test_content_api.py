@@ -213,3 +213,23 @@ def test_klaim_pensiun_tampil_dan_approve_diblokir(client, db, owner_headers, st
     assert approve.status_code == 409 and "Diskon 70 persen" in approve.json()["detail"]
     assert len(_get(client, owner_headers, job["id"])["render_jobs"]) == 5
     assert client.post(f"/content-jobs/{job['id']}/claim-decision", headers=owner_headers, json={"decision": "reject"}).status_code == 200
+
+
+def test_get_script_returns_hooks(client, owner_headers, stored_asset, fake_llm):
+    fake_llm.reply("analysis", ANALYSIS)
+    fake_llm.reply("writer", _writer_reply())
+    job = _get(client, owner_headers, _post(client, owner_headers, stored_asset("photo")).json()["id"])
+    r = client.get(f"/scripts/{job['script_id']}", headers=owner_headers)
+    assert r.status_code == 200, r.text
+    hooks = r.json()["hooks"]
+    assert len(hooks) == 3
+    assert {"slot", "dialog", "overlay_text"} <= hooks[0].keys()
+
+
+def test_get_script_404(client, owner_headers):
+    r = client.get(f"/scripts/{uuid.uuid4()}", headers=owner_headers)
+    assert r.status_code == 404 and r.json()["detail"] == "Script tidak ditemukan."
+
+
+def test_get_script_forbidden_for_creator(client, as_role):
+    assert client.get(f"/scripts/{uuid.uuid4()}", headers=as_role("creator")).status_code == 403

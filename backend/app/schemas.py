@@ -239,6 +239,24 @@ class FlowUploadedIn(BaseModel):
     height: int | None = Field(default=None, ge=0)
 
 
+class ScriptOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    funnel: str
+    duration_s: int
+    headline: str | None
+    caption: str | None
+    hooks: list[dict]
+    body: str
+    cta: str | None
+    shot_list: list
+    version: int
+    parent_script_id: uuid.UUID | None
+    status: str
+    created_at: datetime
+
+
 class ContentLlmIn(BaseModel):
     analysis_model: str = Field(max_length=120)
     writer_model: str = Field(max_length=120)
