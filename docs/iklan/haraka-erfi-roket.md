@@ -46,7 +46,7 @@ Konsep: HPP mahal = alarm bahaya di roket → Haraka Erfi memperbaiki → roket 
 | Visual | Dialog | Teks layar |
 |---|---|---|
 | Mesin menyala, G-force, Bagas nyengir mengangkat produk | Bagas: "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!" | PROSES CEPAT 🚀 |
-| Hitung mundur lewat radio | Operator: "Tiga, dua, satu… meluncur!" | |
+| Hitung mundur dari announcer, Bagas diam menahan G-force | Announcer: "Tiga, dua, satu… meluncur!" | |
 | Shot luar: roket meluncur | Bagas (radio): "Brand skincare lu siap meluncur, Bos!" | |
 
 Jumlah kata semua dialog per klip: 13 / 13 / 23 → autopilot memilih 6s / 6s / 10s (total ±22 detik). Dialog klip 3 sengaja lebih dari 21 kata supaya autopilot memilih 10 detik.
@@ -125,6 +125,11 @@ CHARACTER: Kapten Bagas
 Operator (hanya suara):
 ```
 Operator voice: calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent
+```
+
+Announcer hitung mundur (hanya suara, klip 3). Sengaja beda dari Bagas dan operator supaya Omni tidak menyuarakannya lewat mulut Bagas:
+```
+Announcer voice: an off-screen mission control announcer, a crisp, authoritative female voice booming through the cockpit loudspeaker with a slight echo
 ```
 
 ### Aset gambar (Nano Banana)
@@ -244,8 +249,8 @@ Photorealistic, vertical 9:16. Rocket engines ignite and the cockpit shakes viol
 Pressed back by G-force, he grins and lifts a skincare bottle to camera, saying
 in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
 "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!"
-Operator voice: calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent, counts:
-"Tiga, dua, satu… meluncur!"
+Then an off-screen mission control announcer, a crisp, authoritative female voice booming through the cockpit loudspeaker with a slight echo, counts: "Tiga, dua, satu… meluncur!"
+He stays silent with his lips closed during the countdown, bracing in his seat.
 Cut to an exterior shot of the rocket blasting off; over the radio he shouts happily:
 "Brand skincare lu siap meluncur, Bos!" Fast, high energy.
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
@@ -296,8 +301,8 @@ Photorealistic, vertical 9:16. Same rocket cockpit, high energy.
 [0-5s] Engines ignite and the cockpit shakes; pressed back by G-force, he grins, lifts a skincare bottle
 to camera and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
 "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!"
-[5-7s] The operator voice, calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent,
-counts: "Tiga, dua, satu… meluncur!"
+[5-7s] An off-screen mission control announcer, a crisp, authoritative female voice booming through the cockpit loudspeaker with a slight echo, counts: "Tiga, dua, satu… meluncur!"
+He stays silent with his lips closed during the countdown, bracing in his seat.
 [7-10s] Cut to exterior: the rocket blasts off into the sky with a bright flame trail.
 Over the radio he shouts happily: "Brand skincare lu siap meluncur, Bos!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
@@ -358,8 +363,8 @@ Photorealistic, vertical 9:16. Same rocket cockpit, high energy.
 to camera and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
 "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!"
 Bold orange text with white outline zooms in at the upper-middle of the frame: "PROSES CEPAT"
-[5-7s] The text disappears. The operator voice, calm, deep, slightly amused male voice over crackling radio,
-casual Jakarta accent, counts: "Tiga, dua, satu… meluncur!"
+[5-7s] The text disappears. An off-screen mission control announcer, a crisp, authoritative female voice booming through the cockpit loudspeaker with a slight echo, counts: "Tiga, dua, satu… meluncur!"
+He stays silent with his lips closed during the countdown, bracing in his seat.
 [7-10s] Cut to exterior: the rocket blasts off into the sky with a bright flame trail.
 Over the radio he shouts happily: "Brand skincare lu siap meluncur, Bos!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
