@@ -39,7 +39,7 @@ Konsep: HPP mahal = alarm bahaya di roket → Haraka Erfi memperbaiki → roket 
 
 | Visual | Dialog | Teks layar |
 |---|---|---|
-| Lampu kokpit hijau, Bagas duduk memegang kalkulator, mengetik, lalu nyengir ke kamera | Bagas: "HPP mulai 25 ribu, jual 50 ribu." … "Untung kotor 25 ribu per pcs!" | HPP mulai Rp25rb → jual Rp50rb = **+Rp25rb/pcs** · *ilustrasi, belum termasuk biaya lain* |
+| Lampu hijau, kamera mendorong pelan saat Bagas condong ke depan mengetik kalkulator sambil mengangguk; lalu punch in ke close-up, kalkulator diputar ke kamera, alis naik, nyengir, menunjuk kamera | Bagas: "HPP mulai 25 ribu, jual 50 ribu." … "Untung kotor 25 ribu per pcs!" | HPP mulai Rp25rb → jual Rp50rb = **+Rp25rb/pcs** · *ilustrasi, belum termasuk biaya lain* |
 
 **Klip 3 · Roket = cepat + CTA (12–20 detik)**
 
@@ -176,7 +176,7 @@ and suit exactly as in the reference. No text.
 
 **6. Start frame klip 2 · 9:16** (lampirkan potret master + kokpit)
 ```
-Photorealistic, vertical 9:16, medium close-up. Kapten Bagas from the reference photo
+Photorealistic, vertical 9:16, medium shot. Kapten Bagas from the reference photo
 sitting in the seat of the cockpit from the reference image, visor raised, holding a
 calculator with both hands at chest height, calm green cockpit lights, slight smile
 at camera.
@@ -230,11 +230,9 @@ Sound design: alarm beeps, cockpit hum, radio static, no music. No text overlay 
 **Klip 2**
 ```
 Use the image as the starting frame.
-Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on.
-Locked-off medium close-up. One continuous shot.
-He taps the calculator and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
-"HPP mulai 25 ribu, jual 50 ribu."
-Then he looks up at camera, grins, and says: "Untung kotor 25 ribu per pcs!"
+Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on, the cockpit gently vibrating. One continuous shot with light handheld energy.
+Slow push in from a medium shot as he leans toward camera, taps the calculator twice with exaggerated finger taps, nodding with each number, and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
+Then: Quick punch in to a close-up as he spins the calculator to face the lens (screen glowing, out of focus), raises his eyebrows, grins wide and points at camera, saying: "Untung kotor 25 ribu per pcs!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: soft cockpit hum, calculator beeps, no music. No text overlay on screen.
 ```
@@ -283,11 +281,11 @@ Sound design: alarm beeps, cockpit hum, radio static, no music. No text overlay 
 **Klip 2 · 6 detik**
 ```
 Use the image as the starting frame.
-Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on. Locked-off medium close-up, one continuous shot.
-[0-3s] He taps the calculator and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
-[3-6s] He looks up at camera, grins, and says: "Untung kotor 25 ribu per pcs!"
+Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on, the cockpit gently vibrating. One continuous shot with light handheld energy.
+[0-3s] Slow push in from a medium shot as he leans toward camera, taps the calculator twice with exaggerated finger taps, nodding with each number, and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
+[3-6s] Quick punch in to a close-up as he spins the calculator to face the lens (screen glowing, out of focus), raises his eyebrows, grins wide and points at camera, saying: "Untung kotor 25 ribu per pcs!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
-Sound design: soft cockpit hum, two calculator beeps, a cash-register ding at 4s, no music. No text overlay on screen.
+Sound design: soft cockpit hum, two calculator beeps, a whoosh on the punch in at 3s, a cash-register ding at 4s, no music. No text overlay on screen.
 ```
 
 **Klip 3 · 8 detik** (ada satu cut, jadi tanpa "One continuous shot")
@@ -342,14 +340,14 @@ Sound design: alarm beeps, cockpit hum, radio static, no music.
 **Klip 2 · 6 detik**
 ```
 Use the image as the starting frame.
-Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on. Locked-off medium close-up, one continuous shot.
-[0-3s] He taps the calculator and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
+Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on, the cockpit gently vibrating. One continuous shot with light handheld energy.
+[0-3s] Slow push in from a medium shot as he leans toward camera, taps the calculator twice with exaggerated finger taps, nodding with each number, and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
 Bold white text with thick black outline pops in at the upper-middle of the frame: "HPP 25RB"
-[3-6s] The white text disappears. He looks up at camera, grins, and says: "Untung kotor 25 ribu per pcs!"
+[3-6s] The white text disappears. Quick punch in to a close-up as he spins the calculator to face the lens (screen glowing, out of focus), raises his eyebrows, grins wide and points at camera, saying: "Untung kotor 25 ribu per pcs!"
 Large bold yellow text with thick black outline pops in at the upper-middle of the frame: "UNTUNG 25RB"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Crystal clear text, correct spelling, only one text at a time, no other text on screen.
-Sound design: soft cockpit hum, two calculator beeps, a cash-register ding when the yellow text appears, no music.
+Sound design: soft cockpit hum, two calculator beeps, a whoosh on the punch in at 3s, a cash-register ding when the yellow text appears, no music.
 ```
 
 **Klip 3 · 8 detik**
