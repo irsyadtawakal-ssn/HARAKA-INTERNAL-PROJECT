@@ -15,7 +15,7 @@ beforeEach(async () => {
 
 describe("factoryFetch", () => {
   it("logs in once for two calls", async () => {
-    const fetchMock = vi.fn(async (url: string) => (isLogin(url) ? json({ access_token: "t1" }) : json({ ok: true })));
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => (isLogin(url) ? json({ access_token: "t1" }) : json({ ok: true })));
     vi.stubGlobal("fetch", fetchMock);
     const { factoryFetch } = await import("@/lib/factory");
     await factoryFetch("assets");
@@ -30,7 +30,7 @@ describe("factoryFetch", () => {
   it("re-logins once on 401 then retries", async () => {
     let logins = 0;
     let calls = 0;
-    const fetchMock = vi.fn(async (url: string) => {
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
       if (isLogin(url)) return json({ access_token: `t${++logins}` });
       return ++calls === 1 ? json({ detail: "expired" }, 401) : json({ ok: true });
     });
@@ -43,7 +43,7 @@ describe("factoryFetch", () => {
   });
 
   it("gives up after second 401", async () => {
-    const fetchMock = vi.fn(async (url: string) => (isLogin(url) ? json({ access_token: "t" }) : json({ detail: "no" }, 401)));
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => (isLogin(url) ? json({ access_token: "t" }) : json({ detail: "no" }, 401)));
     vi.stubGlobal("fetch", fetchMock);
     const { factoryFetch } = await import("@/lib/factory");
     const res = await factoryFetch("content-jobs");
@@ -59,7 +59,7 @@ describe("factoryFetch", () => {
   });
 
   it("never puts the password in the request URL", async () => {
-    const fetchMock = vi.fn(async (url: string) => (isLogin(url) ? json({ access_token: "t" }) : json({})));
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => (isLogin(url) ? json({ access_token: "t" }) : json({})));
     vi.stubGlobal("fetch", fetchMock);
     const { factoryFetch } = await import("@/lib/factory");
     await factoryFetch("assets");
