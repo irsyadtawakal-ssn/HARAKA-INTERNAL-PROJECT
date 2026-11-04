@@ -1,10 +1,13 @@
 import { applyPronunciationDictionary, getRaraConfig, type RaraConfig } from "./raraConfig";
+import { forAvatar } from "./avatarProfile";
+import type { AvatarId } from "./avatars";
 
 export type VoiceOverride = Partial<RaraConfig["voice"]>;
 
-export async function synthesize(rawText: string, override?: VoiceOverride): Promise<ArrayBuffer> {
+/** `avatar` picks whose saved voice to use (Mira's or Rara's); without it the top-level (Rara) voice is used. */
+export async function synthesize(rawText: string, override?: VoiceOverride, avatar: AvatarId = "rara"): Promise<ArrayBuffer> {
   const isTest = process.env.NODE_ENV === "test";
-  const cfg = isTest ? undefined : getRaraConfig().voice;
+  const cfg = isTest ? undefined : forAvatar(getRaraConfig(), avatar).voice;
   const rules = override?.pronunciationDictionary ?? cfg?.pronunciationDictionary ?? [];
   const text = applyPronunciationDictionary(rawText, rules);
 

@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { LEAD_MARKER } from "./lead";
 import type { AvatarState } from "./avatarState";
+import { mergeMiraProfile, type AvatarProfileConfig } from "./avatarProfile";
 
 export type CommercialItem = {
   id: string;
@@ -143,6 +144,8 @@ export type RaraConfig = {
     ipRateLimitPerMinute: number;
     sessionLimitMessage: string;
   };
+  /** Mira's own persona, voice and greeting; the top-level ones are Rara's. Always filled by getRaraConfig. */
+  mira?: AvatarProfileConfig;
 };
 
 export const DEFAULT_RARA_CONFIG: RaraConfig = {
@@ -611,8 +614,7 @@ export function compileKnowledgeMarkdown(k: RaraConfig["knowledge"]): string {
   return lines.join("\n");
 }
 
-/** `name` swaps in the avatar the visitor picked (Mira or Rara); everything else comes from the config. */
-export function compileSystemPrompt(cfg: RaraConfig, name = cfg.persona.avatarName): string {
+export function compileSystemPrompt(cfg: RaraConfig): string {
   if (cfg.persona.useCustomPromptOverride && cfg.persona.customSystemPromptOverride.trim()) {
     const knowledgeMd = compileKnowledgeMarkdown(cfg.knowledge);
     return `${cfg.persona.customSystemPromptOverride.trim()}\n\nPENGETAHUAN RESMI\n${knowledgeMd}`;
@@ -659,7 +661,7 @@ export function compileSystemPrompt(cfg: RaraConfig, name = cfg.persona.avatarNa
 
   const qualificationList = l.requiredQualificationFields.join(", ");
 
-  return `Kamu adalah ${name}, ${p.roleTitle} dari ${k.company.legalName}, pabrik maklon kosmetik berstandar CPKB di Bekasi. Kamu tampil sebagai avatar interaktif di website dan jawabanmu dibacakan dengan suara.
+  return `Kamu adalah ${p.avatarName}, ${p.roleTitle} dari ${k.company.legalName}, pabrik maklon kosmetik berstandar CPKB di Bekasi. Kamu tampil sebagai avatar interaktif di website dan jawabanmu dibacakan dengan suara.
 
 GAYA BICARA & BAHASA
 - ${p.toneOfVoice}
@@ -743,6 +745,7 @@ export function getRaraConfig(): RaraConfig {
       if (!merged.knowledge.rawMarkdown) {
         merged.knowledge.rawMarkdown = compileKnowledgeMarkdown({ ...merged.knowledge, activeMode: "structured" });
       }
+      merged.mira = mergeMiraProfile(raw.mira, merged);
       return merged;
     }
   } catch (err) {
@@ -751,6 +754,7 @@ export function getRaraConfig(): RaraConfig {
 
   const initial = structuredClone(DEFAULT_RARA_CONFIG);
   initial.knowledge.rawMarkdown = compileKnowledgeMarkdown(initial.knowledge);
+  initial.mira = mergeMiraProfile(undefined, initial);
   try {
     return saveRaraConfig(initial);
   } catch {

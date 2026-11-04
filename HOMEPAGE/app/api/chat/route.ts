@@ -1,4 +1,5 @@
-import { avatarName } from "@/lib/avatars";
+import { toAvatarId } from "@/lib/avatars";
+import { forAvatar } from "@/lib/avatarProfile";
 import { compileSystemPrompt, getRaraConfig } from "@/lib/raraConfig";
 import { streamChat, type ChatMessage } from "@/lib/llm";
 import { checkLimit } from "@/lib/rateLimit";
@@ -60,8 +61,9 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: limitError }, { status: 429 });
   }
 
+  const avatarCfg = forAvatar(cfg, toAvatarId(body.avatar));
   try {
-    const systemPrompt = compileSystemPrompt(cfg, avatarName(body.avatar));
+    const systemPrompt = compileSystemPrompt(avatarCfg);
     const stream = await streamChat(cleanMessages(messages), systemPrompt);
     const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
     return new Response(stream.pipeThrough(logOnFinish(body.sessionId, lastUser)), {
@@ -70,7 +72,7 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return Response.json(
       {
-        error: `Maaf ${cfg.persona.visitorHonorific || "Kak"}, ${cfg.persona.avatarName || "Rara"} sedang gangguan. Silakan coba lagi atau chat WhatsApp ${cfg.leadRules.whatsappCsNumber || "0831-3703-0656"}.`,
+        error: `Maaf ${avatarCfg.persona.visitorHonorific || "Kak"}, ${avatarCfg.persona.avatarName || "Rara"} sedang gangguan. Silakan coba lagi atau chat WhatsApp ${cfg.leadRules.whatsappCsNumber || "0831-3703-0656"}.`,
       },
       { status: 502 }
     );

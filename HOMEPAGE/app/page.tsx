@@ -5,7 +5,8 @@ import { getRaraConfig } from "@/lib/raraConfig";
 
 export default async function Home({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const { debugAvatar } = await searchParams;
-  const { leadRules, knowledge } = getRaraConfig();
+  const { leadRules, knowledge, visual, mira } = getRaraConfig();
+  const greetings = { rara: visual.greeting, mira: mira?.greeting || "" };
   const whatsapp = { number: leadRules.whatsappCsNumber, prefill: leadRules.whatsappPrefillTemplate };
   const products = knowledge.categories.map(({ id, name, items, heroIngredients, moqNote }) => ({ id, name, items, heroIngredients, moqNote }));
   return (
@@ -19,7 +20,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<Rec
           <div className="avatar-slot"><DebugAvatar /></div>
         </section>
       ) : (
-        <RaraApp whatsapp={whatsapp} products={products} />
+        <RaraApp whatsapp={whatsapp} products={products} greetings={greetings} />
       )}
     </main>
   );

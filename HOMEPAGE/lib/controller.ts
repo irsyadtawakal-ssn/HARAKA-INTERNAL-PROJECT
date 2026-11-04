@@ -21,8 +21,8 @@ const VOICE_KEY = "rara-voice";
 const greetingThread = (greeting = GREETING): ThreadItem[] => [{ id: 0, role: "assistant", content: greeting }];
 type Saved = { thread: ThreadItem[]; messages: ChatMessage[]; leadDone: boolean; showWhatsApp?: boolean };
 
-export function useConversation(avatar: AvatarId = DEFAULT_AVATAR) {
-  const greeting = greetingFor(AVATARS[avatar].name);
+export function useConversation(avatar: AvatarId = DEFAULT_AVATAR, greetingText?: string) {
+  const greeting = greetingText ?? greetingFor(AVATARS[avatar].name);
   const [state, dispatch] = useReducer(avatarReducer, "idle" as AvatarState);
   const [line, setLine] = useState(greeting);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -52,6 +52,8 @@ export function useConversation(avatar: AvatarId = DEFAULT_AVATAR) {
   const seq = useRef(0);
   const avatarRef = useRef(avatar);
   avatarRef.current = avatar;
+  const greetingRef = useRef(greeting);
+  greetingRef.current = greeting;
 
   const fire = useCallback((e: AvatarEvent) => dispatch(e), []);
 
@@ -170,7 +172,7 @@ export function useConversation(avatar: AvatarId = DEFAULT_AVATAR) {
       const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, avatar: avatarRef.current }),
         signal: abort.current?.signal,
       });
       if (id !== turn.current) return;
@@ -327,10 +329,10 @@ export function useConversation(avatar: AvatarId = DEFAULT_AVATAR) {
     messagesRef.current = [];
     leadDoneRef.current = false;
     setMessages([]);
-    setThread(greetingThread(greetingFor(AVATARS[avatarRef.current].name)));
+    setThread(greetingThread(greetingRef.current));
     setShowWhatsApp(false);
     setLeadDone(false);
-    setLine(greetingFor(AVATARS[avatarRef.current].name));
+    setLine(greetingRef.current);
   }, [fire, newTurn]);
 
 

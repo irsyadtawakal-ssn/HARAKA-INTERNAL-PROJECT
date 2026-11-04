@@ -23,7 +23,18 @@ import {
 } from "lucide-react";
 import type { RaraConfig, FaqItem, PronunciationRule, ExtraKnowledgeDoc } from "@/lib/raraConfig";
 import type { ElevenLabsVoice } from "@/lib/tts";
+import { swapMira } from "@/lib/avatarProfile";
+import { AVATARS, AVATAR_IDS, DEFAULT_AVATAR, type AvatarId } from "@/lib/avatars";
 import styles from "@/app/dashboard/dashboard.module.css";
+
+/** JSON with sorted keys, so a Mira/Rara swap that only reorders fields does not count as an unsaved change. */
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, (_key, v) =>
+    v && typeof v === "object" && !Array.isArray(v)
+      ? Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)))
+      : v
+  );
+}
 
 type SubTabId = "visual" | "llm" | "voice" | "knowledge" | "persona" | "simulator";
 
@@ -50,15 +61,28 @@ const LLM_INPUT_STYLE: React.CSSProperties = {
 
 export default function RaraSettingsTab() {
   const [subTab, setSubTab] = useState<SubTabId>("visual");
+  // While Mira is being edited, `config` holds her persona, voice and greeting in the top-level slots
+  // (Rara's wait under `config.mira`), so every form below edits whichever avatar is picked.
+  const [profile, setProfile] = useState<AvatarId>(DEFAULT_AVATAR);
+  const profileRef = useRef<AvatarId>(DEFAULT_AVATAR);
+  const toView = (cfg: RaraConfig) => (profileRef.current === "mira" ? swapMira(cfg) : cfg);
+  // The swap is its own inverse, so the same call turns the edited view back into the stored layout.
+  const toStored = toView;
   const [config, setConfig] = useState<RaraConfig | null>(null);
   // Last config the server confirmed; anything different has not reached Rara Live yet
   const [savedSnapshot, setSavedSnapshot] = useState("");
   const [baseUpdatedAt, setBaseUpdatedAt] = useState("");
-  const isDirty = Boolean(config && savedSnapshot && JSON.stringify(config) !== savedSnapshot);
+  const isDirty = Boolean(config && savedSnapshot && stableJson(toStored(config)) !== savedSnapshot);
   const applyServerConfig = (cfg: RaraConfig) => {
-    setConfig(cfg);
-    setSavedSnapshot(JSON.stringify(cfg));
+    setConfig(toView(cfg));
+    setSavedSnapshot(stableJson(cfg));
     setBaseUpdatedAt(cfg.updatedAt || "");
+  };
+  const switchProfile = (next: AvatarId) => {
+    if (next === profileRef.current) return;
+    profileRef.current = next;
+    setProfile(next);
+    setConfig((c) => (c ? swapMira(c) : c));
   };
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -74,6 +98,8 @@ export default function RaraSettingsTab() {
   // Visual Sub-Tab State
   const [activeAvatarState, setActiveAvatarState] = useState<"idle" | "listening" | "thinking" | "speaking">("idle");
   const [previewVideo, setPreviewVideo] = useState("/avatar/idle-1.mp4");
+  // Mira's clips use the same file names in her own folder, so the stage preview follows the picked profile.
+  const stageVideo = previewVideo.replace(/^\/avatar\//, `${AVATARS[profile].base}/`);
   const [selectedClipToAdd, setSelectedClipToAdd] = useState<Record<string, string>>({});
   const [uploadingClipState, setUploadingClipState] = useState<string | null>(null);
   const [newChipText, setNewChipText] = useState("");
@@ -201,7 +227,7 @@ export default function RaraSettingsTab() {
   }, [subTab, hasLlmKey, config === null]);
 
   const handleSave = async (customCfg?: RaraConfig) => {
-    const target = customCfg || config;
+    const target = customCfg || (config && toStored(config));
     if (!target) return;
     setSaving(true);
     try {
@@ -275,7 +301,7 @@ export default function RaraSettingsTab() {
 
   const handleExportJson = () => {
     if (!config) return;
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(toStored(config), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -292,7 +318,7 @@ export default function RaraSettingsTab() {
       try {
         const parsed = JSON.parse(String(reader.result));
         if (parsed && parsed.visual && parsed.llm && parsed.knowledge) {
-          setConfig(parsed);
+          setConfig(toView(parsed));
           void handleSave(parsed);
         } else {
           showToast("Format file JSON konfigurasi Rara tidak valid", "err");
@@ -770,6 +796,51 @@ export default function RaraSettingsTab() {
         </button>
       </div>
 
+      {/* Which avatar the persona, voice and greeting fields belong to; the rest is shared. */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: 10,
+          margin: "4px 0 18px",
+          padding: "10px 14px",
+          borderRadius: 12,
+          background: "#fbf6f4",
+          border: "1px solid #efe3df",
+        }}
+      >
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#5c4b4b" }}>Profil avatar:</span>
+        <div role="radiogroup" aria-label="Profil avatar yang diatur" style={{ display: "flex", gap: 4 }}>
+          {AVATAR_IDS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={profile === id}
+              onClick={() => switchProfile(id)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 99,
+                border: `1px solid ${profile === id ? "#a8666a" : "#e8e2de"}`,
+                background: profile === id ? "#a8666a" : "#fff",
+                color: profile === id ? "#fff" : "#5c4b4b",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              {AVATARS[id].name}
+              {id === DEFAULT_AVATAR ? " (default)" : ""}
+            </button>
+          ))}
+        </div>
+        <span style={{ fontSize: 11.5, color: "#8a7a78", flex: "1 1 280px" }}>
+          Persona, Suara, dan Kalimat Sapaan diatur terpisah untuk {AVATARS[profile].name}. Pengetahuan, LLM,
+          Guardrails, dan Lead Rules berlaku untuk keduanya.
+        </span>
+      </div>
+
       {/* ====================================================================
           SUB-TAB 1: VISUAL & KLIP AVATAR
           ==================================================================== */}
@@ -797,8 +868,8 @@ export default function RaraSettingsTab() {
 
             {config.visual.mode === "clips" ? (
               <video
-                key={previewVideo}
-                src={previewVideo}
+                key={stageVideo}
+                src={stageVideo}
                 style={{
                   width: "100%",
                   maxHeight: 370,
@@ -830,7 +901,7 @@ export default function RaraSettingsTab() {
             )}
 
             <div style={{ fontSize: 11, color: "#d6c6c4", marginTop: 10 }}>
-              File aktif: <code style={{ color: "#fff" }}>{previewVideo}</code>
+              File aktif: <code style={{ color: "#fff" }}>{stageVideo}</code>
             </div>
 
             {/* State Quick Switcher */}
@@ -1710,7 +1781,7 @@ export default function RaraSettingsTab() {
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Volume2 size={18} style={{ color: "#a8666a" }} />
-                <h4 style={{ fontSize: 15, fontWeight: 700, margin: 0, whiteSpace: "nowrap" }}>Suara Rara — ElevenLabs</h4>
+                <h4 style={{ fontSize: 15, fontWeight: 700, margin: 0, whiteSpace: "nowrap" }}>Suara {AVATARS[profile].name} — ElevenLabs</h4>
               </div>
               <span
                 style={{

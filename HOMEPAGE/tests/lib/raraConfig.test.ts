@@ -6,6 +6,7 @@ import {
   DEFAULT_RARA_CONFIG,
 } from "@/lib/raraConfig";
 import { buildKnowledgeFallbackReply } from "@/lib/llm";
+import { deriveMiraProfile, forAvatar, swapMira } from "@/lib/avatarProfile";
 
 describe("raraConfig engine & harakaerfi.com knowledge compiler", () => {
   it("compiles structured harakaerfi.com knowledge including MOQ 1.000 pcs, 6 steps, and 18 portfolio brands", () => {
@@ -65,7 +66,26 @@ describe("raraConfig engine & harakaerfi.com knowledge compiler", () => {
   });
 
   it("introduces the avatar the visitor picked", () => {
-    expect(compileSystemPrompt(DEFAULT_RARA_CONFIG, "Mira")).toMatch(/^Kamu adalah Mira, /);
-    expect(compileSystemPrompt(DEFAULT_RARA_CONFIG)).toMatch(/^Kamu adalah Rara, /);
+    expect(compileSystemPrompt(forAvatar(DEFAULT_RARA_CONFIG, "mira"))).toMatch(/^Kamu adalah Mira, /);
+    expect(compileSystemPrompt(forAvatar(DEFAULT_RARA_CONFIG, "rara"))).toMatch(/^Kamu adalah Rara, /);
+  });
+
+  it("keeps Mira's own persona, voice and greeting, and swaps back to Rara unchanged", () => {
+    const mira = {
+      ...deriveMiraProfile(DEFAULT_RARA_CONFIG),
+      greeting: "Hai, aku Mira!",
+    };
+    mira.persona = { ...mira.persona, roleTitle: "Konsultan Halal" };
+    mira.voice = { ...mira.voice, voiceId: "mira-voice" };
+    const cfg = { ...DEFAULT_RARA_CONFIG, mira };
+    const asMira = forAvatar(cfg, "mira");
+    expect(asMira.persona.roleTitle).toBe("Konsultan Halal");
+    expect(asMira.voice.voiceId).toBe("mira-voice");
+    expect(asMira.visual.greeting).toBe("Hai, aku Mira!");
+    // Shared voice settings stay with the company, not the avatar.
+    expect(asMira.voice.pronunciationDictionary).toBe(cfg.voice.pronunciationDictionary);
+    expect(swapMira(asMira).persona).toEqual(cfg.persona);
+    expect(swapMira(asMira).voice).toEqual(cfg.voice);
+    expect(swapMira(asMira).mira).toEqual(mira);
   });
 });

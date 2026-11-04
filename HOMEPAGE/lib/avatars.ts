@@ -12,7 +12,7 @@ export const AVATAR_IDS = Object.keys(AVATARS) as AvatarId[];
 
 export const isAvatarId = (v: unknown): v is AvatarId => typeof v === "string" && v in AVATARS;
 
-/** Display name for a request body value; anything unknown falls back to the default avatar. */
-export const avatarName = (v: unknown): string => AVATARS[isAvatarId(v) ? v : DEFAULT_AVATAR].name;
+/** Avatar for a request body value; anything unknown falls back to the default avatar. */
+export const toAvatarId = (v: unknown): AvatarId => (isAvatarId(v) ? v : DEFAULT_AVATAR);
 
 export const greetingFor = (name: string) => `Halo Kak, aku ${name}. Ceritakan produk impianmu.`;

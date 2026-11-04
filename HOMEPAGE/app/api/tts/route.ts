@@ -1,4 +1,5 @@
 import { synthesize } from "@/lib/tts";
+import { toAvatarId } from "@/lib/avatars";
 import { stripMarker } from "@/lib/lead";
 import { checkLimit } from "@/lib/rateLimit";
 import { clientIp } from "@/lib/request";
@@ -19,7 +20,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!text) return Response.json({ error: "invalid_text" }, { status: 400 });
 
   try {
-    const audio = await synthesize(text);
+    const audio = await synthesize(text, undefined, toAvatarId(body.avatar));
     return new Response(audio, { headers: { "content-type": "audio/mpeg", "cache-control": "no-store" } });
   } catch {
     return Response.json({ error: "tts_unavailable" }, { status: 503 });

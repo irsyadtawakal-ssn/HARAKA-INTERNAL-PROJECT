@@ -10,9 +10,16 @@ import { AVATARS, DEFAULT_AVATAR, isAvatarId, type AvatarId } from "@/lib/avatar
 
 const AVATAR_KEY = "avatar-choice";
 
-export default function RaraApp({ whatsapp, products }: { whatsapp: WhatsAppContact; products?: ProductCategory[] }) {
+type Props = {
+  whatsapp: WhatsAppContact;
+  products?: ProductCategory[];
+  /** Opening line per avatar, set in the dashboard; an empty one falls back to the built-in hello. */
+  greetings?: Partial<Record<AvatarId, string>>;
+};
+
+export default function RaraApp({ whatsapp, products, greetings }: Props) {
   const [avatar, setAvatar] = useState<AvatarId>(DEFAULT_AVATAR);
-  const conv = useConversation(avatar);
+  const conv = useConversation(avatar, greetings?.[avatar] || undefined);
 
   // The visitor's pick is a per-device preference; read it after mount so server and client render the same first frame.
   useEffect(() => {
