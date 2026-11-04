@@ -162,28 +162,37 @@ export function useConversation(avatar: AvatarId = DEFAULT_AVATAR, greetingText?
   }, [fire, startLevel, stopLevel]);
 
   /**
-   * Plays the avatar's spoken welcome once per avatar per tab, as long as the visitor has not asked anything yet.
-   * Needs the audio unlocked by a gesture first, so callers run it from a tap, click or key press.
-   * `playClip` starts a lip-synced greeting video if the avatar has one (it must run inside the gesture, so it is
-   * called before anything async); when it cannot play, the greeting is spoken with TTS instead.
+   * Plays the avatar's welcome once per avatar per tab, as long as the visitor has not asked anything yet.
+   * `playClip` starts the lip-synced greeting video if the avatar has one; it is called before anything async so a
+   * tap handler can start it with sound. Without a clip the greeting is spoken with TTS, which needs the audio
+   * unlocked by a gesture first. `replay` plays it again, e.g. with sound after the browser only allowed it muted.
    */
-  const greet = useCallback(async (playClip?: () => boolean) => {
+  const greet = useCallback(async (playClip?: () => boolean, opts?: { replay?: boolean }) => {
     const v = voice.current;
     const avatar = avatarRef.current;
-    if (!v || !voiceOnRef.current || messagesRef.current.some((m) => m.role === "user")) return;
+    if (!voiceOnRef.current || messagesRef.current.some((m) => m.role === "user")) return;
     const key = `${GREETED_KEY}-${avatar}`;
+    const markGreeted = () => {
+      try {
+        sessionStorage.setItem(key, "1");
+      } catch {
+        // Storage blocked: greet anyway, at worst once more after a reload.
+      }
+    };
     try {
-      if (sessionStorage.getItem(key)) return;
-      sessionStorage.setItem(key, "1");
+      if (!opts?.replay && sessionStorage.getItem(key)) return;
     } catch {
-      // Storage blocked: greet anyway, at worst once more after a reload.
+      // Storage blocked: treat as not greeted yet.
     }
     if (playClip?.()) {
+      markGreeted();
       newTurn();
       fire("CANCEL");
       fire("AUDIO_START");
       return;
     }
+    if (!v) return; // TTS waits for the first gesture to unlock audio.
+    markGreeted();
     const id = newTurn();
     try {
       const res = await fetch(`/api/greeting?avatar=${avatar}`, { signal: abort.current?.signal });

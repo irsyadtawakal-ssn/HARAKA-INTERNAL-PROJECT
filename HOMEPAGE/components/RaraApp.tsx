@@ -41,18 +41,41 @@ export default function RaraApp({ whatsapp, products, greetings }: Props) {
     }
   };
 
-  // Browsers only allow audio after a user gesture; the first one unlocks it and the avatar says hello.
+  // The greeting clip starts as soon as it is buffered. Browsers usually allow it only muted until the visitor
+  // taps, so she greets on screen at once and the first tap replays it with her voice.
   const [gestured, setGestured] = useState(false);
   const gesturedRef = useRef(false);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+  const soundBlockedRef = useRef(false);
+  const [heard, setHeard] = useState(false);
+  const autoTried = useRef(false);
   const greetingPlayer = useRef<GreetingPlayer | null>(null);
   const playGreetingClip = () => greetingPlayer.current?.play() ?? false;
+
+  const onGreetingReady = () => {
+    if (gesturedRef.current || autoTried.current) return;
+    autoTried.current = true;
+    void conv.greet(playGreetingClip);
+  };
+  const onGreetingPlayback = (mode: "sound" | "muted") => {
+    soundBlockedRef.current = mode === "muted";
+    setSoundBlocked(mode === "muted");
+    if (mode === "sound") setHeard(true);
+  };
+
   useEffect(() => {
     const mark = () => {
       conv.userGestured();
       if (gesturedRef.current) return;
       gesturedRef.current = true;
       setGestured(true);
-      void conv.greet(playGreetingClip);
+      if (soundBlockedRef.current) {
+        soundBlockedRef.current = false;
+        setSoundBlocked(false);
+        void conv.greet(playGreetingClip, { replay: true });
+      } else {
+        void conv.greet(playGreetingClip);
+      }
     };
     window.addEventListener("pointerdown", mark, { once: true });
     window.addEventListener("keydown", mark, { once: true });
@@ -82,12 +105,15 @@ export default function RaraApp({ whatsapp, products, greetings }: Props) {
             greetingRef={greetingPlayer}
             voiceOn={conv.voiceOn}
             onGreetingEnd={conv.greetEnded}
+            onGreetingReady={onGreetingReady}
+            onGreetingPlayback={onGreetingPlayback}
           />
         </div>
-        {!gestured && conv.voiceOn && !asked && (
+        {!gestured && !heard && conv.voiceOn && !asked && (
           // Any tap counts; this pill only tells the visitor that one is needed before the avatar can speak.
           <button type="button" className="greet-hint">
-            <Volume2 size={15} aria-hidden="true" /> Ketuk untuk disapa {AVATARS[avatar].name}
+            <Volume2 size={15} aria-hidden="true" />{" "}
+            {soundBlocked ? `Ketuk untuk dengar ${AVATARS[avatar].name}` : `Ketuk untuk disapa ${AVATARS[avatar].name}`}
           </button>
         )}
       </section>

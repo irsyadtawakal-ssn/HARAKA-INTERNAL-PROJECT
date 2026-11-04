@@ -20,9 +20,11 @@ type Props = {
   greetingRef?: MutableRefObject<GreetingPlayer | null>;
   voiceOn?: boolean;
   onGreetingEnd?: () => void;
+  onGreetingReady?: () => void;
+  onGreetingPlayback?: (mode: "sound" | "muted") => void;
 };
 
-export default function ClipAvatar({ state, clips, base = "/avatar", greeting, greetingRef, voiceOn = true, onGreetingEnd }: Props) {
+export default function ClipAvatar({ state, clips, base = "/avatar", greeting, greetingRef, voiceOn = true, onGreetingEnd, onGreetingReady, onGreetingPlayback }: Props) {
   const refs = [useRef<HTMLVideoElement>(null), useRef<HTMLVideoElement>(null)];
   // The greeting clip carries its own voice, so it plays unmuted on a third, preloaded video above the loop.
   const greetVideo = useRef<HTMLVideoElement>(null);
@@ -30,6 +32,9 @@ export default function ClipAvatar({ state, clips, base = "/avatar", greeting, g
   const greetingLive = useRef(false);
   const onGreetingEndRef = useRef(onGreetingEnd);
   onGreetingEndRef.current = onGreetingEnd;
+  const onPlaybackRef = useRef(onGreetingPlayback);
+  onPlaybackRef.current = onGreetingPlayback;
+  const readySent = useRef(false);
   const voiceOnRef = useRef(voiceOn);
   voiceOnRef.current = voiceOn;
   const [front, setFront] = useState<number | null>(null);
@@ -93,7 +98,19 @@ export default function ClipAvatar({ state, clips, base = "/avatar", greeting, g
             v.currentTime = 0;
             greetingLive.current = true;
             setGreetingOn(true);
-            v.play()?.catch(() => endGreeting(true));
+            const wantedSound = !v.muted;
+            Promise.resolve(v.play())
+              .then(() => wantedSound && onPlaybackRef.current?.("sound"))
+              .catch((err: unknown) => {
+                // No tap yet, so the browser refuses sound: she still greets on screen, silently, until one comes.
+                if (!wantedSound || (err as { name?: string })?.name !== "NotAllowedError" || !greetingLive.current) {
+                  return endGreeting(true);
+                }
+                v.muted = true;
+                Promise.resolve(v.play())
+                  .then(() => onPlaybackRef.current?.("muted"))
+                  .catch(() => endGreeting(true));
+              });
             return true;
           },
         }
@@ -103,7 +120,6 @@ export default function ClipAvatar({ state, clips, base = "/avatar", greeting, g
       // Switching avatar mid-greeting: tell the page it is over so the avatar does not stay "speaking".
       endGreeting(true);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [greeting, greetingRef]);
 
   // Muting mid-greeting silences it; the visitor asking or tapping the mic cuts it short.
@@ -113,7 +129,6 @@ export default function ClipAvatar({ state, clips, base = "/avatar", greeting, g
 
   useEffect(() => {
     if (greetingLive.current && state !== "speaking") endGreeting(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
   useEffect(() => {
@@ -169,6 +184,11 @@ export default function ClipAvatar({ state, clips, base = "/avatar", greeting, g
           style={{ opacity: greetingOn ? 1 : 0, zIndex: 3, transition: `opacity ${FADE_MS}ms ease` }}
           preload="auto"
           playsInline
+          onCanPlayThrough={() => {
+            if (readySent.current) return;
+            readySent.current = true;
+            onGreetingReady?.();
+          }}
           onEnded={() => endGreeting(true)}
         />
       )}

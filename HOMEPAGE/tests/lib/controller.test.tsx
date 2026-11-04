@@ -88,6 +88,18 @@ describe("useConversation", () => {
     expect(result.current.state).toBe("idle");
   });
 
+  it("starts the greeting clip before any tap, and replays it once the visitor taps", async () => {
+    sessionStorage.clear();
+    const { result } = renderHook(() => useConversation());
+    const play = vi.fn(() => true);
+    await act(async () => { await result.current.greet(play); }); // page just loaded, no gesture
+    expect(play).toHaveBeenCalledTimes(1);
+    await act(async () => { await result.current.greet(play); }); // already greeted
+    expect(play).toHaveBeenCalledTimes(1);
+    await act(async () => { await result.current.greet(play, { replay: true }); }); // first tap: again, with sound
+    expect(play).toHaveBeenCalledTimes(2);
+  });
+
   it("does not greet once the visitor has asked something", async () => {
     sessionStorage.clear();
     const { result } = renderHook(() => useConversation());

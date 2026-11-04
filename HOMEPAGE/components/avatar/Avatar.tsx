@@ -17,6 +17,10 @@ export type AvatarProps = {
   greetingRef?: MutableRefObject<GreetingPlayer | null>;
   voiceOn?: boolean;
   onGreetingEnd?: () => void;
+  /** The greeting clip is buffered and can start right away. */
+  onGreetingReady?: () => void;
+  /** Whether the browser let the greeting play with sound, or only muted (no tap yet). */
+  onGreetingPlayback?: (mode: "sound" | "muted") => void;
 };
 
 type NetworkInfo = { saveData?: boolean; effectiveType?: string };
@@ -27,7 +31,7 @@ function prefersStill(): boolean {
   return Boolean(net?.saveData) || ["slow-2g", "2g", "3g"].includes(net?.effectiveType ?? "");
 }
 
-export default function Avatar({ state, audioLevel, profile = AVATARS[DEFAULT_AVATAR], greetingRef, voiceOn = true, onGreetingEnd }: AvatarProps) {
+export default function Avatar({ state, audioLevel, profile = AVATARS[DEFAULT_AVATAR], greetingRef, voiceOn = true, onGreetingEnd, onGreetingReady, onGreetingPlayback }: AvatarProps) {
   const { base } = profile;
   // Tagged with the folder it came from, so a switch never plays one avatar's clip list from the other's folder.
   const [loaded, setLoaded] = useState<{ base: string; manifest: ClipManifest } | null>(null);
@@ -51,6 +55,8 @@ export default function Avatar({ state, audioLevel, profile = AVATARS[DEFAULT_AV
       greetingRef={greetingRef}
       voiceOn={voiceOn}
       onGreetingEnd={onGreetingEnd}
+      onGreetingReady={onGreetingReady}
+      onGreetingPlayback={onGreetingPlayback}
     />
   ) : (
     <PlaceholderAvatar state={state} audioLevel={audioLevel} profile={profile} />

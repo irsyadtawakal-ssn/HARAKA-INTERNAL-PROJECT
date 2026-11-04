@@ -1,4 +1,4 @@
-import { render, fireEvent } from "@testing-library/react";
+import { render, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, beforeAll } from "vitest";
 import ClipAvatar from "@/components/avatar/ClipAvatar";
 
@@ -70,5 +70,19 @@ describe("ClipAvatar", () => {
     rerender(<ClipAvatar state="thinking" {...props} />);
     expect(greet.style.opacity).toBe("0");
     expect(ended).toBe(0);
+  });
+
+  it("greets muted when the browser refuses sound before a tap, then reports it", async () => {
+    const ref = { current: null as { play(): boolean } | null };
+    const modes: string[] = [];
+    render(<ClipAvatar state="idle" clips={clips} greeting="greeting-1.mp4" greetingRef={ref} onGreetingPlayback={(m) => modes.push(m)} />);
+    const greet = videos().find((v) => v.getAttribute("src") === "/avatar/greeting-1.mp4")!;
+    Object.defineProperty(greet, "readyState", { value: 4, configurable: true });
+    let calls = 0;
+    greet.play = () => (++calls === 1 ? Promise.reject(Object.assign(new Error("no"), { name: "NotAllowedError" })) : Promise.resolve());
+    expect(ref.current?.play()).toBe(true);
+    await waitFor(() => expect(modes).toEqual(["muted"]));
+    expect(greet.muted).toBe(true);
+    expect(greet.style.opacity).toBe("1");
   });
 });
