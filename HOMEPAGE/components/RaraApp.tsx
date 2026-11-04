@@ -61,6 +61,11 @@ export default function RaraApp({ whatsapp, products, greetings }: Props) {
     soundBlockedRef.current = mode === "muted";
     setSoundBlocked(mode === "muted");
     if (mode === "sound") setHeard(true);
+    // Still no sound after a tap: keep the "tap to hear" pill up so the next tap can try again.
+    if (mode === "muted") {
+      gesturedRef.current = false;
+      setGestured(false);
+    }
   };
 
   useEffect(() => {
@@ -77,12 +82,11 @@ export default function RaraApp({ whatsapp, products, greetings }: Props) {
         void conv.greet(playGreetingClip);
       }
     };
-    window.addEventListener("pointerdown", mark, { once: true });
-    window.addEventListener("keydown", mark, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", mark);
-      window.removeEventListener("keydown", mark);
-    };
+    // Only these events count as a user activation that lets media play with sound. A finger's pointerdown does
+    // not (that is why phones stayed silent): on touch screens the permission arrives with touchend.
+    const events = ["touchend", "click", "keydown"] as const;
+    events.forEach((ev) => window.addEventListener(ev, mark, { once: true, passive: true }));
+    return () => events.forEach((ev) => window.removeEventListener(ev, mark));
   }, [conv]);
 
   // Switching avatar before asking anything: the new one introduces herself in her own voice.
