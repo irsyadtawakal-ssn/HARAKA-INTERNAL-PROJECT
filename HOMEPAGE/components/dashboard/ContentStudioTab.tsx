@@ -345,7 +345,7 @@ export default function ContentStudioTab() {
                 <div style={{ display: "grid", gap: 6, fontSize: 12.5, marginBottom: 12 }}>
                   {script.hooks.map((h) => (
                     <div key={h.slot}>
-                      <strong>{slotLabel(h.slot)}:</strong> {h.dialog ?? h.overlay_text}
+                      <strong>{slotLabel(h.slot)}:</strong> {h.dialog || h.overlay_text}
                       {h.dialog && <span style={{ color: "#7a6a6a" }}> · teks layar: {h.overlay_text}</span>}
                     </div>
                   ))}

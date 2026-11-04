@@ -134,6 +134,15 @@ describe("ContentStudioTab", () => {
     expect(container.querySelector("video")!.getAttribute("src")).toBe("https://s3/v1?sig=2");
   });
 
+  it("shows the on-screen text for hooks without dialog", async () => {
+    routes["GET /api/factory/content-jobs"] = () => ({ body: [{ ...baseJob, status: "failed", error: "x", script_id: "s1" }] });
+    routes["GET /api/factory/scripts/s1"] = () => ({
+      body: { id: "s1", headline: "H", caption: "C", body: "B", cta: "C", shot_list: [], hooks: [{ slot: "hook1", dialog: "", overlay_text: "Brand kamu masih placeholder?" }] },
+    });
+    await mount();
+    expect(await screen.findByText(/Brand kamu masih placeholder\?/)).toBeInTheDocument();
+  });
+
   it("polls while active and stops when idle", async () => {
     let n = 0;
     routes["GET /api/factory/content-jobs"] = () => ({ body: [n++ === 0 ? baseJob : { ...baseJob, status: "failed", error: "x" }] });
