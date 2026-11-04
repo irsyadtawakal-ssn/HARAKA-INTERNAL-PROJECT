@@ -56,7 +56,7 @@ Setiap kali tugas masuk (baik dari Popup maupun dari `flow-autopilot-cli.mjs`), 
 1. **Pembersihan Seleksi Canvas & Lapor Slot (`/api/flow-slot`)**:
    - Menekan tombol `Close` atau mengirim event `Escape` bila ada gambar terpilih di canvas agar tidak terjebak di mode edit gambar *Nano Banana*.
 2. **Konfigurasi Menu Settings (`configureFlowSettings`)**:
-   - Menghitung durasi otomatis (`computeTargetDuration`) dari jumlah kata di dalam tanda kutip:
+   - Menghitung durasi otomatis (`computeTargetDuration`) dari total kata **semua dialog** (kutipan yang klausanya memuat kata kerja bicara: says, replies, counts, berkata, …; teks layar dalam kutip tidak dihitung):
      - $\le 9$ kata $\rightarrow$ **`4s`** | $\le 14$ kata $\rightarrow$ **`6s`** | $\le 21$ kata $\rightarrow$ **`8s`** | $> 21$ kata $\rightarrow$ **`10s`**.
    - Membuka menu setting dan mengklik berurutan: **`Video`** $\rightarrow$ **`Frames`** *(WAJIB `Frames`, DILARANG `Ingredients`!)* $\rightarrow$ **`9:16`** $\rightarrow$ **`720p`** $\rightarrow$ **Durasi** $\rightarrow$ **`x2`**.
 3. **Upload Foto Referensi & Tunggu `0% -> 100%` (`uploadAvatarAndWaitUntil100PercentDone`)**:

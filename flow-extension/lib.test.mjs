@@ -45,6 +45,30 @@ test('durasi dari jumlah kata dialog', () => {
   assert.equal(computeTargetDuration(''), '8s');
 });
 
+test('durasi menjumlah semua dialog dan mengabaikan teks layar', () => {
+  // dua pembicara: 7 + 6 kata = 13 -> 6s (dulu hanya kutipan pertama -> 4s)
+  assert.equal(
+    computeTargetDuration(
+      'He says in an energetic voice: "HPP skincare lu masih mahal? Pantes untungnya tipis!" ' +
+        'The operator voice over radio replies: "Tenang Bos, ke Haraka Erfi aja!"'
+    ),
+    '6s'
+  );
+  // teks layar muncul lebih dulu dan tidak dihitung: 11 + 4 = 15 -> 8s
+  assert.equal(
+    computeTargetDuration(
+      'Bold orange text zooms in at the top: "PROSES CEPAT" [0-4s] He grins and says, comedic timing:\n' +
+        '"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!" ' +
+        '[4-6s] The operator counts: "Tiga, dua, satu… meluncur!" Huge numbers flash in sync: "3", "2", "1".'
+    ),
+    '8s'
+  );
+  // kutip lengkung dari naskah yang ditempel
+  assert.equal(computeTargetDuration(`She says: “${words(15)}”`), '8s');
+  // tanpa kata kerja bicara: perilaku lama (kutipan pertama)
+  assert.equal(computeTargetDuration(`x "${words(3)}" y "${words(20)}"`), '4s');
+});
+
 test('target_duration dari backend menang', () => {
   assert.equal(resolveDuration({ prompt: 'x "a"', target_duration: '8s' }), '8s');
   assert.equal(resolveDuration({ prompt: `x "${words(12)}"`, target_duration: null }), '6s');

@@ -44,7 +44,7 @@ Sistem ini mengotomatiskan seluruh proses pembuatan video di `https://flow.googl
 1. **Pembersihan Seleksi Canvas & Lapor Slot (`/api/flow-slot`)**:
    - Menekan `Close` / `Escape` bila ada gambar terpilih di canvas agar tidak masuk ke mode *Nano Banana*.
 2. **Konfigurasi Menu Settings (`configureFlowSettings`)**:
-   - Menghitung durasi otomatis (`computeTargetDuration`) dari jumlah kata di dalam tanda kutip (`<=9` kata: `4s`, `<=14` kata: `6s`, `<=21` kata: `8s`, `>21` kata: `10s`).
+   - Menghitung durasi otomatis (`computeTargetDuration`) dari total kata **semua dialog** (kutipan yang klausanya memuat kata kerja bicara: says, replies, counts, berkata, …; teks layar dalam kutip tidak dihitung) (`<=9` kata: `4s`, `<=14` kata: `6s`, `<=21` kata: `8s`, `>21` kata: `10s`).
    - Membuka menu setting dan memilih: **`Video`** $\rightarrow$ **`Frames`** *(WAJIB `Frames`, DILARANG `Ingredients`!)* $\rightarrow$ **`9:16`** $\rightarrow$ **`720p`** $\rightarrow$ **Durasi (`4s`/`6s`/`8s`/`10s`)** $\rightarrow$ **`x2`**.
 3. **Upload Foto Referensi & Tunggu `0% -> 100%` (`uploadAvatarAndWaitUntil100PercentDone`)**:
    - Mengambil file dari `avatarUrl`, mengklik tombol slot **`Start`**, menyuntikkan file ke `<input type="file">` via `DataTransfer`, lalu menunggu indikator `%` selesai (`100%`) dan gambar tidak blur.
