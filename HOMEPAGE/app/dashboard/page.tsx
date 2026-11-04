@@ -7,7 +7,6 @@ import {
   Users,
   Bot,
   Clapperboard,
-  Film,
   FolderOpen,
   ShieldCheck,
   Factory,
@@ -28,6 +27,7 @@ import {
 import styles from "./dashboard.module.css";
 import RaraSettingsTab from "@/components/dashboard/RaraSettingsTab";
 import ContentStudioTab from "@/components/dashboard/ContentStudioTab";
+import AssetLibraryTab from "@/components/dashboard/AssetLibraryTab";
 
 type Lead = {
   name: string;
@@ -105,100 +105,6 @@ const INITIAL_APPROVALS: ApprovalItem[] = [
   },
 ];
 
-type FactoryAsset = {
-  id: string;
-  title: string;
-  category: "mesin" | "lab" | "packaging" | "tekstur";
-  categoryLabel: string;
-  ratio: "9:16 (Reels/TikTok)" | "16:9 (Landscape)";
-  duration: string;
-  file: string;
-  description: string;
-};
-
-const FACTORY_ASSETS: FactoryAsset[] = [
-  {
-    id: "AST-01",
-    title: "Mesin Homogenizer Vacuum 500L CPKB",
-    category: "mesin",
-    categoryLabel: "B-Roll Mesin CPKB",
-    ratio: "9:16 (Reels/TikTok)",
-    duration: "0:18s",
-    file: "/assets/homogenizer-500l.mp4",
-    description: "Footage proses emulsifikasi krim halus standar farmasi CPKB tanpa gelembung udara.",
-  },
-  {
-    id: "AST-02",
-    title: "Lab R&D: Droplet Pipet Serum & Viskositas",
-    category: "lab",
-    categoryLabel: "Lab & Formulasi",
-    ratio: "9:16 (Reels/TikTok)",
-    duration: "0:14s",
-    file: "/assets/lab-viscosity-pipette.mp4",
-    description: "Macro shot tetesan serum transparan dan pengujian viskositas spindle spindle.",
-  },
-  {
-    id: "AST-03",
-    title: "Filling & Capping Otomatis Botol Dropper",
-    category: "mesin",
-    categoryLabel: "B-Roll Mesin CPKB",
-    ratio: "16:9 (Landscape)",
-    duration: "0:25s",
-    file: "/assets/conveyor-filling-dropper.mp4",
-    description: "Line konveyor steril pengisian botol serum 30ml berkapasitas 2.400 botol/jam.",
-  },
-  {
-    id: "AST-04",
-    title: "Uji In-Vitro UV Analyzer SPF 50",
-    category: "lab",
-    categoryLabel: "Lab & Formulasi",
-    ratio: "9:16 (Reels/TikTok)",
-    duration: "0:12s",
-    file: "/assets/lab-spf-analyzer.mp4",
-    description: "Uji spektrofotometer transmisi sinar UVA & UVB untuk sertifikasi klaim proteksi.",
-  },
-  {
-    id: "AST-05",
-    title: "Unboxing Sample Kit Formulasi Klien",
-    category: "packaging",
-    categoryLabel: "Packaging & Sample",
-    ratio: "9:16 (Reels/TikTok)",
-    duration: "0:20s",
-    file: "/assets/unboxing-sample-kit.mp4",
-    description: "Aesthetic unboxing box tester 3 variasi tekstur lengkap dengan sertifikat analisis.",
-  },
-  {
-    id: "AST-06",
-    title: "Cleanroom Kelas C & Air Shower Produksi",
-    category: "mesin",
-    categoryLabel: "B-Roll Mesin CPKB",
-    ratio: "16:9 (Landscape)",
-    duration: "0:30s",
-    file: "/assets/cleanroom-airshower.mp4",
-    description: "Fasilitas HEPA filter terkontrol partikel mikron untuk standar higienitas tertinggi.",
-  },
-  {
-    id: "AST-07",
-    title: "Tekstur Swatch: Water-Burst Gel Sunscreen",
-    category: "tekstur",
-    categoryLabel: "Tekstur Kosmetik",
-    ratio: "9:16 (Reels/TikTok)",
-    duration: "0:15s",
-    file: "/assets/texture-waterburst-swatch.mp4",
-    description: "Tekstur gel pecah menjadi butiran air saat diaplikasikan, zero whitecast.",
-  },
-  {
-    id: "AST-08",
-    title: "Ruang Botol & Packaging Akrilik Premium",
-    category: "packaging",
-    categoryLabel: "Packaging & Sample",
-    ratio: "16:9 (Landscape)",
-    duration: "0:22s",
-    file: "/assets/packaging-bottle-display.mp4",
-    description: "Pilihan botol serum pipet, airless pump, tube biodegradable, dan jar mewah.",
-  },
-];
-
 function formatRupiah(num: number): string {
   if (num >= 1_000_000_000) {
     return `Rp ${(num / 1_000_000_000).toFixed(2).replace(".", ",")} M`;
@@ -254,11 +160,6 @@ export default function DashboardPage() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [copied, setCopied] = useState(false);
   const [contactedMap, setContactedMap] = useState<Record<string, boolean>>({});
-
-  // ASSET LIBRARY STATE
-  const [assetFilter, setAssetFilter] = useState<string>("all");
-  const [selectedAsset, setSelectedAsset] = useState<FactoryAsset | null>(null);
-  const [assetCopied, setAssetCopied] = useState<string | null>(null);
 
   // Approvals Matrix
   const [approvals, setApprovals] = useState<ApprovalItem[]>(INITIAL_APPROVALS);
@@ -321,12 +222,6 @@ export default function DashboardPage() {
       return true;
     });
   }, [data, invoiceFilter, invoiceSearch]);
-
-  // Filtered Assets
-  const filteredAssets = useMemo(() => {
-    if (assetFilter === "all") return FACTORY_ASSETS;
-    return FACTORY_ASSETS.filter((a) => a.category === assetFilter);
-  }, [assetFilter]);
 
   // Handle Approvals
   const handleApproval = (id: string, newStatus: "approved" | "rejected" | "pending") => {
@@ -966,99 +861,7 @@ export default function DashboardPage() {
           {/* ==================================================================
               MENU 5: ASSET LIBRARY PABRIK (MEDIA & B-ROLL MAKLON)
               ================================================================== */}
-          {activeMenu === "asset_library" && (
-            <div className={styles.panelCard}>
-              <div className={styles.panelHeader}>
-                <div>
-                  <h3 className={styles.panelTitle}>Asset Library Pabrik — Media B-Roll & Footage (Blueprint §6)</h3>
-                  <p className={styles.panelDesc}>
-                    Pustaka aset video dan media pabrik untuk bahan baku pembuatan konten iklan video, landing page, dan materi promosi.
-                  </p>
-                </div>
-
-                <div style={{ display: "flex", gap: 8 }}>
-                  {["all", "mesin", "lab", "packaging", "tekstur"].map((cat) => (
-                    <button
-                      key={cat}
-                      className={`${styles.pillBtn} ${assetFilter === cat ? styles.pillBtnActive : ""}`}
-                      onClick={() => setAssetFilter(cat)}
-                    >
-                      {cat === "all" ? "Semua Aset" : cat.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Asset Grid */}
-              <div className={styles.assetGrid}>
-                {filteredAssets.map((asset) => (
-                  <div key={asset.id} className={styles.assetCard}>
-                    <div className={styles.assetThumb}>
-                      <Film size={32} style={{ opacity: 0.6 }} />
-                      <span className={styles.assetRatioBadge}>{asset.ratio}</span>
-                      <span className={styles.assetDurationBadge}>{asset.duration}</span>
-                    </div>
-
-                    <div className={styles.assetContent}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: 10, fontWeight: 800, color: "#a8666a", background: "#faeeed", padding: "2px 6px", borderRadius: 4 }}>
-                          {asset.categoryLabel}
-                        </span>
-                        <span style={{ fontSize: 10, color: "#9c8a8a", fontFamily: "monospace" }}>{asset.id}</span>
-                      </div>
-
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#1f1818" }}>{asset.title}</div>
-                      <div style={{ fontSize: 11.5, color: "#705e5e", lineHeight: 1.45 }}>{asset.description}</div>
-
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4, paddingTop: 8, borderTop: "1px solid #f0ebe7" }}>
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(asset.file);
-                            setAssetCopied(asset.id);
-                            setTimeout(() => setAssetCopied(null), 1800);
-                          }}
-                          style={{
-                            border: "1px solid #e8e2de",
-                            background: assetCopied === asset.id ? "#eaf5f1" : "#ffffff",
-                            color: assetCopied === asset.id ? "#0d6a55" : "#1f1818",
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 4,
-                          }}
-                        >
-                          {assetCopied === asset.id ? <Check size={11} /> : <Copy size={11} />}
-                          {assetCopied === asset.id ? "Path Tersalin!" : "Salin Path"}
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setActiveMenu("content_studio");
-                          }}
-                          style={{
-                            border: "none",
-                            background: "#a8666a",
-                            color: "#ffffff",
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 11,
-                            fontWeight: 700,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Gunakan di Script →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {activeMenu === "asset_library" && <AssetLibraryTab />}
 
           {/* ==================================================================
               MENU 6: APPROVAL & GUARDRAILS (Blueprint Section 10 & 11)
