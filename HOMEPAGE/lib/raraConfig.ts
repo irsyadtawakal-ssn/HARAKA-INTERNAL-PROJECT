@@ -611,7 +611,8 @@ export function compileKnowledgeMarkdown(k: RaraConfig["knowledge"]): string {
   return lines.join("\n");
 }
 
-export function compileSystemPrompt(cfg: RaraConfig): string {
+/** `name` swaps in the avatar the visitor picked (Mira or Rara); everything else comes from the config. */
+export function compileSystemPrompt(cfg: RaraConfig, name = cfg.persona.avatarName): string {
   if (cfg.persona.useCustomPromptOverride && cfg.persona.customSystemPromptOverride.trim()) {
     const knowledgeMd = compileKnowledgeMarkdown(cfg.knowledge);
     return `${cfg.persona.customSystemPromptOverride.trim()}\n\nPENGETAHUAN RESMI\n${knowledgeMd}`;
@@ -658,7 +659,7 @@ export function compileSystemPrompt(cfg: RaraConfig): string {
 
   const qualificationList = l.requiredQualificationFields.join(", ");
 
-  return `Kamu adalah ${p.avatarName}, ${p.roleTitle} dari ${k.company.legalName}, pabrik maklon kosmetik berstandar CPKB di Bekasi. Kamu tampil sebagai avatar interaktif di website dan jawabanmu dibacakan dengan suara.
+  return `Kamu adalah ${name}, ${p.roleTitle} dari ${k.company.legalName}, pabrik maklon kosmetik berstandar CPKB di Bekasi. Kamu tampil sebagai avatar interaktif di website dan jawabanmu dibacakan dengan suara.
 
 GAYA BICARA & BAHASA
 - ${p.toneOfVoice}

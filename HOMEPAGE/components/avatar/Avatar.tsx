@@ -5,8 +5,9 @@ import type { AvatarState } from "@/lib/avatarState";
 import { parseManifest, type ClipManifest } from "./clips";
 import PlaceholderAvatar from "./PlaceholderAvatar";
 import ClipAvatar from "./ClipAvatar";
+import { AVATARS, DEFAULT_AVATAR, type AvatarProfile } from "@/lib/avatars";
 
-export type AvatarProps = { state: AvatarState; audioLevel: number };
+export type AvatarProps = { state: AvatarState; audioLevel: number; profile?: AvatarProfile };
 
 type NetworkInfo = { saveData?: boolean; effectiveType?: string };
 
@@ -16,20 +17,23 @@ function prefersStill(): boolean {
   return Boolean(net?.saveData) || ["slow-2g", "2g", "3g"].includes(net?.effectiveType ?? "");
 }
 
-export default function Avatar({ state, audioLevel }: AvatarProps) {
-  const [manifest, setManifest] = useState<ClipManifest>({ mode: "placeholder" });
+export default function Avatar({ state, audioLevel, profile = AVATARS[DEFAULT_AVATAR] }: AvatarProps) {
+  const { base } = profile;
+  // Tagged with the folder it came from, so a switch never plays one avatar's clip list from the other's folder.
+  const [loaded, setLoaded] = useState<{ base: string; manifest: ClipManifest } | null>(null);
+  const manifest: ClipManifest = loaded?.base === base ? loaded.manifest : { mode: "placeholder" };
 
   useEffect(() => {
     if (prefersStill()) return;
-    fetch(`/avatar/manifest.json?t=${Date.now()}`, { cache: "no-store" })
+    fetch(`${base}/manifest.json?t=${Date.now()}`, { cache: "no-store" })
       .then((r) => r.json())
-      .then((j) => setManifest(parseManifest(j)))
-      .catch(() => setManifest({ mode: "placeholder" }));
-  }, []);
+      .then((j) => setLoaded({ base, manifest: parseManifest(j) }))
+      .catch(() => setLoaded({ base, manifest: { mode: "placeholder" } }));
+  }, [base]);
 
   return manifest.mode === "clips" ? (
-    <ClipAvatar state={state} clips={manifest.clips} />
+    <ClipAvatar key={base} state={state} clips={manifest.clips} base={base} />
   ) : (
-    <PlaceholderAvatar state={state} audioLevel={audioLevel} />
+    <PlaceholderAvatar state={state} audioLevel={audioLevel} profile={profile} />
   );
 }

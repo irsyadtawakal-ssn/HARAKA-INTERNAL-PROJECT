@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import type { AvatarState } from "@/lib/avatarState";
 import styles from "./avatar.module.css";
+import { AVATARS, DEFAULT_AVATAR, type AvatarProfile } from "@/lib/avatars";
 
-export default function PlaceholderAvatar({ state, audioLevel }: { state: AvatarState; audioLevel: number }) {
+export default function PlaceholderAvatar({ state, audioLevel, profile = AVATARS[DEFAULT_AVATAR] }: { state: AvatarState; audioLevel: number; profile?: AvatarProfile }) {
   const [blink, setBlink] = useState(false);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function PlaceholderAvatar({ state, audioLevel }: { state: Avatar
       <div className={styles.ring} style={{ transform: `translate(-50%, -50%) scale(${ringScale})` }} />
       <div className={styles.head}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.face} src="/avatar/placeholder.png" alt="Rara, asisten AI Haraka Erfi" />
+        <img className={styles.face} src={`${profile.base}/placeholder.png`} alt={`${profile.name}, asisten AI Haraka Erfi`} />
         <div className={styles.lids} data-blink={blink} />
       </div>
     </div>

@@ -132,6 +132,28 @@ body {
   cursor: pointer;
 }
 .chat-reset:hover { background: rgba(168, 102, 106, 0.1); color: var(--fg); }
+.avatar-toggle {
+  display: flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(168, 102, 106, 0.1);
+}
+.avatar-toggle-opt {
+  min-width: 48px;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.avatar-toggle-opt[aria-checked="true"] { background: #fff; color: var(--fg); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); }
+.avatar-toggle-opt:focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 1px; }
 
 .chat-log {
   flex: 1;
@@ -326,6 +348,7 @@ body {
   /* Wraps instead of cutting off "Haraka Erfi" once the reset button joins the header. */
   .chat-status { white-space: normal; line-height: 1.35; }
   .chat-reset { width: 44px; height: 44px; }
+  .avatar-toggle-opt { height: 38px; }
   .chat-log { padding: 14px 12px; gap: 8px; scroll-padding-bottom: 12px; }
   .msg { max-width: 92%; font-size: 15px; line-height: 1.6; }
   .msg-meta { min-height: 24px; }

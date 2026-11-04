@@ -6,6 +6,7 @@ import type { ThreadItem, useConversation } from "@/lib/controller";
 import type { AvatarState } from "@/lib/avatarState";
 import WhatsAppCta, { type WhatsAppContact } from "./WhatsAppCta";
 import ProductCard, { mentionedCategories, type ProductCategory } from "./ProductCard";
+import { AVATARS, AVATAR_IDS, DEFAULT_AVATAR, type AvatarId } from "@/lib/avatars";
 
 const CHIPS = ["Berapa MOQ?", "Bisa urus BPOM?", "Berapa lama prosesnya?"];
 const STATUS: Record<AvatarState, string> = {
@@ -17,7 +18,7 @@ const STATUS: Record<AvatarState, string> = {
 
 // Shown one after another while the first words of a reply are on their way, so a slow model does not feel stuck.
 const WAIT_STEPS: [number, string][] = [
-  [0, "Rara sedang membaca pertanyaan Kakak…"],
+  [0, "{name} sedang membaca pertanyaan Kakak…"],
   [3000, "Mengecek katalog & data pabrik…"],
   [7000, "Menyusun jawaban terbaik…"],
   [12000, "Sebentar lagi ya, Kak…"],
@@ -27,7 +28,7 @@ const MAX_CARDS = 2;
 const clock = (at?: number) =>
   at ? new Date(at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "";
 
-function Waiting() {
+function Waiting({ name }: { name: string }) {
   const [step, setStep] = useState(0);
   useEffect(() => {
     const timers = WAIT_STEPS.slice(1).map(([ms], i) => setTimeout(() => setStep(i + 1), ms));
@@ -36,7 +37,7 @@ function Waiting() {
   return (
     <div className="msg msg-typing" data-role="assistant" role="status">
       <span className="dots" aria-hidden="true"><i /><i /><i /></span>
-      <span className="wait-text">{WAIT_STEPS[step][1]}</span>
+      <span className="wait-text">{WAIT_STEPS[step][1].replace("{name}", name)}</span>
     </div>
   );
 }
@@ -72,9 +73,16 @@ function cardsByMessage(thread: ThreadItem[], products: ProductCategory[]): Map<
   return out;
 }
 
-type Props = { conv: ReturnType<typeof useConversation>; whatsapp: WhatsAppContact; products?: ProductCategory[] };
+type Props = {
+  conv: ReturnType<typeof useConversation>;
+  whatsapp: WhatsAppContact;
+  products?: ProductCategory[];
+  avatar?: AvatarId;
+  onAvatarChange?: (id: AvatarId) => void;
+};
 
-export default function Conversation({ conv, whatsapp, products = [] }: Props) {
+export default function Conversation({ conv, whatsapp, products = [], avatar = DEFAULT_AVATAR, onAvatarChange }: Props) {
+  const { name, base } = AVATARS[avatar];
   const [draft, setDraft] = useState("");
   const cards = useMemo(() => cardsByMessage(conv.thread, products), [conv.thread, products]);
   const log = useRef<HTMLDivElement>(null);
@@ -102,9 +110,9 @@ export default function Conversation({ conv, whatsapp, products = [] }: Props) {
   return (
     <div className="chat">
       <header className="chat-head">
-        <img className="chat-avatar" src="/avatar/placeholder.jpg" alt="" />
+        <img className="chat-avatar" src={`${base}/placeholder.jpg`} alt="" />
         <div className="chat-who">
-          <b>Rara</b>
+          <b>{name}</b>
           <span className="chat-status" data-state={conv.state}>{STATUS[conv.state]}</span>
         </div>
         <button
@@ -112,11 +120,27 @@ export default function Conversation({ conv, whatsapp, products = [] }: Props) {
           className="chat-reset"
           onClick={conv.toggleVoice}
           aria-pressed={conv.voiceOn}
-          aria-label={conv.voiceOn ? "Matikan suara Rara" : "Nyalakan suara Rara"}
-          title={conv.voiceOn ? "Matikan suara Rara" : "Nyalakan suara Rara"}
+          aria-label={conv.voiceOn ? `Matikan suara ${name}` : `Nyalakan suara ${name}`}
+          title={conv.voiceOn ? `Matikan suara ${name}` : `Nyalakan suara ${name}`}
         >
           {conv.voiceOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
         </button>
+        {onAvatarChange && (
+          <div className="avatar-toggle" role="radiogroup" aria-label="Pilih asisten">
+            {AVATAR_IDS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={id === avatar}
+                className="avatar-toggle-opt"
+                onClick={() => onAvatarChange(id)}
+              >
+                {AVATARS[id].name}
+              </button>
+            ))}
+          </div>
+        )}
         {asked && (
           <button type="button" className="chat-reset" onClick={conv.reset} aria-label="Mulai percakapan baru" title="Mulai percakapan baru">
             <RotateCcw size={16} />
@@ -124,7 +148,7 @@ export default function Conversation({ conv, whatsapp, products = [] }: Props) {
         )}
       </header>
 
-      <div className="chat-log" ref={log} role="log" aria-live="polite" aria-label="Riwayat percakapan dengan Rara">
+      <div className="chat-log" ref={log} role="log" aria-live="polite" aria-label={`Riwayat percakapan dengan ${name}`}>
         {conv.thread.map((m) => (
           <div key={m.id} className="msg-row" data-role={m.role}>
             <div className="msg" data-role={m.role} data-tone={m.tone}>
@@ -147,7 +171,7 @@ export default function Conversation({ conv, whatsapp, products = [] }: Props) {
           </div>
         ))}
         {conv.streaming !== null && (
-          conv.streaming ? <div className="msg" data-role="assistant">{conv.streaming}</div> : <Waiting />
+          conv.streaming ? <div className="msg" data-role="assistant">{conv.streaming}</div> : <Waiting name={name} />
         )}
         {conv.showWhatsApp && (
           <div className="msg-card">
@@ -168,7 +192,7 @@ export default function Conversation({ conv, whatsapp, products = [] }: Props) {
           <input
             value={draft}
             placeholder="Ketik atau tekan mic…"
-            aria-label="Pertanyaan untuk Rara"
+            aria-label={`Pertanyaan untuk ${name}`}
             onChange={(e) => {
               const next = e.target.value;
               if (draft === "" && next !== "") conv.typing(true);

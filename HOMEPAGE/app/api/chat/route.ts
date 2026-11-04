@@ -1,3 +1,4 @@
+import { avatarName } from "@/lib/avatars";
 import { compileSystemPrompt, getRaraConfig } from "@/lib/raraConfig";
 import { streamChat, type ChatMessage } from "@/lib/llm";
 import { checkLimit } from "@/lib/rateLimit";
@@ -60,7 +61,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   try {
-    const systemPrompt = compileSystemPrompt(cfg);
+    const systemPrompt = compileSystemPrompt(cfg, avatarName(body.avatar));
     const stream = await streamChat(cleanMessages(messages), systemPrompt);
     const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
     return new Response(stream.pipeThrough(logOnFinish(body.sessionId, lastUser)), {

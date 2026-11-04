@@ -63,4 +63,9 @@ describe("raraConfig engine & harakaerfi.com knowledge compiler", () => {
     expect(reply).toContain("[[LEAD]]");
     expect(reply).not.toContain("Kami melayani maklon lengkap");
   });
+
+  it("introduces the avatar the visitor picked", () => {
+    expect(compileSystemPrompt(DEFAULT_RARA_CONFIG, "Mira")).toMatch(/^Kamu adalah Mira, /);
+    expect(compileSystemPrompt(DEFAULT_RARA_CONFIG)).toMatch(/^Kamu adalah Rara, /);
+  });
 });

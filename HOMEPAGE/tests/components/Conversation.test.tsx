@@ -70,13 +70,22 @@ describe("Conversation", () => {
 
   it("explains the wait while the first words of a reply are on their way", () => {
     render(<Conversation conv={base({ streaming: "" })} whatsapp={WA} />);
-    expect(screen.getByRole("status")).toHaveTextContent("Rara sedang membaca pertanyaan Kakak");
+    expect(screen.getByRole("status")).toHaveTextContent("Mira sedang membaca pertanyaan Kakak");
   });
 
-  it("lets the visitor mute Rara's voice", () => {
+  it("lets the visitor switch between Mira and Rara", () => {
+    const pick = vi.fn();
+    render(<Conversation conv={base()} whatsapp={WA} avatar="rara" onAvatarChange={pick} />);
+    expect(screen.getByRole("radio", { name: "Rara" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText("Rara", { selector: "b" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: "Mira" }));
+    expect(pick).toHaveBeenCalledWith("mira");
+  });
+
+  it("lets the visitor mute the avatar's voice", () => {
     const conv = base();
     render(<Conversation conv={conv} whatsapp={WA} />);
-    fireEvent.click(screen.getByRole("button", { name: "Matikan suara Rara" }));
+    fireEvent.click(screen.getByRole("button", { name: "Matikan suara Mira" }));
     expect(conv.toggleVoice).toHaveBeenCalled();
   });
 

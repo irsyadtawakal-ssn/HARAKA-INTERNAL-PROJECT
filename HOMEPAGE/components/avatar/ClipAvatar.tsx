@@ -11,7 +11,7 @@ const FADE_MS = 550;
 // Two stacked videos with seamless cross-dissolve:
 // The front video is raised on top (zIndex: 2), while the outgoing video
 // stays underneath at zIndex: 1 with delayed fade-out to prevent flash.
-export default function ClipAvatar({ state, clips }: { state: AvatarState; clips: Record<AvatarState, string[]> }) {
+export default function ClipAvatar({ state, clips, base = "/avatar" }: { state: AvatarState; clips: Record<AvatarState, string[]>; base?: string }) {
   const refs = [useRef<HTMLVideoElement>(null), useRef<HTMLVideoElement>(null)];
   const [front, setFront] = useState<number | null>(null);
   const frontRef = useRef<number | null>(null);
@@ -50,7 +50,7 @@ export default function ClipAvatar({ state, clips }: { state: AvatarState; clips
     };
 
     v.addEventListener("canplay", onCanPlay);
-    v.src = `/avatar/${next}`;
+    v.src = `${base}/${next}`;
     v.play()?.catch(() => {});
   };
 
@@ -79,7 +79,7 @@ export default function ClipAvatar({ state, clips }: { state: AvatarState; clips
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className={styles.video}
-        src="/avatar/placeholder.jpg"
+        src={`${base}/placeholder.jpg`}
         alt=""
         aria-hidden="true"
         style={{ opacity: front === null ? 1 : 0, transition: `opacity ${FADE_MS}ms ease` }}

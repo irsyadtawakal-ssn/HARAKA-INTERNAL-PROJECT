@@ -68,7 +68,7 @@ describe("useConversation", () => {
     const { result } = renderHook(() => useConversation());
     expect(result.current.state).toBe("idle");
     expect(result.current.line).toBe(GREETING);
-    expect(GREETING).toBe("Halo Kak, aku Rara. Ceritakan produk impianmu.");
+    expect(GREETING).toBe("Halo Kak, aku Mira. Ceritakan produk impianmu.");
     expect(ttsCalls()).toHaveLength(0);
   });
 

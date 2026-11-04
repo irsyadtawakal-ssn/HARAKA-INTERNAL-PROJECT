@@ -4,8 +4,27 @@
     {
       "name": "rara-dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "HOMEPAGE", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "HOMEPAGE",
+        "run",
+        "dev"
+      ],
       "port": 6500
+    },
+    {
+      "name": "rara-dev-2",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "HOMEPAGE",
+        "run",
+        "dev",
+        "--",
+        "-p",
+        "6510"
+      ],
+      "port": 6510
     }
   ]
 }

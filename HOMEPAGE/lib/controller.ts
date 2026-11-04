@@ -6,8 +6,9 @@ import { createRecognizer } from "./speech";
 import { LEAD_MARKER, stripMarker } from "./lead";
 import { getSessionId } from "./session";
 import type { ChatMessage } from "./llm";
+import { AVATARS, DEFAULT_AVATAR, greetingFor, type AvatarId } from "./avatars";
 
-export const GREETING = "Halo Kak, aku Rara. Ceritakan produk impianmu.";
+export const GREETING = greetingFor(AVATARS[DEFAULT_AVATAR].name);
 const NETWORK_ERROR = "Maaf Kak, koneksinya terputus. Coba kirim lagi ya.";
 
 type Voice = { audio: HTMLAudioElement; analyser: AnalyserNode | null };
@@ -17,14 +18,15 @@ export type ThreadItem = { id: number; role: "user" | "assistant"; content: stri
 
 const STORE_KEY = "rara-chat";
 const VOICE_KEY = "rara-voice";
-const greetingThread = (): ThreadItem[] => [{ id: 0, role: "assistant", content: GREETING }];
+const greetingThread = (greeting = GREETING): ThreadItem[] => [{ id: 0, role: "assistant", content: greeting }];
 type Saved = { thread: ThreadItem[]; messages: ChatMessage[]; leadDone: boolean; showWhatsApp?: boolean };
 
-export function useConversation() {
+export function useConversation(avatar: AvatarId = DEFAULT_AVATAR) {
+  const greeting = greetingFor(AVATARS[avatar].name);
   const [state, dispatch] = useReducer(avatarReducer, "idle" as AvatarState);
-  const [line, setLine] = useState(GREETING);
+  const [line, setLine] = useState(greeting);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [thread, setThread] = useState<ThreadItem[]>(greetingThread);
+  const [thread, setThread] = useState<ThreadItem[]>(() => greetingThread(greeting));
   const [streaming, setStreaming] = useState<string | null>(null);
   const [restored, setRestored] = useState(false);
   const [micSupported, setMicSupported] = useState(false);
@@ -48,6 +50,8 @@ export function useConversation() {
   const recognizer = useRef<ReturnType<typeof createRecognizer>>(null);
   const sendRef = useRef<(text: string) => Promise<void>>(async () => {});
   const seq = useRef(0);
+  const avatarRef = useRef(avatar);
+  avatarRef.current = avatar;
 
   const fire = useCallback((e: AvatarEvent) => dispatch(e), []);
 
@@ -83,6 +87,11 @@ export function useConversation() {
     }
     setRestored(true);
   }, []);
+
+  // Switching avatar mid-chat keeps the conversation; only the opening hello says the new name.
+  useEffect(() => {
+    setThread((t) => (t[0]?.id === 0 && t[0].content !== greeting ? [{ ...t[0], content: greeting }, ...t.slice(1)] : t));
+  }, [greeting]);
 
   useEffect(() => {
     if (!restored) return;
@@ -205,7 +214,7 @@ export function useConversation() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sessionId: getSessionId(), messages: history }),
+        body: JSON.stringify({ sessionId: getSessionId(), messages: history, avatar: avatarRef.current }),
         signal: abort.current?.signal,
       });
       if (id !== turn.current) return;
@@ -318,10 +327,10 @@ export function useConversation() {
     messagesRef.current = [];
     leadDoneRef.current = false;
     setMessages([]);
-    setThread(greetingThread());
+    setThread(greetingThread(greetingFor(AVATARS[avatarRef.current].name)));
     setShowWhatsApp(false);
     setLeadDone(false);
-    setLine(GREETING);
+    setLine(greetingFor(AVATARS[avatarRef.current].name));
   }, [fire, newTurn]);
 
 
