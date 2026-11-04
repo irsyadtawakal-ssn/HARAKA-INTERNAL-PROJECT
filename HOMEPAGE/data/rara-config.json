@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-03T06:00:12.341Z",
+  "updatedAt": "2026-11-04T10:00:32.250Z",
   "visual": {
     "mode": "clips",
     "clips": {
@@ -411,5 +411,27 @@
     "maxUserTurnsPerSession": 20,
     "ipRateLimitPerMinute": 30,
     "sessionLimitMessage": "Sesi demo ini sudah mencapai batas. Silakan lanjut via WhatsApp 0831-3703-0656."
+  },
+  "mira": {
+    "persona": {
+      "avatarName": "Mira",
+      "roleTitle": "AI Maklon & Formula Consultant PT Haraka Erfi",
+      "visitorHonorific": "Kak",
+      "toneOfVoice": "Bahasa Indonesia yang ramah, hangat, antusias, dan profesional. Kalimat ringkas dan enak didengar saat diucapkan dengan suara (tanpa daftar bernomor, tanpa simbol markdown bintang/pagar, tanpa emoji, dan tanpa URL mentah).",
+      "languages": "Bahasa Indonesia (utama), dapat merespons Bahasa Inggris dasar bila diajak bicara dalam Bahasa Inggris.",
+      "customSystemPromptOverride": "",
+      "useCustomPromptOverride": false
+    },
+    "voice": {
+      "voiceId": "U3dExJoUNcmTY5H6GMuG",
+      "modelId": "eleven_multilingual_v2",
+      "stability": 78,
+      "similarityBoost": 80,
+      "styleExaggeration": 31,
+      "useSpeakerBoost": true,
+      "speakingSpeed": 1.04,
+      "sampleTestText": "Halo Kak! Aku Mira dari PT Haraka Erfi. Mau mulai bikin brand skincare sendiri dengan MOQ seribu pcs dan izin BPOM resmi? Ceritakan konsep produk impian Kakak yaa"
+    },
+    "greeting": "Halo Kak, aku Mira dari PT Haraka Erfi. Ceritakan produk kosmetik impianmu ya!"
   }
 }
