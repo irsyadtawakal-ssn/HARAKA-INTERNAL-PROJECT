@@ -342,8 +342,8 @@ Sound design: alarm beeps, cockpit hum, radio static, no music.
 Use the image as the starting frame.
 Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on, the cockpit gently vibrating. One continuous shot with light handheld energy.
 [0-3s] Slow push in from a medium shot as he leans toward camera, taps the calculator twice with exaggerated finger taps, nodding with each number, and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
-Bold white text with thick black outline pops in at the upper-middle of the frame: "HPP 25RB"
-[3-6s] The white text disappears. Quick punch in to a close-up as he spins the calculator to face the lens (screen glowing, out of focus), raises his eyebrows, grins wide and points at camera, saying: "Untung kotor 25 ribu per pcs!"
+Bold white text with thick black outline pops in at the upper-middle of the frame, two stacked lines: "HPP 25RB" above "JUAL 50RB"
+[3-6s] Both white lines disappear. Quick punch in to a close-up as he spins the calculator to face the lens (screen glowing, out of focus), raises his eyebrows, grins wide and points at camera, saying: "Untung kotor 25 ribu per pcs!"
 Large bold yellow text with thick black outline pops in at the upper-middle of the frame: "UNTUNG 25RB"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Crystal clear text, correct spelling, only one text at a time, no other text on screen.
