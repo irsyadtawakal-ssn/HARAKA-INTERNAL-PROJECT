@@ -150,6 +150,8 @@ export default function DashboardPage() {
   const [activeMenu, setActiveMenu] = useState<
     "overview" | "leads" | "rara_settings" | "content_studio" | "asset_library" | "approvals" | "maklon"
   >("rara_settings");
+  // Tab yang tersambung ke backend Factory tidak memakai filter funnel/Export CSV milik data leads.
+  const factoryTab = activeMenu === "content_studio" || activeMenu === "asset_library";
 
   // Funnel Filter: "all" | "A" (Pemula) | "B" (Existing)
   const [selectedFunnel, setSelectedFunnel] = useState<"all" | "A" | "B">("all");
@@ -340,7 +342,7 @@ export default function DashboardPage() {
           >
             <div className={styles.navLinkLeft}>
               <Clapperboard size={16} />
-              <span>Pembuatan Konten</span>
+              <span>Studio Konten</span>
             </div>
             <span className={styles.navBadge} style={{ background: "#eaf5f1", color: "#0d6a55" }}>
               AI Studio
@@ -430,13 +432,14 @@ export default function DashboardPage() {
               {activeMenu === "overview" && "Executive Summary & Funnel Intelligence"}
               {activeMenu === "leads" && "Inbound Leads — Tanya Rara (AI Avatar)"}
               {activeMenu === "rara_settings" && "Pengaturan Avatar Tanya Rara (AI Engine & Visual)"}
-              {activeMenu === "content_studio" && "Studio Pembuatan Konten & Iklan (Blueprint §6)"}
-              {activeMenu === "asset_library" && "Asset Library Pabrik — Media B-Roll & Footage"}
+              {activeMenu === "content_studio" && "Studio Konten"}
+              {activeMenu === "asset_library" && "Asset Library"}
               {activeMenu === "approvals" && "Matriks Approval & Pagar Keamanan (Blueprint §10 & §11)"}
               {activeMenu === "maklon" && "Maklon Control Room: Transaksi & Pabrik"}
             </h2>
 
-            {/* Funnel Switcher (Blueprint Section 5) */}
+            {/* Funnel Switcher (Blueprint Section 5) — hanya untuk data leads, bukan tab Factory */}
+            {!factoryTab && (
             <div className={styles.funnelToggle}>
               <button
                 className={`${styles.funnelToggleBtn} ${selectedFunnel === "all" ? styles.funnelToggleBtnActive : ""}`}
@@ -459,8 +462,10 @@ export default function DashboardPage() {
                 Funnel B: Existing
               </button>
             </div>
+            )}
           </div>
 
+          {!factoryTab && (
           <div className={styles.topActions}>
             <span
               style={{
@@ -482,6 +487,7 @@ export default function DashboardPage() {
               <Download size={13} /> Export CSV
             </button>
           </div>
+          )}
         </header>
 
         <div className={styles.pageBody}>
