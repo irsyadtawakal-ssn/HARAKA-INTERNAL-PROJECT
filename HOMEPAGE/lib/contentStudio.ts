@@ -83,9 +83,10 @@ export function isJobActive(job: ContentJob): boolean {
 
 export function jobStageLabel(job: ContentJob): string {
   if (job.status !== "rendering") return AI_STAGES[job.status] ?? job.status;
-  const total = job.render_jobs.length;
-  const done = job.render_jobs.filter((r) => r.status === "done").length;
-  const failed = job.render_jobs.filter((r) => r.status === "failed").length;
+  const clips = currentClips(job);
+  const total = clips.length;
+  const done = clips.filter((r) => r.status === "done").length;
+  const failed = clips.filter((r) => r.status === "failed").length;
   if (done + failed < total) return `Render klip ${done + 1}/${total}`;
   return failed ? `${done} klip siap, ${failed} gagal` : "Klip siap";
 }
@@ -108,16 +109,19 @@ export type StepState = "done" | "active" | "todo" | "failed";
 export type Step = { key: "analysis" | "script" | "render" | "ready"; label: string; state: StepState; detail?: string };
 
 export function jobSteps(job: ContentJob): Step[] {
-  const total = job.render_jobs.length;
-  const done = job.render_jobs.filter((r) => r.status === "done").length;
-  const failedClips = job.render_jobs.filter((r) => r.status === "failed").length;
+  const clips = currentClips(job);
+  const total = clips.length;
+  const done = clips.filter((r) => r.status === "done").length;
+  const failedClips = clips.filter((r) => r.status === "failed").length;
   const failed = job.status === "failed";
   const hasScript = Boolean(job.script_id) || job.status === "rendering";
+  // start_asset_id tersimpan bersama status "writing", jadi menandai analisis sudah lewat.
+  const analysed = hasScript || Boolean(job.start_asset_id) || job.status === "writing";
 
   const analysis: StepState =
-    job.status === "queued" || job.status === "analyzing" ? "active" : failed && !hasScript ? "failed" : "done";
+    job.status === "queued" || job.status === "analyzing" ? "active" : failed && !analysed ? "failed" : "done";
   const script: StepState =
-    job.status === "writing" ? "active" : failed && hasScript ? "failed" : hasScript ? "done" : "todo";
+    job.status === "writing" ? "active" : failed && analysed ? "failed" : hasScript ? "done" : "todo";
   let render: StepState = "todo";
   let detail: string | undefined;
   if (job.status === "rendering") {
@@ -142,24 +146,44 @@ export type VideoPlan = {
 };
 
 /** Satu Generate = 3 video (spec §3.3): hook berbeda, body dan CTA dipakai bersama; Hard Sell tanpa body. */
-export function groupVideos(
-  job: ContentJob,
-  script?: Script,
-): { videos: VideoPlan[]; shared: { body: string | null; cta: string | null }; others: RenderJob[] } {
-  const tail = job.type === "hard_sell" ? ["cta"] : ["body", "cta"];
-  const known = new Set(["hook1", "hook2", "hook3", ...tail]);
+function tailSlots(job: ContentJob): string[] {
+  return job.type === "hard_sell" ? ["cta"] : ["body", "cta"];
+}
+
+/** Klip terbaru per slot, klip tanpa slot dikenal, dan klip lama yang sudah digantikan (versi sebelum klaim disetujui). */
+function splitClips(job: ContentJob) {
+  const known = new Set(["hook1", "hook2", "hook3", ...tailSlots(job)]);
   const latest = new Map<string, RenderJob>();
   const others: RenderJob[] = [];
+  const previous: RenderJob[] = [];
   for (const clip of job.render_jobs) {
     const slot = clip.content_slot;
     if (!slot || !known.has(slot)) {
       others.push(clip);
       continue;
     }
-    // Setelah klaim disetujui ada dua set klip; yang terbaru mewakili slot itu.
     const prev = latest.get(slot);
-    if (!prev || prev.created_at < clip.created_at) latest.set(slot, clip);
+    if (!prev) latest.set(slot, clip);
+    else if (prev.created_at < clip.created_at) {
+      previous.push(prev);
+      latest.set(slot, clip);
+    } else previous.push(clip);
   }
+  return { latest, others, previous };
+}
+
+/** Klip yang menentukan progres: versi lama yang sudah digantikan tidak dihitung. */
+export function currentClips(job: ContentJob): RenderJob[] {
+  const { latest, others } = splitClips(job);
+  return [...latest.values(), ...others];
+}
+
+export function groupVideos(
+  job: ContentJob,
+  script?: Script,
+): { videos: VideoPlan[]; shared: { body: string | null; cta: string | null }; others: RenderJob[]; previous: RenderJob[] } {
+  const tail = tailSlots(job);
+  const { latest, others, previous } = splitClips(job);
   const videos = ([1, 2, 3] as const).map((index) => {
     const hookSlot = `hook${index}` as const;
     const slots = [hookSlot, ...tail];
@@ -172,13 +196,13 @@ export function groupVideos(
       missing: slots.filter((s) => !latest.has(s)),
     };
   });
-  return { videos, shared: { body: script?.body || null, cta: script?.cta || null }, others };
+  return { videos, shared: { body: script?.body || null, cta: script?.cta || null }, others, previous };
 }
 
 export type ProjectFilter = "all" | "processing" | "decision" | "ready" | "failed";
 
 export function projectCategory(job: ContentJob): Exclude<ProjectFilter, "all"> {
-  const clips = job.render_jobs;
+  const clips = currentClips(job);
   const finished = clips.length > 0 && clips.every(clipFinished);
   if (job.status === "failed" || (job.status === "rendering" && finished && clips.some((c) => c.status === "failed"))) return "failed";
   if (isClaimPending(job)) return "decision";

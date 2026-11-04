@@ -21,6 +21,7 @@ import ProjectDetail from "./studio/ProjectDetail";
 import s from "./studio/studio.module.css";
 
 const POLL_MS = 5000;
+const DEVICE_POLL_MS = 30000;
 
 type Device = { id: string; name: string; is_active: boolean; last_seen_at: string | null };
 
@@ -82,6 +83,14 @@ export default function ContentStudioTab() {
     }, POLL_MS);
     return () => clearInterval(t);
   }, [active, loadJobs, loadQuota, loadDevices]);
+
+  // Status mesin Flow tetap diperbarui walau tidak ada job aktif (mesin bisa hidup/mati kapan saja).
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (document.visibilityState === "visible") loadDevices();
+    }, DEVICE_POLL_MS);
+    return () => clearInterval(t);
+  }, [loadDevices]);
 
   // Aset baru diunggah masih diproses worker; muat ulang sampai siap dipakai sebagai referensi.
   useEffect(() => {
@@ -190,6 +199,8 @@ export default function ContentStudioTab() {
     }
   }
 
+  const closeDrawer = useCallback(() => setOpenId(null), []);
+
   // Drawer membaca job dari daftar terbaru, jadi ikut terbarui saat polling.
   const openJob = jobs.find((j) => j.id === openId) ?? null;
 
@@ -237,7 +248,7 @@ export default function ContentStudioTab() {
           onRetryClip={(clipId) => act(`clip:${clipId}`, openJob.id, () => factory(`render-jobs/${clipId}/retry`, { method: "POST" }))}
           busy={busy}
           error={jobErrors[openJob.id] || undefined}
-          onClose={() => setOpenId(null)}
+          onClose={closeDrawer}
         />
       )}
     </div>

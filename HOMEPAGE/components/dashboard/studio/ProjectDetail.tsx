@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Check, Film, Image as ImageIcon, RefreshCw, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Check, Film, Image as ImageIcon, Play, RefreshCw, X } from "lucide-react";
 import dash from "@/app/dashboard/dashboard.module.css";
 import type { AssetRecord } from "@/lib/assetLabels";
 import {
@@ -32,18 +32,27 @@ type Props = {
   onClose(): void;
 };
 
-function ClipTile({ clip, url, busy, onError, onRetry }: { clip: RenderJob; url?: string; busy?: boolean; onError(): void; onRetry(): void }) {
+type TileProps = { clip: RenderJob; url?: string; busy?: boolean; onError(): void; onRetry(): void; onPlay(): void };
+
+function ClipTile({ clip, url, busy, onError, onRetry, onPlay }: TileProps) {
+  const label = slotLabel(clip.content_slot);
   if (clip.status === "done" && url) {
+    // Ubin kecil hanya pratinjau; klik membuka pemutar besar di atas kolom video.
     return (
-      <div className={s.clipTile} data-status="done" title={slotLabel(clip.content_slot)}>
-        <video src={url} controls playsInline onError={onError} />
-      </div>
+      <button type="button" className={`${s.clipTile} ${s.clipPlay}`} data-status="done" aria-label={`Putar ${label}`} onClick={onPlay}>
+        <video src={url} muted playsInline preload="metadata" onError={onError} />
+        <span className={s.clipOverlay}>
+          <Play size={12} aria-hidden /> {label}
+        </span>
+      </button>
     );
   }
+  const reason = clip.error || clip.stage_message;
   return (
-    <div className={s.clipTile} data-status={clip.status}>
-      <span className={s.clipSlot}>{slotLabel(clip.content_slot)}</span>
+    <div className={s.clipTile} data-status={clip.status} title={reason ?? undefined}>
+      <span className={s.clipSlot}>{label}</span>
       <span>{CLIP_STATUS_LABELS[clip.status] ?? clip.status}</span>
+      {reason && <span className={s.clipReason}>{reason}</span>}
       {clip.status === "failed" && (
         <button type="button" className={s.retry} disabled={busy} onClick={onRetry}>
           Render ulang
@@ -55,22 +64,46 @@ function ClipTile({ clip, url, busy, onError, onRetry }: { clip: RenderJob; url?
 
 export default function ProjectDetail(p: Props) {
   const [note, setNote] = useState("");
-  const { job } = p;
-  const { videos, shared, others } = groupVideos(job, p.script);
+  const [playing, setPlaying] = useState<RenderJob | null>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const { job, onClose } = p;
+  const { videos, shared, others, previous } = groupVideos(job, p.script);
+
+  // Modal: fokus masuk ke drawer, Escape menutup, fokus kembali ke pemicu, halaman belakang tidak ikut scroll.
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+      opener?.focus?.();
+    };
+  }, [onClose]);
+
+  const urlOf = (clip: RenderJob) => (clip.result_asset_id ? p.clipUrls[clip.result_asset_id] : undefined);
+  const onError = (clip: RenderJob) => () => {
+    if (clip.result_asset_id) p.onClipError(clip.result_asset_id);
+  };
   const tile = (clip: RenderJob) => (
     <ClipTile
       key={clip.id}
       clip={clip}
-      url={clip.result_asset_id ? p.clipUrls[clip.result_asset_id] : undefined}
+      url={urlOf(clip)}
       busy={p.busy[`clip:${clip.id}`]}
-      onError={() => clip.result_asset_id && p.onClipError(clip.result_asset_id)}
+      onError={onError(clip)}
       onRetry={() => p.onRetryClip(clip.id)}
+      onPlay={() => setPlaying(clip)}
     />
   );
+  const playingUrl = playing ? urlOf(playing) : undefined;
 
   return (
-    <div className={s.backdrop} onClick={p.onClose}>
-      <div role="dialog" aria-label={projectTitle(job)} className={s.drawer} onClick={(e) => e.stopPropagation()}>
+    <div className={s.backdrop} onClick={onClose}>
+      <div role="dialog" aria-modal="true" aria-label={projectTitle(job)} className={s.drawer} onClick={(e) => e.stopPropagation()}>
         <div className={s.drawerHead}>
           <div className={s.drawerThumb}>
             {p.reference?.thumbnail_url ? (
@@ -89,7 +122,7 @@ export default function ProjectDetail(p: Props) {
               {p.reference ? ` · dari ${p.reference.original_filename}` : ""}
             </span>
           </div>
-          <button type="button" className={s.iconButton} aria-label="Tutup" onClick={p.onClose}>
+          <button ref={closeRef} type="button" className={s.iconButton} aria-label="Tutup" onClick={onClose}>
             <X size={18} />
           </button>
         </div>
@@ -135,6 +168,18 @@ export default function ProjectDetail(p: Props) {
           </div>
         )}
 
+        {playing && playingUrl && (
+          <div className={s.preview} data-testid="clip-preview">
+            <div className={s.row} style={{ justifyContent: "space-between" }}>
+              <strong>{slotLabel(playing.content_slot)}</strong>
+              <button type="button" className={s.iconButton} aria-label="Tutup pemutar" onClick={() => setPlaying(null)}>
+                <X size={16} />
+              </button>
+            </div>
+            <video src={playingUrl} controls autoPlay playsInline onError={onError(playing)} />
+          </div>
+        )}
+
         <div>
           <span className={s.stepLabel}>Hasil: 3 video</span>
           <div className={s.videoCols}>
@@ -172,10 +217,20 @@ export default function ProjectDetail(p: Props) {
           </div>
         )}
 
+        {previous.length > 0 && (
+          <div>
+            <span className={s.stepLabel}>Versi sebelumnya</span>
+            <span className={s.hint}>Klip versi tanpa klaim baru, sebelum klaim disetujui.</span>
+            <div className={s.clipStrip} style={{ gridAutoColumns: "72px", overflowX: "auto" }}>
+              {previous.map(tile)}
+            </div>
+          </div>
+        )}
+
         {others.length > 0 && (
           <div>
             <span className={s.stepLabel}>Klip lain</span>
-            <div className={s.clipStrip} style={{ gridAutoColumns: "90px" }}>
+            <div className={s.clipStrip} style={{ gridAutoColumns: "72px", overflowX: "auto" }}>
               {others.map(tile)}
             </div>
           </div>

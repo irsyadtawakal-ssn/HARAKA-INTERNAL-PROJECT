@@ -63,12 +63,12 @@ describe("jobStageLabel", () => {
     expect(jobStageLabel(job("writing"))).toBe("Menulis script");
   });
   it("counts clips while rendering", () =>
-    expect(jobStageLabel(job("rendering", [clip("done"), clip("generating"), clip("queued"), clip("queued"), clip("queued")]))).toBe(
+    expect(jobStageLabel(job("rendering", [clip("done", "hook1"), clip("generating", "hook2"), clip("queued", "hook3"), clip("queued", "body"), clip("queued", "cta")]))).toBe(
       "Render klip 2/5",
     ));
   it("says ready when all clips are done", () => expect(jobStageLabel(job("rendering", [clip("done"), clip("done")]))).toBe("Klip siap"));
   it("reports failed clips once rendering stops", () =>
-    expect(jobStageLabel(job("rendering", [clip("done"), clip("failed")]))).toBe("1 klip siap, 1 gagal"));
+    expect(jobStageLabel(job("rendering", [clip("done", "hook1"), clip("failed", "hook2")]))).toBe("1 klip siap, 1 gagal"));
 });
 
 describe("slotLabel and isClaimPending", () => {
@@ -107,8 +107,8 @@ describe("jobSteps", () => {
     expect(jobSteps(j)[2].detail).toBe("2/5 klip");
   });
   it("fails analysis when there is no script yet", () => expect(states(job("failed"))[0]).toBe("failed"));
-  it("fails the script step when the script exists", () =>
-    expect(states(job("failed", [], { script_id: "s1" }))).toEqual(["done", "failed", "todo", "todo"]));
+  it("fails the script step once analysis produced a start frame", () =>
+    expect(states(job("failed", [], { start_asset_id: "f1", script_id: null }))).toEqual(["done", "failed", "todo", "todo"]));
   it("marks everything done when all clips are done", () =>
     expect(states(job("rendering", ADS.map((s) => clip("done", s)), { script_id: "s1" }))).toEqual(["done", "done", "done", "done"]));
 });
@@ -141,7 +141,7 @@ describe("groupVideos", () => {
 
 describe("projectCategory", () => {
   it("failed job", () => expect(projectCategory(job("failed"))).toBe("failed"));
-  it("rendering finished with a failed clip", () => expect(projectCategory(job("rendering", [clip("done"), clip("failed")]))).toBe("failed"));
+  it("rendering finished with a failed clip", () => expect(projectCategory(job("rendering", [clip("done", "hook1"), clip("failed", "hook2")]))).toBe("failed"));
   it("pending claim", () => expect(projectCategory(job("rendering", [clip("queued")], { claim_approval_id: "a", pending_script_id: "p" }))).toBe("decision"));
   it("all clips done", () => expect(projectCategory(job("rendering", [clip("done")]))).toBe("ready"));
   it("still working", () => expect(projectCategory(job("analyzing"))).toBe("processing"));
@@ -159,5 +159,24 @@ describe("flowStatus and timeAgo", () => {
     expect(timeAgo("2026-11-04T09:55:00Z", now)).toBe("5 menit lalu");
     expect(timeAgo("2026-11-04T07:00:00Z", now)).toBe("3 jam lalu");
     expect(timeAgo("2026-11-02T10:00:00Z", now)).toBe("2 hari lalu");
+  });
+});
+
+describe("superseded clips after claim approval", () => {
+  const old = (slot: string, status: string) => ({ ...clip(status, slot), id: `old-${slot}`, created_at: "2026-11-04T00:00:00Z" });
+  const fresh = (slot: string) => ({ ...clip("done", slot), id: `new-${slot}`, created_at: "2026-11-04T02:00:00Z" });
+  const approved = () =>
+    job("rendering", [...ADS.map((s) => old(s, s === "hook2" ? "failed" : "done")), ...ADS.map(fresh)], { script_id: "s2", start_asset_id: "f1" });
+
+  it("keeps older clips as previous versions", () => {
+    const { previous, others } = groupVideos(approved());
+    expect(previous.map((c) => c.id).sort()).toEqual(ADS.map((s) => `old-${s}`).sort());
+    expect(others).toHaveLength(0);
+  });
+  it("does not mark the project failed because of a superseded clip", () => expect(projectCategory(approved())).toBe("ready"));
+  it("counts only current clips in the steps", () => {
+    const steps = jobSteps(approved());
+    expect(steps.map((s) => s.state)).toEqual(["done", "done", "done", "done"]);
+    expect(steps[2].detail).toBe("5/5 klip");
   });
 });

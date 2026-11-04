@@ -112,6 +112,8 @@ def test_keputusan_klaim_approve(client, db, owner_headers, pending_claim):
     assert r.status_code == 200, r.text
     after = _get(client, owner_headers, job["id"])
     assert len(after["render_jobs"]) == 10 and after["pending_script_id"] is None
+    # Klip baru dirender dari script asli, jadi hook yang tampil juga harus dari script itu.
+    assert after["script_id"] == job["pending_script_id"]
     assert sorted(j["content_slot"] for j in after["render_jobs"]) == sorted(ADS * 2)
     claim = db.scalar(select(Claim).where(Claim.text == "Sertifikat halal MUI"))
     assert claim.status == "approved" and claim.approved_by_id is not None

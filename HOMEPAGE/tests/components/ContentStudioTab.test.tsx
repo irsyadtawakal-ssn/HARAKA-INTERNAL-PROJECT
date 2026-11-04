@@ -213,6 +213,54 @@ describe("ContentStudioTab", () => {
     expect(await screen.findByText("Offline")).toBeInTheDocument();
   });
 
+  it("shows the failure reason of a clip", async () => {
+    const failed = clip("hook1", "failed", { error: "Captcha muncul di Flow" });
+    routes["GET /api/factory/content-jobs"] = () => ({ body: [{ ...baseJob, status: "rendering", render_jobs: [failed] }] });
+    await mount();
+    const dialog = await openProject();
+    expect(within(dialog).getByText("Captcha muncul di Flow")).toBeInTheDocument();
+  });
+
+  it("refreshes machine status without active jobs", async () => {
+    await mount();
+    expect(countCalls("GET /api/factory/render-devices")).toBe(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30000);
+    });
+    expect(countCalls("GET /api/factory/render-devices")).toBe(2);
+  });
+
+  it("moves focus into the drawer and closes it with Escape", async () => {
+    routes["GET /api/factory/content-jobs"] = () => ({ body: [{ ...baseJob, status: "failed", error: "x" }] });
+    await mount();
+    const dialog = await openProject();
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("plays a finished clip in the large preview", async () => {
+    const done = clip("hook1", "done", { result_asset_id: "v1" });
+    routes["GET /api/factory/content-jobs"] = () => ({ body: [{ ...baseJob, status: "rendering", render_jobs: [done] }] });
+    routes["GET /api/factory/assets/v1"] = () => ({ body: { id: "v1", type: "video", original_url: "https://s3/v1?sig=1" } });
+    await mount();
+    const dialog = await openProject();
+    fireEvent.click(await within(dialog).findByRole("button", { name: "Putar Hook 1" }));
+    const preview = within(dialog).getByTestId("clip-preview");
+    expect(preview.querySelector("video")).toHaveAttribute("src", "https://s3/v1?sig=1");
+    expect(preview.querySelector("video")).toHaveAttribute("controls");
+  });
+
+  it("keeps clips replaced after claim approval as previous versions", async () => {
+    const old = clip("hook1", "done", { id: "old", created_at: "2026-11-04T00:00:00Z" });
+    const fresh = clip("hook1", "queued", { id: "new", created_at: "2026-11-04T02:00:00Z" });
+    routes["GET /api/factory/content-jobs"] = () => ({ body: [{ ...baseJob, status: "rendering", render_jobs: [old, fresh] }] });
+    await mount();
+    const dialog = await openProject();
+    expect(within(dialog).getByText("Versi sebelumnya")).toBeInTheDocument();
+  });
+
   it("polls while active and stops when idle", async () => {
     let n = 0;
     routes["GET /api/factory/content-jobs"] = () => ({ body: [n++ === 0 ? baseJob : { ...baseJob, status: "failed", error: "x" }] });
