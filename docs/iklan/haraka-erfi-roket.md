@@ -41,14 +41,15 @@ Konsep: HPP mahal = alarm bahaya di roket → Haraka Erfi memperbaiki → roket 
 |---|---|---|
 | Lampu hijau, Bagas melayang di gravitasi nol; kamera mendorong pelan saat dia mengetik kalkulator (beep tiap ketukan) sambil mengangguk; lalu punch in ke close-up, layar kalkulator menunjukkan 25000, alis naik, nyengir, menunjuk kamera | Bagas: "HPP mulai 25 ribu, jual 50 ribu." … "Untung kotor 25 ribu per pcs!" | HPP mulai Rp25rb → jual Rp50rb = **+Rp25rb/pcs** · *ilustrasi, belum termasuk biaya lain* |
 
-**Klip 3 · Roket = cepat + CTA (12–20 detik)**
+**Klip 3 · Roket = cepat + CTA (12–22 detik)**
 
 | Visual | Dialog | Teks layar |
 |---|---|---|
-| Hitung mundur, mesin menyala, G-force, Bagas nyengir mengangkat produk, roket meluncur | Bagas: "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!" | PROSES CEPAT 🚀 |
-| | Operator: "Tiga, dua, satu… meluncur!" | 👉 CHAT WHATSAPP HARAKA ERFI |
+| Mesin menyala, G-force, Bagas nyengir mengangkat produk | Bagas: "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!" | PROSES CEPAT 🚀 |
+| Hitung mundur lewat radio | Operator: "Tiga, dua, satu… meluncur!" | |
+| Shot luar: roket meluncur | Bagas (radio): "Brand skincare lu siap meluncur, Bos!" | |
 
-Jumlah kata semua dialog per klip: 13 / 13 / 15 → autopilot memilih 6s / 6s / 8s (total ±20 detik).
+Jumlah kata semua dialog per klip: 13 / 13 / 23 → autopilot memilih 6s / 6s / 10s (total ±22 detik). Dialog klip 3 sengaja lebih dari 21 kata supaya autopilot memilih 10 detik.
 
 ### Variasi hook (A/B test, ganti klip 1 saja)
 
@@ -93,8 +94,7 @@ Semua teks ditambahkan saat editing, bukan oleh Omni. Panduan umum (ukuran, safe
 | 2 · Bukti | HPP Rp25rb → Jual Rp50rb | Anton 120 px putih; panah oranye | Muncul bertahap mengikuti ucapan |
 | 2 · Bukti | +Rp25rb/pcs | Anton 170 px kuning `#FFD400` | Count-up 0 → 25rb, pop-in |
 | 2 · Bukti | *ilustrasi, belum termasuk biaya lain* | Poppins 30 px putih 80% | Pojok bawah, di atas safe zone |
-| 3 · CTA | PROSES CEPAT 🚀 | Russo One 110 px oranye | Label HUD + hitung mundur 3-2-1 |
-| 3 · CTA | CHAT WHATSAPP HARAKA ERFI | Tombol bulat oranye, teks Anton putih, ikon chat | Pop-in + denyut pelan sampai video selesai |
+| 3 · CTA | PROSES CEPAT 🚀 | Russo One 110 px oranye | Label HUD, zoom-in |
 
 Grafis di dalam adegan yang boleh dibuat Omni: layar hitung mundur di panel kokpit, lampu alarm merah → hijau. Tanpa angka harga.
 
@@ -243,10 +243,11 @@ Use the image as the starting frame.
 Photorealistic, vertical 9:16. Rocket engines ignite and the cockpit shakes violently;
 Pressed back by G-force, he grins and lifts a skincare bottle to camera, saying
 in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
-"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!"
+"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!"
 Operator voice: calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent, counts:
 "Tiga, dua, satu… meluncur!"
-Ends with an exterior shot of the rocket blasting off. Fast, high energy.
+Cut to an exterior shot of the rocket blasting off; over the radio he shouts happily:
+"Brand skincare lu siap meluncur, Bos!" Fast, high energy.
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: rising engine roar, launch rumble, no music. No text overlay on screen.
 ```
@@ -263,7 +264,7 @@ Alternatif dari prompt di atas. Momen penting jatuh di detik yang pasti, jadi te
 |---|---|---|---|
 | 1 | 13 | 6s | `[0-6s]` |
 | 2 | 13 | 6s | `[0-6s]` |
-| 3 | 15 | 8s | `[0-8s]` |
+| 3 | 23 | 10s | `[0-10s]` |
 
 **Klip 1 · 6 detik**
 ```
@@ -288,18 +289,19 @@ Keep his face, mustache, mole on right cheek, white spacesuit with orange accent
 Sound design: soft cockpit hum, a crisp calculator beep on every finger tap, a whoosh on the punch in at 3s, a cash-register ding at 4s, no music. No text overlay on screen.
 ```
 
-**Klip 3 · 8 detik** (ada satu cut, jadi tanpa "One continuous shot")
+**Klip 3 · 10 detik** (ada satu cut, jadi tanpa "One continuous shot")
 ```
 Use the image as the starting frame.
 Photorealistic, vertical 9:16. Same rocket cockpit, high energy.
-[0-4s] Engines ignite and the cockpit shakes; pressed back by G-force, he grins, lifts a skincare bottle
+[0-5s] Engines ignite and the cockpit shakes; pressed back by G-force, he grins, lifts a skincare bottle
 to camera and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
-"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!"
-[4-6s] The operator voice, calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent,
+"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!"
+[5-7s] The operator voice, calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent,
 counts: "Tiga, dua, satu… meluncur!"
-[6-8s] Cut to exterior: the rocket blasts off into the sky, synced to a big rumble.
+[7-10s] Cut to exterior: the rocket blasts off into the sky with a bright flame trail.
+Over the radio he shouts happily: "Brand skincare lu siap meluncur, Bos!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
-Sound design: rising engine roar building to a launch boom at 6s, no music. No text overlay on screen.
+Sound design: rising engine roar building to a launch boom at 7s, rumble fading as the rocket climbs, no music. No text overlay on screen.
 ```
 
 ### Teks layar mengikuti timeline (Opsi C)
@@ -309,9 +311,7 @@ Sound design: rising engine roar building to a launch boom at 6s, no music. No t
 | 1 | 0–4 | ⚠️ HPP MAHAL = UNTUNG TIPIS (shake di detik 0) |
 | 2 | 0–3 | HPP Rp25rb → Jual Rp50rb |
 | 2 | 3–6 | +Rp25rb/pcs (count-up) + disclaimer kecil |
-| 3 | 0–4 | PROSES CEPAT 🚀 |
-| 3 | 4–6 | Hitung mundur 3-2-1 |
-| 3 | 6–8 | Tombol CHAT WHATSAPP HARAKA ERFI |
+| 3 | 0–5 | PROSES CEPAT 🚀 |
 
 ---
 
@@ -319,7 +319,7 @@ Sound design: rising engine roar building to a launch boom at 6s, no music. No t
 
 Semua teks layar dibuat langsung oleh Omni, tanpa CapCut. Teks disingkat (`25RB`, tanpa "Rp"), ditaruh di upper-middle (aman dari UI TikTok), dan "WhatsApp" hanya diucapkan, bukan ditulis. Cek huruf per huruf, terutama "HARAKA ERFI" dan angka. Teks yang tetap salah setelah 2–3 kali generate diperbaiki lewat edit (`Change the text "..." to "...". Keep everything else the same.`) atau dipindah ke CapCut.
 
-Autopilot hanya menghitung dialog, jadi teks layar dalam kutip tidak mengubah durasi: 6s / 6s / 8s.
+Autopilot hanya menghitung dialog, jadi teks layar dalam kutip tidak mengubah durasi: 6s / 6s / 10s.
 
 **Klip 1 · 6 detik**
 ```
@@ -350,19 +350,19 @@ Crystal clear text, correct spelling, show only these texts and the calculator s
 Sound design: soft cockpit hum, a crisp calculator beep on every finger tap, a whoosh on the punch in at 3s, a cash-register ding when the yellow text appears, no music.
 ```
 
-**Klip 3 · 8 detik**
+**Klip 3 · 10 detik** (ada satu cut, jadi tanpa "One continuous shot")
 ```
 Use the image as the starting frame.
 Photorealistic, vertical 9:16. Same rocket cockpit, high energy.
-[0-4s] Engines ignite and the cockpit shakes; pressed back by G-force, he grins, lifts a skincare bottle
+[0-5s] Engines ignite and the cockpit shakes; pressed back by G-force, he grins, lifts a skincare bottle
 to camera and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
-"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!"
+"Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp Haraka Erfi sekarang!"
 Bold orange text with white outline zooms in at the upper-middle of the frame: "PROSES CEPAT"
-[4-6s] The operator voice, calm, deep, slightly amused male voice over crackling radio, casual Jakarta accent,
-counts: "Tiga, dua, satu… meluncur!" Huge white numbers flash in the center in sync: "3", "2", "1".
-[6-8s] Cut to exterior: the rocket blasts off into the sky. A rounded green button graphic appears
-in the center with bold white text: "CHAT HARAKA ERFI"
+[5-7s] The text disappears. The operator voice, calm, deep, slightly amused male voice over crackling radio,
+casual Jakarta accent, counts: "Tiga, dua, satu… meluncur!"
+[7-10s] Cut to exterior: the rocket blasts off into the sky with a bright flame trail.
+Over the radio he shouts happily: "Brand skincare lu siap meluncur, Bos!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
-Crystal clear text, correct spelling, only one text at a time, no other text on screen.
-Sound design: rising engine roar building to a launch boom at 6s, no music.
+Crystal clear text, correct spelling, the only text in the whole clip is "PROSES CEPAT", no countdown numbers, no buttons, no other text on screen.
+Sound design: rising engine roar building to a launch boom at 7s, rumble fading as the rocket climbs, no music.
 ```
