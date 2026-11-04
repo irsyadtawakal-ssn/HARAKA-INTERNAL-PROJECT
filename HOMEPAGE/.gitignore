@@ -44,3 +44,6 @@ yarn-error.log*
 
 # Visitor leads and chat transcripts written at runtime
 /data/rara-leads.json
+
+# Spoken greetings cached per avatar (regenerated when the text or voice changes)
+/data/tts-cache/

@@ -39,4 +39,36 @@ describe("ClipAvatar", () => {
     fireEvent(b, new Event("ended"));
     expect(videos().map((v) => v.getAttribute("src"))).toEqual(before);
   });
+
+  it("plays the greeting clip on top with sound, then hands back to the loop", () => {
+    const ref = { current: null as { play(): boolean } | null };
+    let ended = 0;
+    const { rerender } = render(
+      <ClipAvatar state="idle" clips={clips} greeting="greeting-1.mp4" greetingRef={ref} onGreetingEnd={() => ended++} />,
+    );
+    const greet = videos().find((v) => v.getAttribute("src") === "/avatar/greeting-1.mp4")!;
+    expect(ref.current?.play()).toBe(false); // not buffered yet: caller falls back to TTS
+    Object.defineProperty(greet, "readyState", { value: 4, configurable: true });
+    expect(ref.current?.play()).toBe(true);
+    expect(greet.muted).toBe(false);
+    rerender(<ClipAvatar state="speaking" clips={clips} greeting="greeting-1.mp4" greetingRef={ref} onGreetingEnd={() => ended++} />);
+    expect(greet.style.opacity).toBe("1");
+    fireEvent(greet, new Event("ended"));
+    expect(ended).toBe(1);
+    expect(greet.style.opacity).toBe("0");
+  });
+
+  it("cuts the greeting short when the visitor asks something", () => {
+    const ref = { current: null as { play(): boolean } | null };
+    let ended = 0;
+    const props = { clips, greeting: "greeting-1.mp4", greetingRef: ref, onGreetingEnd: () => ended++ };
+    const { rerender } = render(<ClipAvatar state="idle" {...props} />);
+    const greet = videos().find((v) => v.getAttribute("src") === "/avatar/greeting-1.mp4")!;
+    Object.defineProperty(greet, "readyState", { value: 4, configurable: true });
+    ref.current?.play();
+    rerender(<ClipAvatar state="speaking" {...props} />);
+    rerender(<ClipAvatar state="thinking" {...props} />);
+    expect(greet.style.opacity).toBe("0");
+    expect(ended).toBe(0);
+  });
 });

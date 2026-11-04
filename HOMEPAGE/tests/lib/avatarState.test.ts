@@ -11,6 +11,7 @@ describe("avatarReducer", () => {
     ["thinking", "MIC_OFF", "thinking"],
     ["thinking", "AUDIO_START", "speaking"],
     ["speaking", "AUDIO_END", "idle"],
+    ["idle", "AUDIO_START", "speaking"],
     ["thinking", "TEXT_ONLY", "speaking"],
   ];
   it.each(cases)("%s --%s→ %s", (from, ev, to) => {

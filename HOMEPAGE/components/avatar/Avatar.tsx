@@ -1,13 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MutableRefObject } from "react";
 import type { AvatarState } from "@/lib/avatarState";
 import { parseManifest, type ClipManifest } from "./clips";
 import PlaceholderAvatar from "./PlaceholderAvatar";
 import ClipAvatar from "./ClipAvatar";
 import { AVATARS, DEFAULT_AVATAR, type AvatarProfile } from "@/lib/avatars";
 
-export type AvatarProps = { state: AvatarState; audioLevel: number; profile?: AvatarProfile };
+/** Lets the page start the greeting clip straight from a tap handler, which is what unmuted playback needs. */
+export type GreetingPlayer = { play(): boolean };
+
+export type AvatarProps = {
+  state: AvatarState;
+  audioLevel: number;
+  profile?: AvatarProfile;
+  greetingRef?: MutableRefObject<GreetingPlayer | null>;
+  voiceOn?: boolean;
+  onGreetingEnd?: () => void;
+};
 
 type NetworkInfo = { saveData?: boolean; effectiveType?: string };
 
@@ -17,7 +27,7 @@ function prefersStill(): boolean {
   return Boolean(net?.saveData) || ["slow-2g", "2g", "3g"].includes(net?.effectiveType ?? "");
 }
 
-export default function Avatar({ state, audioLevel, profile = AVATARS[DEFAULT_AVATAR] }: AvatarProps) {
+export default function Avatar({ state, audioLevel, profile = AVATARS[DEFAULT_AVATAR], greetingRef, voiceOn = true, onGreetingEnd }: AvatarProps) {
   const { base } = profile;
   // Tagged with the folder it came from, so a switch never plays one avatar's clip list from the other's folder.
   const [loaded, setLoaded] = useState<{ base: string; manifest: ClipManifest } | null>(null);
@@ -32,7 +42,16 @@ export default function Avatar({ state, audioLevel, profile = AVATARS[DEFAULT_AV
   }, [base]);
 
   return manifest.mode === "clips" ? (
-    <ClipAvatar key={base} state={state} clips={manifest.clips} base={base} />
+    <ClipAvatar
+      key={base}
+      state={state}
+      clips={manifest.clips}
+      base={base}
+      greeting={manifest.greeting}
+      greetingRef={greetingRef}
+      voiceOn={voiceOn}
+      onGreetingEnd={onGreetingEnd}
+    />
   ) : (
     <PlaceholderAvatar state={state} audioLevel={audioLevel} profile={profile} />
   );

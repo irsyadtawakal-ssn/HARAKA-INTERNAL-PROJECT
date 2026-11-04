@@ -208,3 +208,78 @@ Do not change the background at all.
 - Latar sama persis dengan potret master di semua frame: tidak berganti, tidak berkedip, tidak menggelap. Kalau masih berubah, tambahkan di akhir prompt: `Do not change the background at all.`
 - Bibir di klip speaking bergerak kecil, bukan mangap lebar.
 - Klip yang gagal cukup di-generate ulang dengan prompt yang sama. Kalau sering geser, tambahkan `Her head and body stay almost completely still.`
+
+---
+
+## Klip sapaan (`greeting`) · video Flow + Voice Changer ElevenLabs
+
+Klip ini diputar sekali saat pengunjung pertama kali mengetuk halaman. Bibir harus sinkron dengan kalimatnya. Suara bawaan Flow nanti diganti voice masing-masing karakter lewat **ElevenLabs Voice Changer (Speech-to-Speech)**. Voice Changer mempertahankan tempo, jadi bibir tetap pas.
+
+Kalimat sapaan (sama dengan isi **Kalimat Sapaan Awal** di dashboard):
+- Mira: *"Halo Kak, selamat datang! Aku Mira dari Haraka Erfi. Mau bikin brand skincare sendiri? Yuk, ngobrol sama aku!"*
+- Rara: *"Halo Kak, selamat datang! Aku Rara dari Haraka Erfi. Mau bikin brand skincare sendiri? Yuk, ngobrol sama aku!"*
+
+Cara pakai:
+- Pakai Google Flow mode **Video → Frames**, dengan durasi **8 detik**.
+- Slot **Start** dan **End** diisi potret master yang sama (versi tersenyum). Ini yang membuat klip menyambung mulus ke `idle`.
+- **Audio jangan dimatikan.** Suara Flow dipakai sebagai bahan Voice Changer.
+- Simpan hasilnya di `avatar-raw/` dengan nama `mira greeting.mp4` atau `rara greeting.mp4`.
+
+**`mira-greeting.mp4` · 8 detik**
+```
+Use the image as the starting frame. Locked-off static camera, no zoom, no pan, no cut.
+Keep her face, porcelain skin, pearl-white hijab fully covering hair, rose-gold jaw line,
+ceramic pin, ivory satin top and lighting exactly as in the image.
+The background is locked: the exact same plain flat background from the image, same color
+and brightness in every frame, never changes, no new objects, no room, no gradient, no blur change.
+Head stays centered, same size and position.
+She warmly welcomes a visitor who just arrived, looking straight into the lens with a bright,
+friendly smile. At the start she gives a small welcoming nod, then says in a warm, gentle, clear
+young female voice, casual Jakarta Indonesian, calm cheerful tempo, smiling while talking:
+"Halo Kak, selamat datang! Aku Mira dari Haraka Erfi (pronounced "ha-RA-ka ER-fi"). Mau bikin brand skincare sendiri? Yuk, ngobrol sama aku!"
+Natural lip movements clearly matching every word, small natural head movements, eyebrows lift
+slightly on "selamat datang" and on the question.
+After the last word she closes her mouth into a soft smile and returns to exactly the starting
+pose, looking straight into the lens.
+The rose-gold line on her jaw and the ceramic pin stay exactly as in the image, no glowing,
+no pulsing, no light effects.
+Sound: only her voice, clean studio sound, no music, no background noise. No text on screen.
+Do not change the background at all.
+```
+
+**`rara-greeting.mp4` · 8 detik** (potret master Rara di Start dan End)
+```
+Use the image as the starting frame. Locked-off static camera, no zoom, no pan, no cut.
+Keep her face, porcelain skin, sleek platinum-white hair with middle part, ivory satin high-neck
+top, subtle rose-gold jaw line, ceramic ear cuff and lighting exactly as in the image.
+The background is locked: the exact same plain flat background from the image, same color
+and brightness in every frame, never changes, no new objects, no room, no gradient, no blur change.
+Head stays centered, same size and position. Hair stays calm, no strands crossing the face.
+She warmly welcomes a visitor who just arrived, looking straight into the lens with a bright,
+friendly smile. At the start she gives a small welcoming nod, then says in a warm, clear, elegant
+young female voice, casual Jakarta Indonesian, calm cheerful tempo, smiling while talking:
+"Halo Kak, selamat datang! Aku Rara dari Haraka Erfi (pronounced "ha-RA-ka ER-fi"). Mau bikin brand skincare sendiri? Yuk, ngobrol sama aku!"
+Natural lip movements clearly matching every word, small natural head movements, eyebrows lift
+slightly on "selamat datang" and on the question.
+After the last word she closes her mouth into a soft smile and returns to exactly the starting
+pose, looking straight into the lens.
+The rose-gold line and the ear cuff stay exactly as in the image, no glowing, no pulsing,
+no light effects.
+Sound: only her voice, clean studio sound, no music, no background noise. No text on screen.
+Do not change the background at all.
+```
+
+Langkah di ElevenLabs Voice Changer:
+1. Upload video hasil Flow. Bisa langsung file mp4-nya, atau ekstrak audionya dulu.
+2. Pilih voice karakter. Mira memakai voice `U3dExJoUNcmTY5H6GMuG`, dan Rara memakai voice Rara di dashboard.
+3. Nyalakan **Remove background noise**. Biarkan stability dan similarity di nilai default dulu.
+4. Download hasilnya (mp3) dan simpan di `avatar-raw/` dengan nama `mira greeting voice.mp3` atau `rara greeting voice.mp3`.
+
+Setelah video dan audio ada, audio baru digabungkan ke video. Latar diganti seperti klip lain, lalu klip dipasang sebagai `greeting`. Selama klip `greeting` belum ada, website memakai TTS sebagai cadangan.
+
+### Cek sebelum dipakai
+
+- Kalimatnya diucapkan lengkap, termasuk "Haraka Erfi", tidak terpotong, dan tidak ada kata tambahan.
+- Gerak bibir pas dengan audio hasil Voice Changer.
+- Frame pertama dan terakhir sama dengan potret master, dan mulut tertutup di akhir.
+- Latar tidak berubah, dan hijab atau rambut tidak bergeser.

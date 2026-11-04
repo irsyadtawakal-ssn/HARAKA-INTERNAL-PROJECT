@@ -6,6 +6,11 @@ describe("parseManifest", () => {
     const m = { mode: "clips", clips: { idle: ["a.mp4"], listening: ["b.mp4"], thinking: ["c.mp4"], speaking: ["d.mp4", "e.mp4"] } };
     expect(parseManifest(m)).toEqual(m);
   });
+  it("keeps the optional greeting clip", () => {
+    const clips = { idle: ["a.mp4"], listening: ["b.mp4"], thinking: ["c.mp4"], speaking: ["d.mp4"] };
+    expect(parseManifest({ mode: "clips", clips, greeting: "greeting-1.mp4" })).toEqual({ mode: "clips", clips, greeting: "greeting-1.mp4" });
+    expect(parseManifest({ mode: "clips", clips, greeting: 5 })).toEqual({ mode: "clips", clips });
+  });
   it("falls back to placeholder when clips are missing", () => {
     expect(parseManifest({ mode: "clips" })).toEqual({ mode: "placeholder" });
     expect(parseManifest(null)).toEqual({ mode: "placeholder" });

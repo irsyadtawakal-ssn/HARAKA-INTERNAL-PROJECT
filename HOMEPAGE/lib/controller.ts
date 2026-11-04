@@ -19,6 +19,7 @@ export type ThreadItem = { id: number; role: "user" | "assistant"; content: stri
 
 const STORE_KEY = "rara-chat";
 const VOICE_KEY = "rara-voice";
+const GREETED_KEY = "rara-greeted";
 const greetingThread = (greeting = GREETING): ThreadItem[] => [{ id: 0, role: "assistant", content: greeting }];
 type Saved = { thread: ThreadItem[]; messages: ChatMessage[]; leadDone: boolean; showWhatsApp?: boolean };
 
@@ -159,6 +160,47 @@ export function useConversation(avatar: AvatarId = DEFAULT_AVATAR, greetingText?
     audio.onended = () => { stopLevel(); fire("AUDIO_END"); };
     voice.current = { audio, analyser };
   }, [fire, startLevel, stopLevel]);
+
+  /**
+   * Plays the avatar's spoken welcome once per avatar per tab, as long as the visitor has not asked anything yet.
+   * Needs the audio unlocked by a gesture first, so callers run it from a tap, click or key press.
+   * `playClip` starts a lip-synced greeting video if the avatar has one (it must run inside the gesture, so it is
+   * called before anything async); when it cannot play, the greeting is spoken with TTS instead.
+   */
+  const greet = useCallback(async (playClip?: () => boolean) => {
+    const v = voice.current;
+    const avatar = avatarRef.current;
+    if (!v || !voiceOnRef.current || messagesRef.current.some((m) => m.role === "user")) return;
+    const key = `${GREETED_KEY}-${avatar}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      // Storage blocked: greet anyway, at worst once more after a reload.
+    }
+    if (playClip?.()) {
+      newTurn();
+      fire("CANCEL");
+      fire("AUDIO_START");
+      return;
+    }
+    const id = newTurn();
+    try {
+      const res = await fetch(`/api/greeting?avatar=${avatar}`, { signal: abort.current?.signal });
+      if (id !== turn.current || !res.ok) return;
+      const blob = await res.blob();
+      if (id !== turn.current) return;
+      if (audioUrl.current) URL.revokeObjectURL(audioUrl.current);
+      audioUrl.current = URL.createObjectURL(blob);
+      v.audio.src = audioUrl.current;
+      await v.audio.play();
+    } catch {
+      // No voice right now (offline, TTS down, autoplay refused): the written greeting is still on screen.
+    }
+  }, [fire, newTurn]);
+
+  /** The greeting video finished on its own. */
+  const greetEnded = useCallback(() => fire("AUDIO_END"), [fire]);
 
   const speakAsText = useCallback((text: string) => {
     if (textTimer.current) clearTimeout(textTimer.current);
@@ -340,6 +382,6 @@ export function useConversation(avatar: AvatarId = DEFAULT_AVATAR, greetingText?
 
   return {
     state, audioLevel, line, messages, thread, streaming, micSupported, micActive, showWhatsApp, leadDone,
-    voiceOn, send, startMic, stopMic, userGestured, typing, whatsappOpened, toggleVoice, reset,
+    voiceOn, send, startMic, stopMic, userGestured, greet, greetEnded, typing, whatsappOpened, toggleVoice, reset,
   };
 }

@@ -8,7 +8,7 @@ const base = (over: Partial<Conv> = {}): Conv => ({
   state: "idle", audioLevel: 0, line: "Halo", messages: [], thread: [{ id: 0, role: "assistant", content: "Halo" }],
   streaming: null, micSupported: true, showWhatsApp: false,
   leadDone: false, micActive: false, voiceOn: true, toggleVoice: vi.fn(),
-  send: vi.fn(async () => {}), startMic: vi.fn(), stopMic: vi.fn(), userGestured: vi.fn(), typing: vi.fn(),
+  send: vi.fn(async () => {}), startMic: vi.fn(), stopMic: vi.fn(), userGestured: vi.fn(), greet: vi.fn(async () => {}), greetEnded: vi.fn(), typing: vi.fn(),
   whatsappOpened: vi.fn(), reset: vi.fn(), ...over,
 });
 const WA = { number: "0831-3703-0656", prefill: "Halo Admin Haraka Erfi." };

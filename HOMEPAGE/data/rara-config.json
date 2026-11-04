@@ -24,7 +24,7 @@
     "dissolveSpeedMs": 400,
     "avatarScale": 1.22,
     "bgTheme": "soft-rose",
-    "greeting": "Halo Kak, aku Rara dari PT Haraka Erfi. Ceritakan produk kosmetik impianmu ya!",
+    "greeting": "Halo Kak, selamat datang! Aku Rara dari Haraka Erfi. Mau bikin brand skincare sendiri? Yuk, ngobrol sama aku!",
     "quickChips": [
       "Berapa MOQ maklon?",
       "Bisa urus BPOM & Halal?",
@@ -433,6 +433,6 @@
       "speakingSpeed": 1.04,
       "sampleTestText": "Halo Kak! Aku Mira dari PT Haraka Erfi. Mau mulai bikin brand skincare sendiri dengan MOQ seribu pcs dan izin BPOM resmi? Ceritakan konsep produk impian Kakak yaa"
     },
-    "greeting": "Halo Kak, aku Mira dari PT Haraka Erfi. Ceritakan produk kosmetik impianmu ya!"
+    "greeting": "Halo Kak, selamat datang! Aku Mira dari Haraka Erfi. Mau bikin brand skincare sendiri? Yuk, ngobrol sama aku!"
   }
 }

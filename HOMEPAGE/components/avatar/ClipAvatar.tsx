@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type MutableRefObject } from "react";
 import type { AvatarState } from "@/lib/avatarState";
+import type { GreetingPlayer } from "./Avatar";
 import { pickClip } from "./clips";
 import styles from "./avatar.module.css";
 
@@ -11,8 +12,26 @@ const FADE_MS = 550;
 // Two stacked videos with seamless cross-dissolve:
 // The front video is raised on top (zIndex: 2), while the outgoing video
 // stays underneath at zIndex: 1 with delayed fade-out to prevent flash.
-export default function ClipAvatar({ state, clips, base = "/avatar" }: { state: AvatarState; clips: Record<AvatarState, string[]>; base?: string }) {
+type Props = {
+  state: AvatarState;
+  clips: Record<AvatarState, string[]>;
+  base?: string;
+  greeting?: string;
+  greetingRef?: MutableRefObject<GreetingPlayer | null>;
+  voiceOn?: boolean;
+  onGreetingEnd?: () => void;
+};
+
+export default function ClipAvatar({ state, clips, base = "/avatar", greeting, greetingRef, voiceOn = true, onGreetingEnd }: Props) {
   const refs = [useRef<HTMLVideoElement>(null), useRef<HTMLVideoElement>(null)];
+  // The greeting clip carries its own voice, so it plays unmuted on a third, preloaded video above the loop.
+  const greetVideo = useRef<HTMLVideoElement>(null);
+  const [greetingOn, setGreetingOn] = useState(false);
+  const greetingLive = useRef(false);
+  const onGreetingEndRef = useRef(onGreetingEnd);
+  onGreetingEndRef.current = onGreetingEnd;
+  const voiceOnRef = useRef(voiceOn);
+  voiceOnRef.current = voiceOn;
   const [front, setFront] = useState<number | null>(null);
   const frontRef = useRef<number | null>(null);
   const last = useRef<string | null>(null);
@@ -54,6 +73,49 @@ export default function ClipAvatar({ state, clips, base = "/avatar" }: { state: 
     v.play()?.catch(() => {});
   };
 
+  const endGreeting = (notify: boolean) => {
+    if (!greetingLive.current) return;
+    greetingLive.current = false;
+    greetVideo.current?.pause();
+    setGreetingOn(false);
+    if (notify) onGreetingEndRef.current?.();
+  };
+
+  useEffect(() => {
+    if (!greetingRef) return;
+    greetingRef.current = greeting
+      ? {
+          play: () => {
+            const v = greetVideo.current;
+            // Not buffered yet (a very fast first tap): let the caller fall back to the spoken TTS greeting.
+            if (!v || v.readyState < 3) return false;
+            v.muted = !voiceOnRef.current;
+            v.currentTime = 0;
+            greetingLive.current = true;
+            setGreetingOn(true);
+            v.play()?.catch(() => endGreeting(true));
+            return true;
+          },
+        }
+      : null;
+    return () => {
+      greetingRef.current = null;
+      // Switching avatar mid-greeting: tell the page it is over so the avatar does not stay "speaking".
+      endGreeting(true);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [greeting, greetingRef]);
+
+  // Muting mid-greeting silences it; the visitor asking or tapping the mic cuts it short.
+  useEffect(() => {
+    if (greetVideo.current) greetVideo.current.muted = !voiceOn;
+  }, [voiceOn]);
+
+  useEffect(() => {
+    if (greetingLive.current && state !== "speaking") endGreeting(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
+
   useEffect(() => {
     refs.forEach((r) => {
       if (r.current) {
@@ -61,6 +123,8 @@ export default function ClipAvatar({ state, clips, base = "/avatar" }: { state: 
         r.current.playsInline = true;
       }
     });
+    // While the greeting covers the loop, its "speaking" is the greeting itself; the loop stays where it is.
+    if (greetingLive.current) return;
     show(state);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
@@ -97,6 +161,17 @@ export default function ClipAvatar({ state, clips, base = "/avatar" }: { state: 
           onEnded={onEnded}
         />
       ))}
+      {greeting && (
+        <video
+          ref={greetVideo}
+          className={styles.video}
+          src={`${base}/${greeting}`}
+          style={{ opacity: greetingOn ? 1 : 0, zIndex: 3, transition: `opacity ${FADE_MS}ms ease` }}
+          preload="auto"
+          playsInline
+          onEnded={() => endGreeting(true)}
+        />
+      )}
     </div>
   );
 }

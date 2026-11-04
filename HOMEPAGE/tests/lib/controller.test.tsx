@@ -64,6 +64,40 @@ afterEach(() => vi.useRealTimers());
 const ttsCalls = () => fetchMock.mock.calls.filter((c) => c[0] === "/api/tts");
 
 describe("useConversation", () => {
+  it("speaks the welcome greeting once per avatar after the first gesture", async () => {
+    sessionStorage.clear();
+    const { result } = renderHook(() => useConversation());
+    await act(async () => { await result.current.greet(); }); // no gesture yet: audio is still locked
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("/api/greeting"))).toBe(false);
+    act(() => result.current.userGestured());
+    await act(async () => { await result.current.greet(); });
+    await act(async () => { await result.current.greet(); });
+    const greetCalls = fetchMock.mock.calls.filter((c) => String(c[0]).startsWith("/api/greeting"));
+    expect(greetCalls.map((c) => c[0])).toEqual(["/api/greeting?avatar=mira"]);
+    expect(result.current.state).toBe("speaking");
+  });
+
+  it("uses the greeting clip instead of TTS when the avatar has one", async () => {
+    sessionStorage.clear();
+    const { result } = renderHook(() => useConversation());
+    act(() => result.current.userGestured());
+    await act(async () => { await result.current.greet(() => true); });
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("/api/greeting"))).toBe(false);
+    expect(result.current.state).toBe("speaking");
+    act(() => result.current.greetEnded());
+    expect(result.current.state).toBe("idle");
+  });
+
+  it("does not greet once the visitor has asked something", async () => {
+    sessionStorage.clear();
+    const { result } = renderHook(() => useConversation());
+    act(() => result.current.userGestured());
+    await act(async () => { await result.current.send("Berapa MOQ?"); });
+    fetchMock.mockClear();
+    await act(async () => { await result.current.greet(); });
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("/api/greeting"))).toBe(false);
+  });
+
   it("starts idle with the greeting and does not speak before a user gesture", () => {
     const { result } = renderHook(() => useConversation());
     expect(result.current.state).toBe("idle");
