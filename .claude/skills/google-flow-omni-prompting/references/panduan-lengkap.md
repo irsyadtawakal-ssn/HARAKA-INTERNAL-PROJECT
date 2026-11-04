@@ -152,6 +152,39 @@ proportions, eyes, nose, mouth shape, hairstyle, age, outfit, camera distance,
 lighting, and art style identical in every panel. Plain background.
 ```
 
+### Rasio per aset
+
+| Aset | Rasio | Alasan |
+|---|---|---|
+| Potret master | 1:1 (atau 3:4) | Wajah terpusat, detail paling tajam |
+| Turnaround sheet | 16:9 | 4 pose seluruh badan butuh kanvas lebar |
+| Expression sheet | 16:9 (atau 3:2) | Grid 3×2 |
+| Set / lokasi | 9:16 | Sama dengan video, bisa jadi start frame |
+| Start frame | **9:16** | **Wajib sama dengan rasio video**, kalau tidak Flow akan crop/pad |
+| Video | 9:16 | TikTok/Reels/Shorts (Omni hanya 16:9 dan 9:16) |
+
+Sheet 16:9 aman karena dipakai sebagai **referensi** (`<IMAGE_REF_0>`), bukan frame pertama.
+
+### Set dan start frame
+
+1. Buat gambar set kosong (9:16, tanpa orang, tanpa teks) supaya semua klip terasa di tempat yang sama.
+2. Gabungkan karakter + set jadi start frame 9:16 dengan melampirkan potret master dan gambar set:
+
+```
+<Style>, vertical 9:16. <Nama> from the reference photo <pose/aksi> in the
+<set> from the reference image, looking at camera, <ekspresi>. Keep his face,
+<ciri kunci>, and <outfit> exactly as in the reference. No text.
+```
+
+### Karakter realistis
+
+- Tetap tokoh fiktif, bukan wajah orang nyata.
+- Tulis detail wajah lebih rinci: tekstur kulit, pori, tahi lalat (dengan sisinya), kumis/jenggot.
+- Pilih potret master yang wajahnya **khas**. Wajah yang terlalu mulus atau generik gampang berubah antar klip.
+- Lampirkan potret master sebagai referensi **pertama** di setiap klip.
+- Kalau helm/masker/kacamata ada, tulis posisinya (misalnya `visor raised`) di setiap prompt supaya wajah dan lip-sync terlihat.
+- Wajah melenceng di satu klip → perbaiki lewat edit, jangan tulis ulang: `Make his face match the reference photo. Keep everything else the same.`
+
 ---
 
 ## 12. Template prompt video
@@ -191,6 +224,7 @@ The scene continues: <apa yang terjadi berikutnya>. Keep the same character.
 
 ## 13. Checklist sebelum generate
 
+- [ ] Rasio start frame = rasio video (9:16)
 - [ ] Bahasa Inggris, ±30–80 kata, 1–2 aksi
 - [ ] `One continuous shot` bila perlu satu take
 - [ ] Referensi dideklarasikan dengan tag; penampilan tidak dideskripsikan ulang

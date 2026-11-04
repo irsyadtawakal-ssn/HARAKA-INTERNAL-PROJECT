@@ -12,7 +12,7 @@ description: Menulis dan mereview naskah iklan video pendek (< 30 detik, hook/bo
 
 0. **Naskah dulu** bila iklannya belum punya naskah: pilih durasi dan framework, tulis 3–5 variasi hook, satu body, satu CTA, lalu pecah ke klip Hook/CTA (atau 3 klip untuk 30 detik) sesuai `naskah-iklan.md` §7.
 1. **Tentukan jenis prompt:** scene baru, edit, start→end frame, extension, atau character sheet.
-2. **Karakter dulu.** Kalau ada karakter berulang dan belum ada sheet-nya, buat **blok identitas** lengkap (§11) lalu prompt turnaround sheet untuk Nano Banana. Character sheet ditulis **sangat detail**; prompt video ditulis **singkat**.
+2. **Karakter dulu.** Kalau ada karakter berulang dan belum ada sheet-nya, buat **blok identitas** lengkap (§11) lalu prompt turnaround sheet untuk Nano Banana. Character sheet ditulis **sangat detail**; prompt video ditulis **singkat**. Ikuti tabel rasio per aset, buat set + start frame 9:16, dan untuk karakter realistis ikuti tips di §11.
 3. **Tulis prompt video** dengan template §12:
    - Bahasa Inggris, ±30–80 kata, 1–2 aksi per klip.
    - Deklarasikan referensi dengan tag (`<IMAGE_REF_0>`, `<FIRST_FRAME>`, …). Jangan deskripsikan ulang penampilan yang sudah ada di gambar.
