@@ -35,20 +35,20 @@ Konsep: HPP mahal = alarm bahaya di roket → Haraka Erfi memperbaiki → roket 
 | Kokpit, alarm merah berkedip, Bagas panik memegang botol skincare | Bagas: "HPP skincare lu masih mahal? Pantes untungnya tipis!" | ⚠️ HPP MAHAL = UNTUNG TIPIS |
 | | Operator (radio): "Tenang Bos, ke Haraka Erfi aja!" | |
 
-**Klip 2 · Bukti — HPP murah (6–14 detik)**
+**Klip 2 · Bukti — HPP murah (6–12 detik)**
 
 | Visual | Dialog | Teks layar |
 |---|---|---|
-| Alarm jadi hijau, kalkulator melayang di gravitasi nol, Bagas menangkap dan menghitung | Bagas: "Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!" | HPP mulai Rp25rb → jual Rp50rb = **+Rp25rb/pcs** · *ilustrasi, belum termasuk biaya lain* |
+| Lampu kokpit hijau, Bagas duduk memegang kalkulator, mengetik, lalu nyengir ke kamera | Bagas: "HPP mulai 25 ribu, jual 50 ribu." … "Untung kotor 25 ribu per pcs!" | HPP mulai Rp25rb → jual Rp50rb = **+Rp25rb/pcs** · *ilustrasi, belum termasuk biaya lain* |
 
-**Klip 3 · Roket = cepat + CTA (14–22 detik)**
+**Klip 3 · Roket = cepat + CTA (12–20 detik)**
 
 | Visual | Dialog | Teks layar |
 |---|---|---|
 | Hitung mundur, mesin menyala, G-force, Bagas nyengir mengangkat produk, roket meluncur | Bagas: "Prosesnya ngebut kayak roket! Siapin nama brand lu, klik WhatsApp sekarang!" | PROSES CEPAT 🚀 |
 | | Operator: "Tiga, dua, satu… meluncur!" | 👉 CHAT WHATSAPP HARAKA ERFI |
 
-Jumlah kata semua dialog per klip: 13 / 16 / 15 → autopilot memilih 6s / 8s / 8s.
+Jumlah kata semua dialog per klip: 13 / 13 / 15 → autopilot memilih 6s / 6s / 8s (total ±20 detik).
 
 ### Variasi hook (A/B test, ganti klip 1 saja)
 
@@ -176,9 +176,10 @@ and suit exactly as in the reference. No text.
 
 **6. Start frame klip 2 · 9:16** (lampirkan potret master + kokpit)
 ```
-Photorealistic, vertical 9:16. Kapten Bagas from the reference photo floating slightly
-above the seat in the cockpit from the reference image, visor raised, a calculator
-floating in front of him, calm green cockpit lights, starting to grin at camera.
+Photorealistic, vertical 9:16, medium close-up. Kapten Bagas from the reference photo
+sitting in the seat of the cockpit from the reference image, visor raised, holding a
+calculator with both hands at chest height, calm green cockpit lights, slight smile
+at camera.
 Keep his face, mustache, mole, and suit exactly as in the reference. No text.
 ```
 
@@ -229,11 +230,11 @@ Sound design: alarm beeps, cockpit hum, radio static, no music. No text overlay 
 **Klip 2**
 ```
 Use the image as the starting frame.
-Photorealistic, vertical 9:16. Same rocket cockpit, alarm lights turn calm green.
-A calculator floats in zero gravity; he grabs it, grins, taps it and says
-in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
-"Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!"
-Medium shot, slow push in. One continuous shot.
+Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on.
+Locked-off medium close-up. One continuous shot.
+He taps the calculator and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing:
+"HPP mulai 25 ribu, jual 50 ribu."
+Then he looks up at camera, grins, and says: "Untung kotor 25 ribu per pcs!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Sound design: soft cockpit hum, calculator beeps, no music. No text overlay on screen.
 ```
@@ -263,7 +264,7 @@ Alternatif dari prompt di atas. Momen penting jatuh di detik yang pasti, jadi te
 | Klip | Kata dialog | Durasi autopilot | Timeline maksimal |
 |---|---|---|---|
 | 1 | 13 | 6s | `[0-6s]` |
-| 2 | 16 | 8s | `[0-8s]` |
+| 2 | 13 | 6s | `[0-6s]` |
 | 3 | 15 | 8s | `[0-8s]` |
 
 **Klip 1 · 6 detik**
@@ -279,16 +280,14 @@ Keep his face, mustache, mole on right cheek, white spacesuit with orange accent
 Sound design: alarm beeps, cockpit hum, radio static, no music. No text overlay on screen.
 ```
 
-**Klip 2 · 8 detik**
+**Klip 2 · 6 detik**
 ```
 Use the image as the starting frame.
-Photorealistic, vertical 9:16. Same rocket cockpit. One continuous shot, medium shot.
-[0-2s] The alarm lights switch from red to calm green; a calculator floats in zero gravity and he catches it.
-[2-7s] Slow push in as he taps the calculator, grins, and says in an energetic, slightly hoarse male voice,
-fast talker, casual Jakarta accent, comedic timing: "Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!"
-[7-8s] He winks at camera.
+Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on. Locked-off medium close-up, one continuous shot.
+[0-3s] He taps the calculator and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
+[3-6s] He looks up at camera, grins, and says: "Untung kotor 25 ribu per pcs!"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
-Sound design: soft cockpit hum, calculator beeps in rhythm with his taps, no music. No text overlay on screen.
+Sound design: soft cockpit hum, two calculator beeps, a cash-register ding at 4s, no music. No text overlay on screen.
 ```
 
 **Klip 3 · 8 detik** (ada satu cut, jadi tanpa "One continuous shot")
@@ -310,8 +309,8 @@ Sound design: rising engine roar building to a launch boom at 6s, no music. No t
 | Klip | Detik | Teks |
 |---|---|---|
 | 1 | 0–4 | ⚠️ HPP MAHAL = UNTUNG TIPIS (shake di detik 0) |
-| 2 | 2–5 | HPP Rp25rb → Jual Rp50rb |
-| 2 | 5–8 | +Rp25rb/pcs (count-up) + disclaimer kecil |
+| 2 | 0–3 | HPP Rp25rb → Jual Rp50rb |
+| 2 | 3–6 | +Rp25rb/pcs (count-up) + disclaimer kecil |
 | 3 | 0–4 | PROSES CEPAT 🚀 |
 | 3 | 4–6 | Hitung mundur 3-2-1 |
 | 3 | 6–8 | Tombol CHAT WHATSAPP HARAKA ERFI |
@@ -322,7 +321,7 @@ Sound design: rising engine roar building to a launch boom at 6s, no music. No t
 
 Semua teks layar dibuat langsung oleh Omni, tanpa CapCut. Teks disingkat (`25RB`, tanpa "Rp"), ditaruh di upper-middle (aman dari UI TikTok), dan "WhatsApp" hanya diucapkan, bukan ditulis. Cek huruf per huruf, terutama "HARAKA ERFI" dan angka. Teks yang tetap salah setelah 2–3 kali generate diperbaiki lewat edit (`Change the text "..." to "...". Keep everything else the same.`) atau dipindah ke CapCut.
 
-Autopilot hanya menghitung dialog, jadi teks layar dalam kutip tidak mengubah durasi: 6s / 8s / 8s.
+Autopilot hanya menghitung dialog, jadi teks layar dalam kutip tidak mengubah durasi: 6s / 6s / 8s.
 
 **Klip 1 · 6 detik**
 ```
@@ -340,19 +339,17 @@ Crystal clear text, correct spelling, only one text at a time, no other text on 
 Sound design: alarm beeps, cockpit hum, radio static, no music.
 ```
 
-**Klip 2 · 8 detik**
+**Klip 2 · 6 detik**
 ```
 Use the image as the starting frame.
-Photorealistic, vertical 9:16. Same rocket cockpit. One continuous shot, medium shot.
-[0-2s] The alarm lights switch from red to calm green; a calculator floats in zero gravity and he catches it.
-[2-7s] Slow push in as he taps the calculator, grins, and says in an energetic, slightly hoarse male voice,
-fast talker, casual Jakarta accent, comedic timing: "Di Haraka Erfi, HPP mulai 25 ribu. Jual 50 ribu, untung kotor 25 ribu per pcs!"
-Synced to his words, bold white text with black outline pops in at the upper-middle of the frame,
-one line at a time: "HPP 25RB", then "JUAL 50RB", then large yellow text "UNTUNG 25RB".
-[7-8s] He winks at camera; small white text appears at the top: "ILUSTRASI".
+Photorealistic, vertical 9:16. Same rocket cockpit, calm green lights stay on. Locked-off medium close-up, one continuous shot.
+[0-3s] He taps the calculator and says in an energetic, slightly hoarse male voice, fast talker, casual Jakarta accent, comedic timing: "HPP mulai 25 ribu, jual 50 ribu."
+Bold white text with thick black outline pops in at the upper-middle of the frame: "HPP 25RB"
+[3-6s] The white text disappears. He looks up at camera, grins, and says: "Untung kotor 25 ribu per pcs!"
+Large bold yellow text with thick black outline pops in at the upper-middle of the frame: "UNTUNG 25RB"
 Keep his face, mustache, mole on right cheek, white spacesuit with orange accents, and raised visor exactly as in the starting frame.
 Crystal clear text, correct spelling, only one text at a time, no other text on screen.
-Sound design: soft cockpit hum, calculator beeps in rhythm with his taps, a cash-register ding when the yellow text appears, no music.
+Sound design: soft cockpit hum, two calculator beeps, a cash-register ding when the yellow text appears, no music.
 ```
 
 **Klip 3 · 8 detik**
